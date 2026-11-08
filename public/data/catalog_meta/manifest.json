@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-08T04:08:17Z",
+  "totalModels": 4531,
+  "totalColours": 596,
+  "totalCitadelPaints": 487,
+  "totalThirdPartyPaints": 145,
+  "bundles": {
+    "paints_bundle": "sha256:0faefe8d2873d122d231607f",
+    "third_party_paints_bundle": "sha256:1943ba419eb66d27d9eb79d0",
+    "colours_bundle": "sha256:9f61f397939a879020231fdf",
+    "games_factions_bundle": "sha256:2ca3c31bd7c7e00c0b50dc16",
+    "models_index_0": "sha256:601d5ea8d019adb3e5e72597",
+    "models_index_1": "sha256:97cfc87c551733d9766a3356",
+    "models_index_2": "sha256:0d39335aa621386f69d80ef3",
+    "models_index_3": "sha256:2d8cf19d32b9caa83219def1",
+    "models_index_4": "sha256:493500ef1808de1345fe72aa",
+    "models_index_5": "sha256:2aa76fccd8cdc5200ad9aa71"
+  }
+}

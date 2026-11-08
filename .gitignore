@@ -1,0 +1,25 @@
+# Dependencies & Build Outputs
+node_modules/
+dist/
+.angular/
+out-tsc/
+functions/node_modules/
+functions/lib/
+
+# Large local media symlink & split static caches (seeded to Firebase or generated locally)
+public/assets
+public/data/recipes/
+public/data/colours/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+*.log
+npm-debug.log*
+
+# Secrets / Service Account Keys
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+.env
+.env.*

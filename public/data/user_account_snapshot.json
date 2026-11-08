@@ -1,0 +1,4187 @@
+{
+  "inventoryCount": 64,
+  "wishlistCount": 34,
+  "projectsCount": 5,
+  "inventoryPaintIds": [
+    "c999eafe-caf0-4f2e-990d-859ad56744fe",
+    "2a115bb9-74ee-4150-84ba-ca39f55aa7d3",
+    "68f31c51-5948-4c41-9d1c-1510605505b5",
+    "e09b63a3-1aae-409d-9157-5b8f77840c3a",
+    "69aa9d66-d756-413b-9fef-571dd299bb6c",
+    "ec328e89-760a-45c0-88ce-1ae2d36e7159",
+    "fa23f015-20a6-46ac-8ca4-c352640dbed8",
+    "3c1a21bf-5a08-42cc-95b4-7676693e32a7",
+    "2b1a2240-09cb-4b0c-8014-c0649abdc4eb",
+    "ea36d4e9-8fcb-41b7-b23d-20475c963685",
+    "447f025f-3428-45aa-8b97-9e2a9769f20c",
+    "a328a437-2093-48ea-a146-e6f9b7e077a4",
+    "ca0e4758-5472-4594-b68c-59e3ff01af77",
+    "50fbefd8-e1c3-4154-ba6b-02e2aa730315",
+    "5339b9e1-b6ef-4211-9089-0d86246a84ff",
+    "75465d26-2fb1-5760-80f2-094f67b38bf0",
+    "aad2f400-adb3-45e3-8b70-08bbf15b7388",
+    "cb115681-5fb9-4f23-8c35-db3f86f21f2e",
+    "5c7df491-6ac3-4085-88ec-f92d5012ccdd",
+    "aadcc2c6-78d0-5eea-b4ee-db547c47e4c1",
+    "abf41231-bfb9-572f-8e01-bfe8bd1dab70",
+    "5550bcfb-8805-43c4-809a-101911129745",
+    "c3846d83-ee44-4f03-a65a-cdd8b0d5e3e4",
+    "bbfe54c8-9973-4e6f-a12e-0af17cfee05a",
+    "a72ec04c-533e-43a3-a389-a418bd957b1b",
+    "53bccb8a-9172-4d55-aaaa-76031ec2bc8e",
+    "31432e35-1345-46d6-93ce-0e03da98daae",
+    "e4e9d93e-bc5e-427b-8ad9-95cfdb39e402",
+    "e5e2e3f8-f608-43f2-846d-f1df66dd1f31",
+    "51a8cb06-ce1f-4ccd-b624-c17de6f503ae",
+    "4d6f1bd7-635d-4071-9369-e43365f90b03",
+    "eea0bb84-376b-45d7-8292-dd5b5eb439fe",
+    "53413390-90e2-41a6-9292-4e833c89450f",
+    "7acc8a87-4be0-54d5-a37b-29cac5b54cec",
+    "a73b3e58-be23-41d5-b79f-d1a1d870046c",
+    "6bc96dd0-5494-4c27-8746-ca6e6621de9d",
+    "30ec47b9-dda5-4b61-9db2-315ac96859b4",
+    "d569764a-62f9-46e4-b925-f605f35c1462",
+    "1be88328-f8e7-4343-b3c3-da8ec006bdac",
+    "6ae4dfc1-8d9b-4d09-bd7b-b267cf955b25",
+    "c199c294-1601-409d-a756-53f018f66834",
+    "c25511c3-a9dd-53e0-a7e1-c77eff7ac5ec",
+    "d1868dab-f5c7-49ee-904d-c2ccec5948a2",
+    "39091fa3-acf4-4fef-be30-49ab332f0372",
+    "6805b74d-6ac6-4bf8-b363-fe681f663ab6",
+    "97da4406-6d5e-4142-a33c-f5c9d1905ab5",
+    "d86802a5-a3f5-4ac0-9348-1d5772b59d4a",
+    "f7384f3f-b96e-43c5-9699-ef5eb49bf19b",
+    "e42b905d-abb2-4436-8631-c7dcb1d15946",
+    "ca51d4cb-2b2f-443e-9c79-984730d5e1d9",
+    "abbd7c31-9766-4933-8e69-a440a79de664",
+    "729cad4d-9a31-4230-9354-72190c7b1991",
+    "cdbe5536-a64e-43c7-a08d-fab099020a33",
+    "c88aa39a-e603-42eb-b282-8009fc2ce2ec",
+    "4a5db852-789e-41cb-b4dd-b7a9177aea53",
+    "2a2ccee9-f02b-48bb-a47e-2878e52dc42c",
+    "c768fd5a-265f-4ca1-a19a-ee9674937b59",
+    "33cc4f63-124e-4b55-a279-2cb1852d01d1",
+    "85107867-fe38-4ad3-81a5-5efae3abbe93",
+    "0e45fff8-cf2e-48ba-83fc-4ead56f9b6ab",
+    "142f80dd-1f4b-40c5-b5c7-856b075ab762",
+    "b5174fa0-4fa0-423e-855d-d64b11433acf",
+    "2f2f3973-2d79-5c65-8a47-4c04b8193b9f",
+    "03bd69e7-08c6-49b4-a68b-a314cb1116e5"
+  ],
+  "wishlistPaintIds": [
+    "31d053cb-0afe-4d41-ab20-780305c1a054",
+    "7d99d5ce-16b9-51fd-8e12-d41a559eb515",
+    "9aa98dd9-ddf1-42c2-aa2b-02a661fa08e4",
+    "0988e8a4-5530-476c-8e1e-b1eed5af5ae7",
+    "eb2e0675-3078-483b-b8b7-4fbf84a4cc18",
+    "1aa6f246-ed88-4235-927f-281a34158223",
+    "bb9e60ab-2c85-43df-9bf4-041fa7e0a4d9",
+    "f48c7ee4-52df-451e-b6f7-8a1699c789cf",
+    "6ffc4207-6556-40c3-8a4a-c8201e1e36fe",
+    "2358dfdf-7624-4f01-b29d-05cf89d6a67c",
+    "e131b3cb-50e8-4479-ae0b-88cadcc09e96",
+    "df3368ae-2fee-4b47-b851-f03f7d14c873",
+    "b9872c83-b87c-4456-93b5-3cf6ae7f65d3",
+    "eaff871f-883d-5747-a923-78e45d25b8aa",
+    "9d345022-f4d8-455a-8199-3b3e112ca770",
+    "f421665e-2edb-429b-98ca-905bc7dc025c",
+    "c9aaebda-787b-4de6-847e-66592aa081dd",
+    "001ff0cf-ed2a-48e4-91b7-75066ca2fbe3",
+    "5feae433-a844-43f1-bef9-472a451cc585",
+    "746d0437-59a0-4940-8476-2b62726595fc",
+    "327d7902-d58c-4150-aad5-2c872d6d0651",
+    "5cb9ca6d-0a8c-4a53-8c8a-44dbfdf87204",
+    "3a7752b9-72c7-4fed-b8e2-c69277b79737",
+    "a3281712-a681-4d3d-9279-5d8de69ba9d0",
+    "5fad2686-e4f8-4f56-a59c-bd96cc19e36d",
+    "f9978ec0-0131-4f71-9730-c73ea290fd83",
+    "61bb3847-bac0-4719-8d80-e8e8742e316d",
+    "fd7cf5a6-eaad-4908-8dd8-8cde4323a1b9",
+    "70aceb8a-715a-4116-8747-c1ba53a76d79",
+    "dda970e7-53a9-4770-98eb-3d1ed68e5679",
+    "c7ed3986-9a0c-4710-80a2-cbcc288f6184",
+    "d8d7c239-22d9-48e9-87d2-454832396e18",
+    "cf768fd8-384f-4c72-a55b-ff5914a64bf1",
+    "14ee7b60-7769-47a1-bc4a-004e10c75c3d"
+  ],
+  "inventoryPaints": [
+    {
+      "id": "c999eafe-caf0-4f2e-990d-859ad56744fe",
+      "name": "Abaddon Black",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#000000",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 0,
+        "g": 0,
+        "b": 0
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fc2419e3-adc5-4276-8d06-1cd09ccd95b0.png",
+      "localImagePath": "assets/images/paints/fc2419e3-adc5-4276-8d06-1cd09ccd95b0.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "c24b202b-8c52-4474-b9a6-4b9c2b62c11b",
+          "name": "Blackstone Void 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#000208",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/baefd326-c47c-4c86-ab61-4dd13ba3a315.png",
+          "localImagePath": "assets/images/paints/baefd326-c47c-4c86-ab61-4dd13ba3a315.png"
+        }
+      ]
+    },
+    {
+      "id": "2a115bb9-74ee-4150-84ba-ca39f55aa7d3",
+      "name": "Agrax Earthshade",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#E2DAC8",
+      "gradientMiddleHex": "#725839",
+      "gradientEndHex": "#2D190C",
+      "rgb": {
+        "r": 226,
+        "g": 218,
+        "b": 200
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f23d18d0-be55-4138-a758-f53c2cff27e1.png",
+      "localImagePath": "assets/images/paints/f23d18d0-be55-4138-a758-f53c2cff27e1.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "68f31c51-5948-4c41-9d1c-1510605505b5",
+      "name": "Alaitoc Blue",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#2F4F85",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 47,
+        "g": 79,
+        "b": 133
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a4020a80-4eaa-4419-af2a-745e8f4d929d.png",
+      "localImagePath": "assets/images/paints/a4020a80-4eaa-4419-af2a-745e8f4d929d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "05351fcd-c916-4507-8410-b698a89be2e0",
+          "name": "Ultramar Blue 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#1a5086",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/dc154c1d-31e0-48d2-befb-afdd1f77e7db.png",
+          "localImagePath": "assets/images/paints/dc154c1d-31e0-48d2-befb-afdd1f77e7db.png"
+        },
+        {
+          "id": "702799f6-66af-4546-9729-81f2801b48f3",
+          "name": "Blue Gorkshroom 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#006dab",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1ed4f099-e165-425d-a083-2b8fa62d9468.png",
+          "localImagePath": "assets/images/paints/1ed4f099-e165-425d-a083-2b8fa62d9468.png"
+        },
+        {
+          "id": "af5ce5d0-1ede-4b3f-968f-fe15d50b3448",
+          "name": "Scinari Blue 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#006c98",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/cec6f4eb-f486-4a9c-8781-fb580de56b3f.png",
+          "localImagePath": "assets/images/paints/cec6f4eb-f486-4a9c-8781-fb580de56b3f.png"
+        }
+      ]
+    },
+    {
+      "id": "e09b63a3-1aae-409d-9157-5b8f77840c3a",
+      "name": "Armageddon Dust",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "texture_fine",
+      "gradientStartHex": "#D2AD00",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#E8D36F",
+      "rgb": {
+        "r": 210,
+        "g": 173,
+        "b": 0
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/67b53e87-340b-44dc-af4e-ef936277d09e.png",
+      "localImagePath": "assets/images/paints/67b53e87-340b-44dc-af4e-ef936277d09e.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "69aa9d66-d756-413b-9fef-571dd299bb6c",
+      "name": "Astrogranite",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "texture_fine",
+      "gradientStartHex": "#767675",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#9D9D9D",
+      "rgb": {
+        "r": 118,
+        "g": 118,
+        "b": 117
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ffa28117-6257-4886-a0e7-c2e0ce1711f7.png",
+      "localImagePath": "assets/images/paints/ffa28117-6257-4886-a0e7-c2e0ce1711f7.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "ec328e89-760a-45c0-88ce-1ae2d36e7159",
+      "name": "Auric Armour Gold",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FFF3C7",
+      "gradientMiddleHex": "#FFBE41",
+      "gradientEndHex": "#B05A25",
+      "rgb": {
+        "r": 255,
+        "g": 243,
+        "b": 199
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/64312668-4e2c-4fd2-9040-a8e5ca938d99.png",
+      "localImagePath": "assets/images/paints/64312668-4e2c-4fd2-9040-a8e5ca938d99.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "fa23f015-20a6-46ac-8ca4-c352640dbed8",
+      "name": "Averland Sunset",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#FBB81C",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 251,
+        "g": 184,
+        "b": 28
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a03200c7-9fac-4a74-8001-6fbb0e5f3e29.png",
+      "localImagePath": "assets/images/paints/a03200c7-9fac-4a74-8001-6fbb0e5f3e29.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "d5f06b3b-36c2-4b94-b296-740e38aa0c86",
+          "name": "Khemri Sands 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#cb8416",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f15e0a8c-5901-4ce2-980f-305a79b4c3b2.png",
+          "localImagePath": "assets/images/paints/f15e0a8c-5901-4ce2-980f-305a79b4c3b2.png"
+        },
+        {
+          "id": "41e0fc0b-7c8b-4238-9a06-bc1bb2ca3b32",
+          "name": "Hawkshroud Yellow 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#f6a221",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/bb03a6a9-2055-42cb-99ae-b558af2707d2.png",
+          "localImagePath": "assets/images/paints/bb03a6a9-2055-42cb-99ae-b558af2707d2.png"
+        },
+        {
+          "id": "f457e7c0-c2dc-4c20-97e7-66ce15c4d009",
+          "name": "Megaboss Yellow 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#f5ad19",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4420b7be-5910-472b-9326-768c5746e551.png",
+          "localImagePath": "assets/images/paints/4420b7be-5910-472b-9326-768c5746e551.png"
+        }
+      ]
+    },
+    {
+      "id": "3c1a21bf-5a08-42cc-95b4-7676693e32a7",
+      "name": "Balthasar Gold",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FFC28A",
+      "gradientMiddleHex": "#9B684B",
+      "gradientEndHex": "#1D0F07",
+      "rgb": {
+        "r": 255,
+        "g": 194,
+        "b": 138
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8144be75-5634-4350-a1bc-fd674693f128.png",
+      "localImagePath": "assets/images/paints/8144be75-5634-4350-a1bc-fd674693f128.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "2b1a2240-09cb-4b0c-8014-c0649abdc4eb",
+      "name": "Biel-Tan Green",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#AEDCA2",
+      "gradientMiddleHex": "#008543",
+      "gradientEndHex": "#132E21",
+      "rgb": {
+        "r": 174,
+        "g": 220,
+        "b": 162
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/aa8e5812-2490-4867-b729-1489503b6d60.png",
+      "localImagePath": "assets/images/paints/aa8e5812-2490-4867-b729-1489503b6d60.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "ea36d4e9-8fcb-41b7-b23d-20475c963685",
+      "name": "Blood for the Blood God",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "gloss",
+      "gradientStartHex": "#600005",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#000000",
+      "rgb": {
+        "r": 96,
+        "g": 0,
+        "b": 5
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d54f88a9-d09e-4cb7-9130-9d3590507b51.png",
+      "localImagePath": "assets/images/paints/d54f88a9-d09e-4cb7-9130-9d3590507b51.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "447f025f-3428-45aa-8b97-9e2a9769f20c",
+      "name": "Brass Scorpion",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FFC266",
+      "gradientMiddleHex": "#9A4F24",
+      "gradientEndHex": "#3D0700",
+      "rgb": {
+        "r": 255,
+        "g": 194,
+        "b": 102
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4204df39-1182-432c-afa2-1e3063f7073b.png",
+      "localImagePath": "assets/images/paints/4204df39-1182-432c-afa2-1e3063f7073b.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "a328a437-2093-48ea-a146-e6f9b7e077a4",
+      "name": "Bugman‘s Glow",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#804C43",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 128,
+        "g": 76,
+        "b": 67
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/11f4cac2-711f-4c5d-8ce0-18dea3bf39e0.png",
+      "localImagePath": "assets/images/paints/11f4cac2-711f-4c5d-8ce0-18dea3bf39e0.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "e528b2ad-f76d-4384-807f-f0de489b55db",
+          "name": "Celestine Skin 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#c9826c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4efbe6db-06dc-4446-86b1-f6cf73ffcf30.png",
+          "localImagePath": "assets/images/paints/4efbe6db-06dc-4446-86b1-f6cf73ffcf30.png"
+        },
+        {
+          "id": "22e9d89f-9ea6-43ec-9eaa-2c16830cbdb5",
+          "name": "Celestine Skin 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d18c73",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a66962a9-2217-4092-8948-b8f3c3aade8b.png",
+          "localImagePath": "assets/images/paints/a66962a9-2217-4092-8948-b8f3c3aade8b.png"
+        },
+        {
+          "id": "ff4464b7-8610-4d4b-93fe-31e1b6c4b25d",
+          "name": "Celestine Skin 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d6967b",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/06e9ae3b-a14a-4ef2-92f6-d32688d9369b.png",
+          "localImagePath": "assets/images/paints/06e9ae3b-a14a-4ef2-92f6-d32688d9369b.png"
+        }
+      ]
+    },
+    {
+      "id": "ca0e4758-5472-4594-b68c-59e3ff01af77",
+      "name": "Caliban Green",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#003D15",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 0,
+        "g": 61,
+        "b": 21
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/19c042c2-dacb-4dbe-8a21-91a1248c6da8.png",
+      "localImagePath": "assets/images/paints/19c042c2-dacb-4dbe-8a21-91a1248c6da8.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "b48e595e-e3d6-4fb2-bc83-eb7e9dab50fc",
+          "name": "Hierotek Green 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#00311c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fbaabe62-9ccf-405a-bcf9-dde2709620dd.png",
+          "localImagePath": "assets/images/paints/fbaabe62-9ccf-405a-bcf9-dde2709620dd.png"
+        },
+        {
+          "id": "ca66a303-f68e-4f48-9af2-58270cc520b8",
+          "name": "Kasrkin Green 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#224430",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2b008237-2570-4c84-a7fb-d51596947399.png",
+          "localImagePath": "assets/images/paints/2b008237-2570-4c84-a7fb-d51596947399.png"
+        },
+        {
+          "id": "169fdcad-a525-425f-95ba-848665264f7e",
+          "name": "Lustria Green 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#004718",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4a0e6bd2-f53d-4995-a7bf-66fad8fdcc9a.png",
+          "localImagePath": "assets/images/paints/4a0e6bd2-f53d-4995-a7bf-66fad8fdcc9a.png"
+        }
+      ]
+    },
+    {
+      "id": "50fbefd8-e1c3-4154-ba6b-02e2aa730315",
+      "name": "Carroburg Crimson",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#FFB7EB",
+      "gradientMiddleHex": "#942D52",
+      "gradientEndHex": "#310808",
+      "rgb": {
+        "r": 255,
+        "g": 183,
+        "b": 235
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1341e5ae-0670-4625-85ad-3f5ec095ee88.png",
+      "localImagePath": "assets/images/paints/1341e5ae-0670-4625-85ad-3f5ec095ee88.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "5339b9e1-b6ef-4211-9089-0d86246a84ff",
+      "name": "Casandora Yellow",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#FCEFBC",
+      "gradientMiddleHex": "#FBC600",
+      "gradientEndHex": "#E78035",
+      "rgb": {
+        "r": 252,
+        "g": 239,
+        "b": 188
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4b3eac4e-39fe-4d7d-940b-fa7e4257ba0c.png",
+      "localImagePath": "assets/images/paints/4b3eac4e-39fe-4d7d-940b-fa7e4257ba0c.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "75465d26-2fb1-5760-80f2-094f67b38bf0",
+      "name": "Catachan Flesh",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#442B25",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 68,
+        "g": 43,
+        "b": 37
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f98e9bbd-7cc0-46a3-9b6e-17eb12f7064d.png",
+      "localImagePath": "assets/images/paints/f98e9bbd-7cc0-46a3-9b6e-17eb12f7064d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "025bcf79-3735-492b-b559-733f162b1076",
+          "name": "Carthalos Skin 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#775347",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/7d07c31f-7c89-4c91-8fde-390885c4a57c.png",
+          "localImagePath": "assets/images/paints/7d07c31f-7c89-4c91-8fde-390885c4a57c.png"
+        },
+        {
+          "id": "af091cda-68d8-4270-a2ee-98e16e044633",
+          "name": "Carthalos Skin 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#5d3b38",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b37132e9-6c20-40e3-a263-9a6d5b904886.png",
+          "localImagePath": "assets/images/paints/b37132e9-6c20-40e3-a263-9a6d5b904886.png"
+        },
+        {
+          "id": "3e1e8aa3-7a8a-441a-b6e5-4f3ebd1e6151",
+          "name": "Gnarlwood 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#504236",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/85061958-e49f-4529-b30b-c1d20db436fe.png",
+          "localImagePath": "assets/images/paints/85061958-e49f-4529-b30b-c1d20db436fe.png"
+        }
+      ]
+    },
+    {
+      "id": "aad2f400-adb3-45e3-8b70-08bbf15b7388",
+      "name": "Celestra Grey",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#8BA3A3",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 139,
+        "g": 163,
+        "b": 163
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2de545ab-ff54-47c1-a906-c26e04fc533e.png",
+      "localImagePath": "assets/images/paints/2de545ab-ff54-47c1-a906-c26e04fc533e.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "a8818d67-582f-40f3-99d9-f2172bee26b4",
+          "name": "Blackstone Void 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#9b9d9f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/6a10fc46-d3cc-4fa1-8c92-1cb2209504bf.png",
+          "localImagePath": "assets/images/paints/6a10fc46-d3cc-4fa1-8c92-1cb2209504bf.png"
+        },
+        {
+          "id": "42f091bf-4c35-4794-9f30-255219ce89c7",
+          "name": "Dataslate Grey 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#878983",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png",
+          "localImagePath": "assets/images/paints/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png"
+        },
+        {
+          "id": "8820a21c-8169-43cd-86c3-eaeb9bf78c5b",
+          "name": "Stormwolf Blue 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#8aafb8",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3abf8940-1c06-4cd8-ad88-68d4b4ede1bc.png",
+          "localImagePath": "assets/images/paints/3abf8940-1c06-4cd8-ad88-68d4b4ede1bc.png"
+        }
+      ]
+    },
+    {
+      "id": "cb115681-5fb9-4f23-8c35-db3f86f21f2e",
+      "name": "Chaos Black",
+      "range": "warhammer_colour",
+      "category": "spray",
+      "potStyle": "flat",
+      "gradientStartHex": "#000000",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 0,
+        "g": 0,
+        "b": 0
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": null,
+      "localImagePath": null,
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "5c7df491-6ac3-4085-88ec-f92d5012ccdd",
+      "name": "Coelia Greenshade",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#20B8AC",
+      "gradientMiddleHex": "#00675F",
+      "gradientEndHex": "#113431",
+      "rgb": {
+        "r": 32,
+        "g": 184,
+        "b": 172
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a27fa942-6c59-4efb-8acf-e9e12aebc02d.png",
+      "localImagePath": "assets/images/paints/a27fa942-6c59-4efb-8acf-e9e12aebc02d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "aadcc2c6-78d0-5eea-b4ee-db547c47e4c1",
+      "name": "Corax White",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#FFFFFF",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/26cf3e6e-bbf9-4e3a-8017-80783124413e.png",
+      "localImagePath": "assets/images/paints/26cf3e6e-bbf9-4e3a-8017-80783124413e.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "26c5348f-9734-44cf-96ef-60b4208893e1",
+          "name": "Blackstone Void 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ffffff",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d74d6a9a-95bd-458b-844b-3c350390e261.png",
+          "localImagePath": "assets/images/paints/d74d6a9a-95bd-458b-844b-3c350390e261.png"
+        }
+      ]
+    },
+    {
+      "id": "abf41231-bfb9-572f-8e01-bfe8bd1dab70",
+      "name": "Corvus Black",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#171314",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 23,
+        "g": 19,
+        "b": 20
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/bcfca0b5-52be-4262-8194-750d76279733.png",
+      "localImagePath": "assets/images/paints/bcfca0b5-52be-4262-8194-750d76279733.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "e1964298-288a-4eb0-a4ff-9b4857a2f1d4",
+          "name": "Blackstone Void 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4e5458",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1ad25d9e-4b69-48ca-8254-00c7c5fe999d.png",
+          "localImagePath": "assets/images/paints/1ad25d9e-4b69-48ca-8254-00c7c5fe999d.png"
+        },
+        {
+          "id": "1b86e12c-1d88-46ad-8e49-7d264354840e",
+          "name": "Dataslate Grey 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#2b2d28",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/00821ef7-f50a-4ade-a4f6-365de2b997b5.png",
+          "localImagePath": "assets/images/paints/00821ef7-f50a-4ade-a4f6-365de2b997b5.png"
+        },
+        {
+          "id": "79962cfb-1e03-424d-923b-3236346a026e",
+          "name": "Dataslate Grey 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#3e3d35",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8d467558-8211-4462-a9d7-d2f508da136a.png",
+          "localImagePath": "assets/images/paints/8d467558-8211-4462-a9d7-d2f508da136a.png"
+        }
+      ]
+    },
+    {
+      "id": "5550bcfb-8805-43c4-809a-101911129745",
+      "name": "Dawnstone",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#697068",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 105,
+        "g": 112,
+        "b": 104
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/9fd8fe67-364f-48d6-9560-06e9504867f6.png",
+      "localImagePath": "assets/images/paints/9fd8fe67-364f-48d6-9560-06e9504867f6.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "436132af-ec83-44a9-88d5-b4e2c030ac9f",
+          "name": "Blackstone Void 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#6e7074",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3cac1445-07ef-421c-b6c2-9710384fd0e5.png",
+          "localImagePath": "assets/images/paints/3cac1445-07ef-421c-b6c2-9710384fd0e5.png"
+        },
+        {
+          "id": "e1964298-288a-4eb0-a4ff-9b4857a2f1d4",
+          "name": "Blackstone Void 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4e5458",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1ad25d9e-4b69-48ca-8254-00c7c5fe999d.png",
+          "localImagePath": "assets/images/paints/1ad25d9e-4b69-48ca-8254-00c7c5fe999d.png"
+        },
+        {
+          "id": "42f091bf-4c35-4794-9f30-255219ce89c7",
+          "name": "Dataslate Grey 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#878983",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png",
+          "localImagePath": "assets/images/paints/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png"
+        }
+      ]
+    },
+    {
+      "id": "c3846d83-ee44-4f03-a65a-cdd8b0d5e3e4",
+      "name": "Doomfire Magenta",
+      "range": "warhammer_colour",
+      "category": "contrast",
+      "potStyle": "contrast",
+      "gradientStartHex": "#A70063",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#EC008C",
+      "rgb": {
+        "r": 167,
+        "g": 0,
+        "b": 99
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/0a82dfbe-716d-44a0-9937-6bd96da4f485.png",
+      "localImagePath": "assets/images/paints/0a82dfbe-716d-44a0-9937-6bd96da4f485.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "bbfe54c8-9973-4e6f-a12e-0af17cfee05a",
+      "name": "Drakenhof Nightshade",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#E6E8F3",
+      "gradientMiddleHex": "#004589",
+      "gradientEndHex": "#0A131B",
+      "rgb": {
+        "r": 230,
+        "g": 232,
+        "b": 243
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3bf5b105-8a0b-41b4-bf8a-52fa7bbc4600.png",
+      "localImagePath": "assets/images/paints/3bf5b105-8a0b-41b4-bf8a-52fa7bbc4600.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "a72ec04c-533e-43a3-a389-a418bd957b1b",
+      "name": "Dryad Bark",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#2B2A24",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 43,
+        "g": 42,
+        "b": 36
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/998a8a7e-c10a-4bac-8615-c3444db7abaf.png",
+      "localImagePath": "assets/images/paints/998a8a7e-c10a-4bac-8615-c3444db7abaf.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "a8c60be2-d53f-4a15-a695-b33fcda04b81",
+          "name": "Gnarlwood 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#332928",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/80855df3-90ae-41b5-be9d-ffc7d19a5cd8.png",
+          "localImagePath": "assets/images/paints/80855df3-90ae-41b5-be9d-ffc7d19a5cd8.png"
+        },
+        {
+          "id": "3e1e8aa3-7a8a-441a-b6e5-4f3ebd1e6151",
+          "name": "Gnarlwood 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#504236",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/85061958-e49f-4529-b30b-c1d20db436fe.png",
+          "localImagePath": "assets/images/paints/85061958-e49f-4529-b30b-c1d20db436fe.png"
+        },
+        {
+          "id": "e8477761-4222-4b76-9ab3-8bd511ec5c17",
+          "name": "Carthalos Skin 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#231815",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/34dfcedd-a02d-4103-a603-a5827ef6bb56.png",
+          "localImagePath": "assets/images/paints/34dfcedd-a02d-4103-a603-a5827ef6bb56.png"
+        }
+      ]
+    },
+    {
+      "id": "53bccb8a-9172-4d55-aaaa-76031ec2bc8e",
+      "name": "Emperor's Children",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#B74073",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 183,
+        "g": 64,
+        "b": 115
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d09cd6d6-342d-4373-9051-27591859ed27.png",
+      "localImagePath": "assets/images/paints/d09cd6d6-342d-4373-9051-27591859ed27.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "00caaff2-eeeb-4766-ae8f-54e8300fa2fd",
+          "name": "Eye Of Terror 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d76899",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/43dbc940-e9dc-4dd1-b282-9de052332c92.png",
+          "localImagePath": "assets/images/paints/43dbc940-e9dc-4dd1-b282-9de052332c92.png"
+        },
+        {
+          "id": "d58ccb2e-e948-4900-bb55-8220d89845e4",
+          "name": "Eye Of Terror 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#cf477c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/79beec65-b3c9-484e-9c5c-c5146f5216fe.png",
+          "localImagePath": "assets/images/paints/79beec65-b3c9-484e-9c5c-c5146f5216fe.png"
+        },
+        {
+          "id": "e161b207-9a17-423b-908a-26958f0709d9",
+          "name": "Magnus The Red 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#a64677",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/63b0ba99-2839-4406-bd55-b352c20598a5.png",
+          "localImagePath": "assets/images/paints/63b0ba99-2839-4406-bd55-b352c20598a5.png"
+        }
+      ]
+    },
+    {
+      "id": "31432e35-1345-46d6-93ce-0e03da98daae",
+      "name": "Evil Sunz Scarlet",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#C01411",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 192,
+        "g": 20,
+        "b": 17
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f99fbe08-188a-41df-9495-e84d84526b44.png",
+      "localImagePath": "assets/images/paints/f99fbe08-188a-41df-9495-e84d84526b44.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "c060c0b3-7df3-4eb1-93ba-ba25ea2ccc7f",
+          "name": "Bloodtoof Red 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d01629",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/c91acc8e-621b-4ca1-bcde-3b7f7dc19912.png",
+          "localImagePath": "assets/images/paints/c91acc8e-621b-4ca1-bcde-3b7f7dc19912.png"
+        },
+        {
+          "id": "19fa33fd-839f-4743-a327-13160d9b2c96",
+          "name": "Bloodtoof Red 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#a8152f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/76ac29b1-2266-4857-8475-c735cd3429be.png",
+          "localImagePath": "assets/images/paints/76ac29b1-2266-4857-8475-c735cd3429be.png"
+        },
+        {
+          "id": "0b47090f-8298-4a2c-8604-85182189583d",
+          "name": "Carmine Blades 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#8d0425",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/7f407269-bc43-4474-9eff-05978485a61d.png",
+          "localImagePath": "assets/images/paints/7f407269-bc43-4474-9eff-05978485a61d.png"
+        }
+      ]
+    },
+    {
+      "id": "e4e9d93e-bc5e-427b-8ad9-95cfdb39e402",
+      "name": "Fire Dragon Bright",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#F4874E",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 244,
+        "g": 135,
+        "b": 78
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/bde5b054-a6bb-4748-9e49-fa508ee6613c.png",
+      "localImagePath": "assets/images/paints/bde5b054-a6bb-4748-9e49-fa508ee6613c.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "53340785-5405-4a4d-aeca-4a6c1b433031",
+          "name": "Chotec Orange 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#f2823c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/73cd5fa6-4b79-4816-948e-ea7d582f98ed.png",
+          "localImagePath": "assets/images/paints/73cd5fa6-4b79-4816-948e-ea7d582f98ed.png"
+        },
+        {
+          "id": "ce644023-d5be-4784-a793-89b96c1ae304",
+          "name": "Bloodtoof Red 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e93c42",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8cebedae-f3de-4d4b-a279-a98e37743fc0.png",
+          "localImagePath": "assets/images/paints/8cebedae-f3de-4d4b-a279-a98e37743fc0.png"
+        },
+        {
+          "id": "88759949-2cce-4da8-aa52-86e7ca53be99",
+          "name": "Chotec Orange 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ef653a",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/905d66e8-93fa-4cd3-8c16-3e7d11c528b6.png",
+          "localImagePath": "assets/images/paints/905d66e8-93fa-4cd3-8c16-3e7d11c528b6.png"
+        }
+      ]
+    },
+    {
+      "id": "e5e2e3f8-f608-43f2-846d-f1df66dd1f31",
+      "name": "Flash Gitz Yellow",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#FFF300",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 255,
+        "g": 243,
+        "b": 0
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d3789044-5996-4a27-aa35-1d430761d801.png",
+      "localImagePath": "assets/images/paints/d3789044-5996-4a27-aa35-1d430761d801.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "3b0d3a2e-cd89-4a03-a4df-a298a4d91ef1",
+          "name": "Hawkshroud Yellow 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ffd203",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d725ddff-1700-4944-945e-2b888e7643a5.png",
+          "localImagePath": "assets/images/paints/d725ddff-1700-4944-945e-2b888e7643a5.png"
+        },
+        {
+          "id": "950081cf-3871-4141-881b-be5c88ab0647",
+          "name": "Megaboss Yellow 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#f6e769",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f87af1bd-b4c1-4135-b6bd-7f38de6b3010.png",
+          "localImagePath": "assets/images/paints/f87af1bd-b4c1-4135-b6bd-7f38de6b3010.png"
+        },
+        {
+          "id": "b691c255-0f12-4f71-9b04-4a4e02bad22c",
+          "name": "Hawkshroud Yellow 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#fbdf84",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f3e306c0-9a95-4bf6-9775-e93d1a4f6f67.png",
+          "localImagePath": "assets/images/paints/f3e306c0-9a95-4bf6-9775-e93d1a4f6f67.png"
+        }
+      ]
+    },
+    {
+      "id": "51a8cb06-ce1f-4ccd-b624-c17de6f503ae",
+      "name": "Flayed One Flesh",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#EEC483",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 238,
+        "g": 196,
+        "b": 131
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/27f63032-aabb-438e-8c29-6ef91afa4638.png",
+      "localImagePath": "assets/images/paints/27f63032-aabb-438e-8c29-6ef91afa4638.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "b81f8eb4-e3b8-4235-ae9b-01b60a95af2e",
+          "name": "Necrolith Bone 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#b79f7f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/78b2e47b-e29b-4995-8b7e-161046b7a781.png",
+          "localImagePath": "assets/images/paints/78b2e47b-e29b-4995-8b7e-161046b7a781.png"
+        },
+        {
+          "id": "8fdcd44f-ac9c-4215-9bb5-ac5a763667c1",
+          "name": "Ta'unar Ochre 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e6b073",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d99fa6aa-9db8-4e57-a04f-5c1b7d448d31.png",
+          "localImagePath": "assets/images/paints/d99fa6aa-9db8-4e57-a04f-5c1b7d448d31.png"
+        },
+        {
+          "id": "20a726f8-133c-45e2-9ff4-0bec8b652226",
+          "name": "Celestine Skin 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e7a98c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2384ec9a-51a9-4d25-9bce-f8894a3c49d7.png",
+          "localImagePath": "assets/images/paints/2384ec9a-51a9-4d25-9bce-f8894a3c49d7.png"
+        }
+      ]
+    },
+    {
+      "id": "4d6f1bd7-635d-4071-9369-e43365f90b03",
+      "name": "Fuegan Orange",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#DF9F68",
+      "gradientMiddleHex": "#B45A0C",
+      "gradientEndHex": "#6C1C03",
+      "rgb": {
+        "r": 223,
+        "g": 159,
+        "b": 104
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4b472e1f-02de-4c9a-b28c-2879ec003881.png",
+      "localImagePath": "assets/images/paints/4b472e1f-02de-4c9a-b28c-2879ec003881.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "eea0bb84-376b-45d7-8292-dd5b5eb439fe",
+      "name": "Fulgrim Pink",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#F3ABCA",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 243,
+        "g": 171,
+        "b": 202
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/6809bce4-1af9-4e1d-a730-386aa25a5e6c.png",
+      "localImagePath": "assets/images/paints/6809bce4-1af9-4e1d-a730-386aa25a5e6c.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "d58ccb2e-e948-4900-bb55-8220d89845e4",
+          "name": "Eye Of Terror 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#cf477c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/79beec65-b3c9-484e-9c5c-c5146f5216fe.png",
+          "localImagePath": "assets/images/paints/79beec65-b3c9-484e-9c5c-c5146f5216fe.png"
+        },
+        {
+          "id": "00caaff2-eeeb-4766-ae8f-54e8300fa2fd",
+          "name": "Eye Of Terror 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d76899",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/43dbc940-e9dc-4dd1-b282-9de052332c92.png",
+          "localImagePath": "assets/images/paints/43dbc940-e9dc-4dd1-b282-9de052332c92.png"
+        },
+        {
+          "id": "e161b207-9a17-423b-908a-26958f0709d9",
+          "name": "Magnus The Red 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#a64677",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/63b0ba99-2839-4406-bd55-b352c20598a5.png",
+          "localImagePath": "assets/images/paints/63b0ba99-2839-4406-bd55-b352c20598a5.png"
+        }
+      ]
+    },
+    {
+      "id": "53413390-90e2-41a6-9292-4e833c89450f",
+      "name": "Gehenna's Gold",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FFD233",
+      "gradientMiddleHex": "#C15D14",
+      "gradientEndHex": "#722A0B",
+      "rgb": {
+        "r": 255,
+        "g": 210,
+        "b": 51
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1c2d2983-5de7-4cd2-8f0d-7e90ba7e6d5f.png",
+      "localImagePath": "assets/images/paints/1c2d2983-5de7-4cd2-8f0d-7e90ba7e6d5f.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "7acc8a87-4be0-54d5-a37b-29cac5b54cec",
+      "name": "Gore-grunta Fur",
+      "range": "warhammer_colour",
+      "category": "contrast",
+      "potStyle": "contrast",
+      "gradientStartHex": "#543927",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#8F4001",
+      "rgb": {
+        "r": 84,
+        "g": 57,
+        "b": 39
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1199879c-6efc-48b2-a687-c3706a56a88d.png",
+      "localImagePath": "assets/images/paints/1199879c-6efc-48b2-a687-c3706a56a88d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "a73b3e58-be23-41d5-b79f-d1a1d870046c",
+      "name": "Incubi Darkness",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#082E32",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 8,
+        "g": 46,
+        "b": 50
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/17737ce5-198c-4e73-87bb-8a69f573216f.png",
+      "localImagePath": "assets/images/paints/17737ce5-198c-4e73-87bb-8a69f573216f.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "6505373d-fec5-4b46-906e-87a48b542aac",
+          "name": "Seraphon Blue 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#002f34",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/26c09e2f-28ff-4445-8222-9b04f87eeec5.png",
+          "localImagePath": "assets/images/paints/26c09e2f-28ff-4445-8222-9b04f87eeec5.png"
+        },
+        {
+          "id": "73513629-982e-44a3-91d1-4e8888ec4dbe",
+          "name": "Seraphon Blue 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#00464f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/eb2e1bee-3645-48cb-8d07-d2261814ebb6.png",
+          "localImagePath": "assets/images/paints/eb2e1bee-3645-48cb-8d07-d2261814ebb6.png"
+        },
+        {
+          "id": "1f617d88-e704-4f38-9db4-3dcca4d2223a",
+          "name": "Green Morkshroom 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#173230",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/e6f1ae72-d492-482c-9a8e-1907a832cc57.png",
+          "localImagePath": "assets/images/paints/e6f1ae72-d492-482c-9a8e-1907a832cc57.png"
+        }
+      ]
+    },
+    {
+      "id": "6bc96dd0-5494-4c27-8746-ca6e6621de9d",
+      "name": "Kantor Blue",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#02134E",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 2,
+        "g": 19,
+        "b": 78
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1de36552-743b-4218-8ce9-9860cbc55052.png",
+      "localImagePath": "assets/images/paints/1de36552-743b-4218-8ce9-9860cbc55052.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "083e172f-bc01-45c7-a4a7-8f3668d6447d",
+          "name": "Ultramar Blue 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#001b41",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4db030a0-54f0-42a2-b07e-2a6740c3ca3b.png",
+          "localImagePath": "assets/images/paints/4db030a0-54f0-42a2-b07e-2a6740c3ca3b.png"
+        },
+        {
+          "id": "40b4772d-8c66-4d36-8f15-98b0c2c67df0",
+          "name": "Scinari Blue 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#004887",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/405d3477-ec2f-4c97-9c82-0fcb1cfdb01e.png",
+          "localImagePath": "assets/images/paints/405d3477-ec2f-4c97-9c82-0fcb1cfdb01e.png"
+        },
+        {
+          "id": "c3e7ff0c-39f3-4ac9-beaf-669f5306a937",
+          "name": "Blue Gorkshroom 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#004585",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/6e0ee9b6-8716-4c1f-bdd8-d7ed28aa40a2.png",
+          "localImagePath": "assets/images/paints/6e0ee9b6-8716-4c1f-bdd8-d7ed28aa40a2.png"
+        }
+      ]
+    },
+    {
+      "id": "30ec47b9-dda5-4b61-9db2-315ac96859b4",
+      "name": "Khorne Red",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#650001",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 101,
+        "g": 0,
+        "b": 1
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1747ef45-8143-4857-94b5-d7ae4ca9aa57.png",
+      "localImagePath": "assets/images/paints/1747ef45-8143-4857-94b5-d7ae4ca9aa57.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "a146f26d-885f-465b-936a-e41788f3bbd4",
+          "name": "Carmine Blades 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#72051c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/bad0fda6-c63e-4491-86aa-ee8b8b91d7a5.png",
+          "localImagePath": "assets/images/paints/bad0fda6-c63e-4491-86aa-ee8b8b91d7a5.png"
+        },
+        {
+          "id": "502ec823-39e0-416e-b6ad-953b3c40787e",
+          "name": "Bloodtoof Red 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#900222",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/38b8b3d5-7600-445f-ba45-5848562df309.png",
+          "localImagePath": "assets/images/paints/38b8b3d5-7600-445f-ba45-5848562df309.png"
+        },
+        {
+          "id": "3bf12650-e38c-4cca-bb39-e9a3d11dd7db",
+          "name": "Carmine Blades 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#593639",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2b8a9f5d-0595-4458-8b7e-ffa589dd2b00.png",
+          "localImagePath": "assets/images/paints/2b8a9f5d-0595-4458-8b7e-ffa589dd2b00.png"
+        }
+      ]
+    },
+    {
+      "id": "d569764a-62f9-46e4-b925-f605f35c1462",
+      "name": "Leadbelcher",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "metallic",
+      "gradientStartHex": "#F0F0F0",
+      "gradientMiddleHex": "#8A8A8A",
+      "gradientEndHex": "#151E24",
+      "rgb": {
+        "r": 240,
+        "g": 240,
+        "b": 240
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/9dad8a6a-a6de-42a6-94ec-977633c05f74.png",
+      "localImagePath": "assets/images/paints/9dad8a6a-a6de-42a6-94ec-977633c05f74.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "1be88328-f8e7-4343-b3c3-da8ec006bdac",
+      "name": "Liberator Gold",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FFFFFF",
+      "gradientMiddleHex": "#DDB06D",
+      "gradientEndHex": "#886625",
+      "rgb": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2b0b9bda-1fa8-4e37-b30c-7387d0406b98.png",
+      "localImagePath": "assets/images/paints/2b0b9bda-1fa8-4e37-b30c-7387d0406b98.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "6ae4dfc1-8d9b-4d09-bd7b-b267cf955b25",
+      "name": "Macragge Blue",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#0F3D7C",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 15,
+        "g": 61,
+        "b": 124
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/805adfc4-f7d0-4cb1-b0d2-a58989b2e260.png",
+      "localImagePath": "assets/images/paints/805adfc4-f7d0-4cb1-b0d2-a58989b2e260.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "333e7f20-1143-4400-afcb-008ea2ca2986",
+          "name": "Ultramar Blue 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#153161",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/c6355fa0-8bd8-4fdd-b469-db4bca3f1078.png",
+          "localImagePath": "assets/images/paints/c6355fa0-8bd8-4fdd-b469-db4bca3f1078.png"
+        },
+        {
+          "id": "083e172f-bc01-45c7-a4a7-8f3668d6447d",
+          "name": "Ultramar Blue 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#001b41",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4db030a0-54f0-42a2-b07e-2a6740c3ca3b.png",
+          "localImagePath": "assets/images/paints/4db030a0-54f0-42a2-b07e-2a6740c3ca3b.png"
+        },
+        {
+          "id": "05351fcd-c916-4507-8410-b698a89be2e0",
+          "name": "Ultramar Blue 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#1a5086",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/dc154c1d-31e0-48d2-befb-afdd1f77e7db.png",
+          "localImagePath": "assets/images/paints/dc154c1d-31e0-48d2-befb-afdd1f77e7db.png"
+        }
+      ]
+    },
+    {
+      "id": "c199c294-1601-409d-a756-53f018f66834",
+      "name": "Macragge Blue",
+      "range": "warhammer_colour",
+      "category": "spray",
+      "potStyle": "flat",
+      "gradientStartHex": "#0F3D7C",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 15,
+        "g": 61,
+        "b": 124
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": null,
+      "localImagePath": null,
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "c25511c3-a9dd-53e0-a7e1-c77eff7ac5ec",
+      "name": "Magos Purple",
+      "range": "warhammer_colour",
+      "category": "contrast",
+      "potStyle": "contrast",
+      "gradientStartHex": "#662357",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#C2A7C3",
+      "rgb": {
+        "r": 102,
+        "g": 35,
+        "b": 87
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/385ccf91-8496-424a-8948-c1697eb11d41.png",
+      "localImagePath": "assets/images/paints/385ccf91-8496-424a-8948-c1697eb11d41.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "d1868dab-f5c7-49ee-904d-c2ccec5948a2",
+      "name": "Mephiston Red",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#960C09",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 150,
+        "g": 12,
+        "b": 9
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fa742906-0d4f-47e4-945b-ebdb85ad99d0.png",
+      "localImagePath": "assets/images/paints/fa742906-0d4f-47e4-945b-ebdb85ad99d0.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "19fa33fd-839f-4743-a327-13160d9b2c96",
+          "name": "Bloodtoof Red 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#a8152f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/76ac29b1-2266-4857-8475-c735cd3429be.png",
+          "localImagePath": "assets/images/paints/76ac29b1-2266-4857-8475-c735cd3429be.png"
+        },
+        {
+          "id": "c060c0b3-7df3-4eb1-93ba-ba25ea2ccc7f",
+          "name": "Bloodtoof Red 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d01629",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/c91acc8e-621b-4ca1-bcde-3b7f7dc19912.png",
+          "localImagePath": "assets/images/paints/c91acc8e-621b-4ca1-bcde-3b7f7dc19912.png"
+        }
+      ]
+    },
+    {
+      "id": "39091fa3-acf4-4fef-be30-49ab332f0372",
+      "name": "Naggaroth Night",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#3B2B50",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 59,
+        "g": 43,
+        "b": 80
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f31ee7b5-e2ab-44b9-96a2-7c42e519b39d.png",
+      "localImagePath": "assets/images/paints/f31ee7b5-e2ab-44b9-96a2-7c42e519b39d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "58faf1fb-6121-4c10-b4d4-50bbd0278d5f",
+          "name": "Hive Fleet Purple 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#1e1b3f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4d9bfbee-4bbc-44eb-8b0c-9e1eb54b17c9.png",
+          "localImagePath": "assets/images/paints/4d9bfbee-4bbc-44eb-8b0c-9e1eb54b17c9.png"
+        },
+        {
+          "id": "a7399440-8da9-49a3-8f57-356a1bd210b4",
+          "name": "Shalaxi Violet 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#13003f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b02a2b22-f2fc-434d-a0fc-6131b83463ea.png",
+          "localImagePath": "assets/images/paints/b02a2b22-f2fc-434d-a0fc-6131b83463ea.png"
+        },
+        {
+          "id": "fee1911e-b7f7-475f-a3bc-d3a89144b573",
+          "name": "Hive Fleet Purple 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#3b2053",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/89a2110d-0101-46af-b4e6-1d039679d0c3.png",
+          "localImagePath": "assets/images/paints/89a2110d-0101-46af-b4e6-1d039679d0c3.png"
+        }
+      ]
+    },
+    {
+      "id": "6805b74d-6ac6-4bf8-b363-fe681f663ab6",
+      "name": "Nihilakh Oxide",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "flat",
+      "gradientStartHex": "#66B39A",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 102,
+        "g": 179,
+        "b": 154
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/9a4d2884-72f0-45da-82ce-93a044b499d3.png",
+      "localImagePath": "assets/images/paints/9a4d2884-72f0-45da-82ce-93a044b499d3.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "97da4406-6d5e-4142-a33c-f5c9d1905ab5",
+      "name": "Nuln Oil",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#DFD9D6",
+      "gradientMiddleHex": "#5D5A58",
+      "gradientEndHex": "#101010",
+      "rgb": {
+        "r": 223,
+        "g": 217,
+        "b": 214
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/e37052a9-93ba-453a-866f-e4e5a440d18f.png",
+      "localImagePath": "assets/images/paints/e37052a9-93ba-453a-866f-e4e5a440d18f.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "d86802a5-a3f5-4ac0-9348-1d5772b59d4a",
+      "name": "Nurgles Rot",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "flat",
+      "gradientStartHex": "#9D8B16",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 157,
+        "g": 139,
+        "b": 22
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/88875fc4-b660-48ba-b275-e365878bb0fa.png",
+      "localImagePath": "assets/images/paints/88875fc4-b660-48ba-b275-e365878bb0fa.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "f7384f3f-b96e-43c5-9699-ef5eb49bf19b",
+      "name": "Orruk Flesh",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#94B18E",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 148,
+        "g": 177,
+        "b": 142
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/5a811dac-dc12-42b7-8e7f-7720c4b1f197.png",
+      "localImagePath": "assets/images/paints/5a811dac-dc12-42b7-8e7f-7720c4b1f197.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "4b0de091-b26b-45ee-b194-44e8465d703c",
+          "name": "Kruleboyz Green 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#7a8143",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/0caae8b4-fae9-4dea-a53e-0537a5994e17.png",
+          "localImagePath": "assets/images/paints/0caae8b4-fae9-4dea-a53e-0537a5994e17.png"
+        },
+        {
+          "id": "e0d49c0d-0c33-44bc-99b3-41da6d1be487",
+          "name": "Kruleboyz Green 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#637e3f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/06b25e09-7235-49ee-816c-7160d20dd551.png",
+          "localImagePath": "assets/images/paints/06b25e09-7235-49ee-816c-7160d20dd551.png"
+        },
+        {
+          "id": "c445ff4b-b390-490b-9606-e0b1fc95f957",
+          "name": "Kasrkin Green 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#43703e",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/5c48b5cc-1bf0-4e25-b6fa-1428ee609bdf.png",
+          "localImagePath": "assets/images/paints/5c48b5cc-1bf0-4e25-b6fa-1428ee609bdf.png"
+        }
+      ]
+    },
+    {
+      "id": "e42b905d-abb2-4436-8631-c7dcb1d15946",
+      "name": "Pallid Wych Flesh",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#CACCBB",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 202,
+        "g": 204,
+        "b": 187
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/717d95f4-65a6-4a34-b64e-cf77003f192f.png",
+      "localImagePath": "assets/images/paints/717d95f4-65a6-4a34-b64e-cf77003f192f.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "45ac4ffd-47fa-4fc0-9108-c3b4c0d5fbd2",
+          "name": "Celestine Skin 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#dbb39a",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/de5c5e9d-8329-476c-a302-3eac6b529af6.png",
+          "localImagePath": "assets/images/paints/de5c5e9d-8329-476c-a302-3eac6b529af6.png"
+        },
+        {
+          "id": "42f091bf-4c35-4794-9f30-255219ce89c7",
+          "name": "Dataslate Grey 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#878983",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png",
+          "localImagePath": "assets/images/paints/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png"
+        },
+        {
+          "id": "20a726f8-133c-45e2-9ff4-0bec8b652226",
+          "name": "Celestine Skin 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e7a98c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2384ec9a-51a9-4d25-9bce-f8894a3c49d7.png",
+          "localImagePath": "assets/images/paints/2384ec9a-51a9-4d25-9bce-f8894a3c49d7.png"
+        }
+      ]
+    },
+    {
+      "id": "ca51d4cb-2b2f-443e-9c79-984730d5e1d9",
+      "name": "Rakarth Flesh",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#9C998D",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 156,
+        "g": 153,
+        "b": 141
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/cc7ce4ec-ac02-43fb-965e-a62dcede679e.png",
+      "localImagePath": "assets/images/paints/cc7ce4ec-ac02-43fb-965e-a62dcede679e.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "42f091bf-4c35-4794-9f30-255219ce89c7",
+          "name": "Dataslate Grey 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#878983",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png",
+          "localImagePath": "assets/images/paints/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png"
+        },
+        {
+          "id": "68b6ba98-9617-4bb4-92e7-a074f50d0e3b",
+          "name": "Necrolith Bone 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#bfab88",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b890d6ca-b863-4c0f-8d54-575973681fd5.png",
+          "localImagePath": "assets/images/paints/b890d6ca-b863-4c0f-8d54-575973681fd5.png"
+        },
+        {
+          "id": "227f8a24-90a3-4521-a5ca-eb2daec7f83c",
+          "name": "Gnarlwood 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#877b68",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png",
+          "localImagePath": "assets/images/paints/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png"
+        }
+      ]
+    },
+    {
+      "id": "abbd7c31-9766-4933-8e69-a440a79de664",
+      "name": "Reikland Fleshshade",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#FFD5B7",
+      "gradientMiddleHex": "#AC491D",
+      "gradientEndHex": "#311908",
+      "rgb": {
+        "r": 255,
+        "g": 213,
+        "b": 183
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/90ae146f-921c-42f0-bd62-4bb4669fb197.png",
+      "localImagePath": "assets/images/paints/90ae146f-921c-42f0-bd62-4bb4669fb197.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "729cad4d-9a31-4230-9354-72190c7b1991",
+      "name": "Retributor Armour",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FFFFFF",
+      "gradientMiddleHex": "#EBB854",
+      "gradientEndHex": "#89571D",
+      "rgb": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8574cc4f-4156-44aa-9e9e-098cf4a6ed2d.png",
+      "localImagePath": "assets/images/paints/8574cc4f-4156-44aa-9e9e-098cf4a6ed2d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "cdbe5536-a64e-43c7-a08d-fab099020a33",
+      "name": "Screamer Pink",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#7A0E44",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 122,
+        "g": 14,
+        "b": 68
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/69c2a680-ddda-4e0e-a189-65049439a570.png",
+      "localImagePath": "assets/images/paints/69c2a680-ddda-4e0e-a189-65049439a570.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "901cb073-bb51-4124-a7ef-30b132a389a3",
+          "name": "Magnus The Red 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#73093f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d56ec7b9-11bb-479d-aeb3-53f2e07bad81.png",
+          "localImagePath": "assets/images/paints/d56ec7b9-11bb-479d-aeb3-53f2e07bad81.png"
+        },
+        {
+          "id": "15f8c8ea-069e-4d48-96c7-6e7a90b83257",
+          "name": "Eye Of Terror 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#b80d49",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/bbe1452b-e878-4bd6-aa1b-8cccd03b3fa3.png",
+          "localImagePath": "assets/images/paints/bbe1452b-e878-4bd6-aa1b-8cccd03b3fa3.png"
+        },
+        {
+          "id": "22afd08a-4e44-416d-a1e2-c5d13602c87c",
+          "name": "Magnus The Red 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#48153e",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/e9762b54-e52a-4925-a131-adc9e27868ff.png",
+          "localImagePath": "assets/images/paints/e9762b54-e52a-4925-a131-adc9e27868ff.png"
+        }
+      ]
+    },
+    {
+      "id": "c88aa39a-e603-42eb-b282-8009fc2ce2ec",
+      "name": "Seraphim Sepia",
+      "range": "warhammer_colour",
+      "category": "shade",
+      "potStyle": "shade",
+      "gradientStartHex": "#E9AE7D",
+      "gradientMiddleHex": "#94551F",
+      "gradientEndHex": "#2E1F08",
+      "rgb": {
+        "r": 233,
+        "g": 174,
+        "b": 125
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3250408c-5cfd-4d06-b791-95a704904da1.png",
+      "localImagePath": "assets/images/paints/3250408c-5cfd-4d06-b791-95a704904da1.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "4a5db852-789e-41cb-b4dd-b7a9177aea53",
+      "name": "Soulstone Blue",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "gloss",
+      "gradientStartHex": "#01154B",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#01458F",
+      "rgb": {
+        "r": 1,
+        "g": 21,
+        "b": 75
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/6a0d95b0-80ad-45e6-8057-8784e22792df.png",
+      "localImagePath": "assets/images/paints/6a0d95b0-80ad-45e6-8057-8784e22792df.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "2a2ccee9-f02b-48bb-a47e-2878e52dc42c",
+      "name": "Spiritstone Red",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "gloss",
+      "gradientStartHex": "#7C1100",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#DA2308",
+      "rgb": {
+        "r": 124,
+        "g": 17,
+        "b": 0
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f19ad5fc-b308-4c15-bb74-0b64d5e42cc9.png",
+      "localImagePath": "assets/images/paints/f19ad5fc-b308-4c15-bb74-0b64d5e42cc9.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "c768fd5a-265f-4ca1-a19a-ee9674937b59",
+      "name": "Steel Legion Drab",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#584E2D",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 88,
+        "g": 78,
+        "b": 45
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/53b359d1-102e-41ec-8a95-dbd616d674b4.png",
+      "localImagePath": "assets/images/paints/53b359d1-102e-41ec-8a95-dbd616d674b4.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "3690bd7c-76a4-46b1-9703-8e84d6a10638",
+          "name": "Gnarlwood 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#715c45",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/7677e9da-6e22-4b62-805a-8d24d0328e92.png",
+          "localImagePath": "assets/images/paints/7677e9da-6e22-4b62-805a-8d24d0328e92.png"
+        },
+        {
+          "id": "3e1e8aa3-7a8a-441a-b6e5-4f3ebd1e6151",
+          "name": "Gnarlwood 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#504236",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/85061958-e49f-4529-b30b-c1d20db436fe.png",
+          "localImagePath": "assets/images/paints/85061958-e49f-4529-b30b-c1d20db436fe.png"
+        },
+        {
+          "id": "227f8a24-90a3-4521-a5ca-eb2daec7f83c",
+          "name": "Gnarlwood 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#877b68",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png",
+          "localImagePath": "assets/images/paints/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png"
+        }
+      ]
+    },
+    {
+      "id": "33cc4f63-124e-4b55-a279-2cb1852d01d1",
+      "name": "Stirland Mud",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "texture_fine",
+      "gradientStartHex": "#482B00",
+      "gradientMiddleHex": null,
+      "gradientEndHex": "#70490D",
+      "rgb": {
+        "r": 72,
+        "g": 43,
+        "b": 0
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8bbc8c4f-fa40-4c2b-9ca0-5c44f0b1ebf0.png",
+      "localImagePath": "assets/images/paints/8bbc8c4f-fa40-4c2b-9ca0-5c44f0b1ebf0.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "85107867-fe38-4ad3-81a5-5efae3abbe93",
+      "name": "Thunderhawk Blue",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#396A70",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 57,
+        "g": 106,
+        "b": 112
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3b9ecd30-81c8-4441-be88-58cacff23072.png",
+      "localImagePath": "assets/images/paints/3b9ecd30-81c8-4441-be88-58cacff23072.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "5e1d744d-5cac-40bb-ad09-e38f316d66bc",
+          "name": "Craventhrone Cloak 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#1c4857",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/df2ec48f-d503-4fb1-8b47-f6acfc5b3d21.png",
+          "localImagePath": "assets/images/paints/df2ec48f-d503-4fb1-8b47-f6acfc5b3d21.png"
+        },
+        {
+          "id": "bdac58aa-af37-41e9-a282-b48ebe65dc77",
+          "name": "Craventhrone Cloak 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#45717c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/df8cfcd8-ef1c-4425-81fe-d30108d1cb8d.png",
+          "localImagePath": "assets/images/paints/df8cfcd8-ef1c-4425-81fe-d30108d1cb8d.png"
+        },
+        {
+          "id": "2247e798-51d6-46f1-996e-fce52ce70c4b",
+          "name": "Stormwolf Blue 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#56697c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1362ba4f-39f6-4026-961f-d4dc236d2bf5.png",
+          "localImagePath": "assets/images/paints/1362ba4f-39f6-4026-961f-d4dc236d2bf5.png"
+        }
+      ]
+    },
+    {
+      "id": "0e45fff8-cf2e-48ba-83fc-4ead56f9b6ab",
+      "name": "Troll Slayer Orange",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#F16C23",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 241,
+        "g": 108,
+        "b": 35
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/f7020feb-493b-4390-86d8-b117e9915857.png",
+      "localImagePath": "assets/images/paints/f7020feb-493b-4390-86d8-b117e9915857.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "88759949-2cce-4da8-aa52-86e7ca53be99",
+          "name": "Chotec Orange 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ef653a",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/905d66e8-93fa-4cd3-8c16-3e7d11c528b6.png",
+          "localImagePath": "assets/images/paints/905d66e8-93fa-4cd3-8c16-3e7d11c528b6.png"
+        },
+        {
+          "id": "e42d1128-633b-49f5-8d0f-710b9062ec2d",
+          "name": "Chotec Orange 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#db4e3a",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/83e6395a-49aa-4144-8be3-d1d561ffd4df.png",
+          "localImagePath": "assets/images/paints/83e6395a-49aa-4144-8be3-d1d561ffd4df.png"
+        },
+        {
+          "id": "53340785-5405-4a4d-aeca-4a6c1b433031",
+          "name": "Chotec Orange 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#f2823c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/73cd5fa6-4b79-4816-948e-ea7d582f98ed.png",
+          "localImagePath": "assets/images/paints/73cd5fa6-4b79-4816-948e-ea7d582f98ed.png"
+        }
+      ]
+    },
+    {
+      "id": "142f80dd-1f4b-40c5-b5c7-856b075ab762",
+      "name": "Typhus Corrosion",
+      "range": "warhammer_colour",
+      "category": "technical",
+      "potStyle": "flat",
+      "gradientStartHex": "#373A22",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 55,
+        "g": 58,
+        "b": 34
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a391f82f-465a-4a69-8ca3-016aef9b347f.png",
+      "localImagePath": "assets/images/paints/a391f82f-465a-4a69-8ca3-016aef9b347f.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "b5174fa0-4fa0-423e-855d-d64b11433acf",
+      "name": "Wild Rider Red",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#E82E1B",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 232,
+        "g": 46,
+        "b": 27
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/490e0020-bed4-4737-b004-5c2f76db5356.png",
+      "localImagePath": "assets/images/paints/490e0020-bed4-4737-b004-5c2f76db5356.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "e42d1128-633b-49f5-8d0f-710b9062ec2d",
+          "name": "Chotec Orange 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#db4e3a",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/83e6395a-49aa-4144-8be3-d1d561ffd4df.png",
+          "localImagePath": "assets/images/paints/83e6395a-49aa-4144-8be3-d1d561ffd4df.png"
+        },
+        {
+          "id": "ce644023-d5be-4784-a793-89b96c1ae304",
+          "name": "Bloodtoof Red 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e93c42",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8cebedae-f3de-4d4b-a279-a98e37743fc0.png",
+          "localImagePath": "assets/images/paints/8cebedae-f3de-4d4b-a279-a98e37743fc0.png"
+        },
+        {
+          "id": "308c2020-0ba3-4c32-a0dc-1f7a26f0c52d",
+          "name": "Chotec Orange 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#b33432",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d2fc486b-9660-44e6-8045-4f61c3331325.png",
+          "localImagePath": "assets/images/paints/d2fc486b-9660-44e6-8045-4f61c3331325.png"
+        }
+      ]
+    },
+    {
+      "id": "2f2f3973-2d79-5c65-8a47-4c04b8193b9f",
+      "name": "Wraithbone",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#DBD1B2",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 219,
+        "g": 209,
+        "b": 178
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/6eebc2fd-bf50-4a90-92f7-e110e9a9020c.png",
+      "localImagePath": "assets/images/paints/6eebc2fd-bf50-4a90-92f7-e110e9a9020c.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "b5738aa2-3fea-4021-bbc6-81adbcad1b66",
+          "name": "Necrolith Bone 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#bbb79f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/838e247e-fe2e-4e5b-9783-bb569a7a4683.png",
+          "localImagePath": "assets/images/paints/838e247e-fe2e-4e5b-9783-bb569a7a4683.png"
+        },
+        {
+          "id": "42f091bf-4c35-4794-9f30-255219ce89c7",
+          "name": "Dataslate Grey 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#878983",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png",
+          "localImagePath": "assets/images/paints/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png"
+        },
+        {
+          "id": "68b6ba98-9617-4bb4-92e7-a074f50d0e3b",
+          "name": "Necrolith Bone 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#bfab88",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b890d6ca-b863-4c0f-8d54-575973681fd5.png",
+          "localImagePath": "assets/images/paints/b890d6ca-b863-4c0f-8d54-575973681fd5.png"
+        }
+      ]
+    },
+    {
+      "id": "03bd69e7-08c6-49b4-a68b-a314cb1116e5",
+      "name": "Zandri Dust",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#988E56",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 152,
+        "g": 142,
+        "b": 86
+      },
+      "isInInventory": true,
+      "isInWishlist": false,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8d4765d3-987a-4270-9f40-7a5fb0624fd1.png",
+      "localImagePath": "assets/images/paints/8d4765d3-987a-4270-9f40-7a5fb0624fd1.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "cac6d2e3-bcf7-47f4-92ff-034e1f8ae159",
+          "name": "Necrolith Bone 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#867562",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/785253f4-09dc-4583-8f3f-313c9a8086fe.png",
+          "localImagePath": "assets/images/paints/785253f4-09dc-4583-8f3f-313c9a8086fe.png"
+        },
+        {
+          "id": "d3c97a1d-09b6-4bab-8453-3951b2793268",
+          "name": "Khemri Sands 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#6a4b18",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/81337ef2-fe1e-4c50-9cba-2a920c86144b.png",
+          "localImagePath": "assets/images/paints/81337ef2-fe1e-4c50-9cba-2a920c86144b.png"
+        },
+        {
+          "id": "4e714b9b-ebbf-4315-88ce-9f8e8826c44b",
+          "name": "Ta'unar Ochre 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e69c6f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/cfa50b64-e3dd-49ca-b983-21d9fb88cb6b.png",
+          "localImagePath": "assets/images/paints/cfa50b64-e3dd-49ca-b983-21d9fb88cb6b.png"
+        }
+      ]
+    }
+  ],
+  "wishlistPaints": [
+    {
+      "id": "31d053cb-0afe-4d41-ab20-780305c1a054",
+      "name": "Baneblade Brown",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#8F7C68",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 143,
+        "g": 124,
+        "b": 104
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/5797dee7-968f-4f19-a5b6-6ecbc2328dd2.png",
+      "localImagePath": "assets/images/paints/5797dee7-968f-4f19-a5b6-6ecbc2328dd2.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "c6d1ba24-ca4b-4674-9464-15736a9d01af",
+          "name": "Gnarlwood 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#766858",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/128f0f08-a0aa-4b4e-869e-3161f0c41214.png",
+          "localImagePath": "assets/images/paints/128f0f08-a0aa-4b4e-869e-3161f0c41214.png"
+        },
+        {
+          "id": "cac6d2e3-bcf7-47f4-92ff-034e1f8ae159",
+          "name": "Necrolith Bone 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#867562",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/785253f4-09dc-4583-8f3f-313c9a8086fe.png",
+          "localImagePath": "assets/images/paints/785253f4-09dc-4583-8f3f-313c9a8086fe.png"
+        },
+        {
+          "id": "227f8a24-90a3-4521-a5ca-eb2daec7f83c",
+          "name": "Gnarlwood 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#877b68",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png",
+          "localImagePath": "assets/images/paints/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png"
+        }
+      ]
+    },
+    {
+      "id": "7d99d5ce-16b9-51fd-8e12-d41a559eb515",
+      "name": "Bloodreaver Flesh",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#6A4848",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 106,
+        "g": 72,
+        "b": 72
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/c3e15ae0-1fb0-4034-9e37-f046cd3ef05f.png",
+      "localImagePath": "assets/images/paints/c3e15ae0-1fb0-4034-9e37-f046cd3ef05f.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "9195afd6-077b-4e2d-bf34-728b69d56fb4",
+          "name": "Carthalos Skin 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4c2314",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/273c7a1a-c11e-41db-aa07-2bd55aefe12b.png",
+          "localImagePath": "assets/images/paints/273c7a1a-c11e-41db-aa07-2bd55aefe12b.png"
+        },
+        {
+          "id": "af091cda-68d8-4270-a2ee-98e16e044633",
+          "name": "Carthalos Skin 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#5d3b38",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b37132e9-6c20-40e3-a263-9a6d5b904886.png",
+          "localImagePath": "assets/images/paints/b37132e9-6c20-40e3-a263-9a6d5b904886.png"
+        },
+        {
+          "id": "b3e95c68-db6d-401b-b0d8-769c875bc9b3",
+          "name": "Carthalos Skin 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#2c140d",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fa71eabc-486e-4696-9a35-1e579d1d88e4.png",
+          "localImagePath": "assets/images/paints/fa71eabc-486e-4696-9a35-1e579d1d88e4.png"
+        }
+      ]
+    },
+    {
+      "id": "9aa98dd9-ddf1-42c2-aa2b-02a661fa08e4",
+      "name": "Cadian Fleshtone",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#C47652",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 196,
+        "g": 118,
+        "b": 82
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/12bbc811-c663-4cc3-99e5-e4a2670d205b.png",
+      "localImagePath": "assets/images/paints/12bbc811-c663-4cc3-99e5-e4a2670d205b.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "ff4464b7-8610-4d4b-93fe-31e1b6c4b25d",
+          "name": "Celestine Skin 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d6967b",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/06e9ae3b-a14a-4ef2-92f6-d32688d9369b.png",
+          "localImagePath": "assets/images/paints/06e9ae3b-a14a-4ef2-92f6-d32688d9369b.png"
+        },
+        {
+          "id": "22e9d89f-9ea6-43ec-9eaa-2c16830cbdb5",
+          "name": "Celestine Skin 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d18c73",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a66962a9-2217-4092-8948-b8f3c3aade8b.png",
+          "localImagePath": "assets/images/paints/a66962a9-2217-4092-8948-b8f3c3aade8b.png"
+        },
+        {
+          "id": "4e714b9b-ebbf-4315-88ce-9f8e8826c44b",
+          "name": "Ta'unar Ochre 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e69c6f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/cfa50b64-e3dd-49ca-b983-21d9fb88cb6b.png",
+          "localImagePath": "assets/images/paints/cfa50b64-e3dd-49ca-b983-21d9fb88cb6b.png"
+        }
+      ]
+    },
+    {
+      "id": "0988e8a4-5530-476c-8e1e-b1eed5af5ae7",
+      "name": "Calgar Blue",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#2A497F",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 42,
+        "g": 73,
+        "b": 127
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/925cbb64-b6be-4e9e-a137-480d519a8a9d.png",
+      "localImagePath": "assets/images/paints/925cbb64-b6be-4e9e-a137-480d519a8a9d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "b2399df2-2a10-4d0a-bac2-74698d21cc58",
+          "name": "Ultramar Blue 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#486d9f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/772573ea-2c6e-4f14-982f-7f81978f2c9b.png",
+          "localImagePath": "assets/images/paints/772573ea-2c6e-4f14-982f-7f81978f2c9b.png"
+        },
+        {
+          "id": "05351fcd-c916-4507-8410-b698a89be2e0",
+          "name": "Ultramar Blue 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#1a5086",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/dc154c1d-31e0-48d2-befb-afdd1f77e7db.png",
+          "localImagePath": "assets/images/paints/dc154c1d-31e0-48d2-befb-afdd1f77e7db.png"
+        },
+        {
+          "id": "2247e798-51d6-46f1-996e-fce52ce70c4b",
+          "name": "Stormwolf Blue 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#56697c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1362ba4f-39f6-4026-961f-d4dc236d2bf5.png",
+          "localImagePath": "assets/images/paints/1362ba4f-39f6-4026-961f-d4dc236d2bf5.png"
+        }
+      ]
+    },
+    {
+      "id": "eb2e0675-3078-483b-b8b7-4fbf84a4cc18",
+      "name": "Doombull Brown",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#570003",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 87,
+        "g": 0,
+        "b": 3
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/9c288af9-bffe-401c-b88f-658014b423fd.png",
+      "localImagePath": "assets/images/paints/9c288af9-bffe-401c-b88f-658014b423fd.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "9195afd6-077b-4e2d-bf34-728b69d56fb4",
+          "name": "Carthalos Skin 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4c2314",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/273c7a1a-c11e-41db-aa07-2bd55aefe12b.png",
+          "localImagePath": "assets/images/paints/273c7a1a-c11e-41db-aa07-2bd55aefe12b.png"
+        },
+        {
+          "id": "af091cda-68d8-4270-a2ee-98e16e044633",
+          "name": "Carthalos Skin 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#5d3b38",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b37132e9-6c20-40e3-a263-9a6d5b904886.png",
+          "localImagePath": "assets/images/paints/b37132e9-6c20-40e3-a263-9a6d5b904886.png"
+        },
+        {
+          "id": "b3e95c68-db6d-401b-b0d8-769c875bc9b3",
+          "name": "Carthalos Skin 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#2c140d",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fa71eabc-486e-4696-9a35-1e579d1d88e4.png",
+          "localImagePath": "assets/images/paints/fa71eabc-486e-4696-9a35-1e579d1d88e4.png"
+        }
+      ]
+    },
+    {
+      "id": "1aa6f246-ed88-4235-927f-281a34158223",
+      "name": "Eshin Grey",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#484B4E",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 72,
+        "g": 75,
+        "b": 78
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d921f919-8e7c-40ab-bd8e-113160b90225.png",
+      "localImagePath": "assets/images/paints/d921f919-8e7c-40ab-bd8e-113160b90225.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "e1964298-288a-4eb0-a4ff-9b4857a2f1d4",
+          "name": "Blackstone Void 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4e5458",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1ad25d9e-4b69-48ca-8254-00c7c5fe999d.png",
+          "localImagePath": "assets/images/paints/1ad25d9e-4b69-48ca-8254-00c7c5fe999d.png"
+        },
+        {
+          "id": "1b86e12c-1d88-46ad-8e49-7d264354840e",
+          "name": "Dataslate Grey 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#2b2d28",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/00821ef7-f50a-4ade-a4f6-365de2b997b5.png",
+          "localImagePath": "assets/images/paints/00821ef7-f50a-4ade-a4f6-365de2b997b5.png"
+        },
+        {
+          "id": "436132af-ec83-44a9-88d5-b4e2c030ac9f",
+          "name": "Blackstone Void 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#6e7074",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3cac1445-07ef-421c-b6c2-9710384fd0e5.png",
+          "localImagePath": "assets/images/paints/3cac1445-07ef-421c-b6c2-9710384fd0e5.png"
+        }
+      ]
+    },
+    {
+      "id": "bb9e60ab-2c85-43df-9bf4-041fa7e0a4d9",
+      "name": "Fenrisian Grey",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#6D94B3",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 109,
+        "g": 148,
+        "b": 179
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/59590ff0-d644-49fc-abaa-3fa3c2687c31.png",
+      "localImagePath": "assets/images/paints/59590ff0-d644-49fc-abaa-3fa3c2687c31.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "f64c5d01-ff8b-44c3-a6aa-56ce0041078a",
+          "name": "Stormwolf Blue 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#7195a3",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fb93dcdd-419a-45ee-901d-40cc100e5860.png",
+          "localImagePath": "assets/images/paints/fb93dcdd-419a-45ee-901d-40cc100e5860.png"
+        },
+        {
+          "id": "8820a21c-8169-43cd-86c3-eaeb9bf78c5b",
+          "name": "Stormwolf Blue 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#8aafb8",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3abf8940-1c06-4cd8-ad88-68d4b4ede1bc.png",
+          "localImagePath": "assets/images/paints/3abf8940-1c06-4cd8-ad88-68d4b4ede1bc.png"
+        },
+        {
+          "id": "4ccf0662-d5f7-4d78-825a-1e310a79e927",
+          "name": "Craventhrone Cloak 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#5d8a8d",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/81ddaa6a-91bd-49e5-87ca-d2c377a395da.png",
+          "localImagePath": "assets/images/paints/81ddaa6a-91bd-49e5-87ca-d2c377a395da.png"
+        }
+      ]
+    },
+    {
+      "id": "f48c7ee4-52df-451e-b6f7-8a1699c789cf",
+      "name": "Gorthor Brown",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#5F463F",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 95,
+        "g": 70,
+        "b": 63
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b908e9c4-177c-4c74-b38f-090af0a35ca2.png",
+      "localImagePath": "assets/images/paints/b908e9c4-177c-4c74-b38f-090af0a35ca2.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "3e1e8aa3-7a8a-441a-b6e5-4f3ebd1e6151",
+          "name": "Gnarlwood 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#504236",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/85061958-e49f-4529-b30b-c1d20db436fe.png",
+          "localImagePath": "assets/images/paints/85061958-e49f-4529-b30b-c1d20db436fe.png"
+        },
+        {
+          "id": "a8c60be2-d53f-4a15-a695-b33fcda04b81",
+          "name": "Gnarlwood 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#332928",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/80855df3-90ae-41b5-be9d-ffc7d19a5cd8.png",
+          "localImagePath": "assets/images/paints/80855df3-90ae-41b5-be9d-ffc7d19a5cd8.png"
+        },
+        {
+          "id": "025bcf79-3735-492b-b559-733f162b1076",
+          "name": "Carthalos Skin 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#775347",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/7d07c31f-7c89-4c91-8fde-390885c4a57c.png",
+          "localImagePath": "assets/images/paints/7d07c31f-7c89-4c91-8fde-390885c4a57c.png"
+        }
+      ]
+    },
+    {
+      "id": "6ffc4207-6556-40c3-8a4a-c8201e1e36fe",
+      "name": "Hoeth Blue",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#4C78AF",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 76,
+        "g": 120,
+        "b": 175
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/5695654d-8514-4baa-a453-166a6bb4b828.png",
+      "localImagePath": "assets/images/paints/5695654d-8514-4baa-a453-166a6bb4b828.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "b2399df2-2a10-4d0a-bac2-74698d21cc58",
+          "name": "Ultramar Blue 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#486d9f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/772573ea-2c6e-4f14-982f-7f81978f2c9b.png",
+          "localImagePath": "assets/images/paints/772573ea-2c6e-4f14-982f-7f81978f2c9b.png"
+        },
+        {
+          "id": "702799f6-66af-4546-9729-81f2801b48f3",
+          "name": "Blue Gorkshroom 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#006dab",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1ed4f099-e165-425d-a083-2b8fa62d9468.png",
+          "localImagePath": "assets/images/paints/1ed4f099-e165-425d-a083-2b8fa62d9468.png"
+        },
+        {
+          "id": "d43c50c1-f160-405f-b374-8592e8851dbd",
+          "name": "Scinari Blue 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#0088b9",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b5b4f573-bd27-4fd1-977c-97125aa981c9.png",
+          "localImagePath": "assets/images/paints/b5b4f573-bd27-4fd1-977c-97125aa981c9.png"
+        }
+      ]
+    },
+    {
+      "id": "2358dfdf-7624-4f01-b29d-05cf89d6a67c",
+      "name": "Ironbreaker",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "metallic",
+      "gradientStartHex": "#F4F4F4",
+      "gradientMiddleHex": "#7A8284",
+      "gradientEndHex": "#414141",
+      "rgb": {
+        "r": 244,
+        "g": 244,
+        "b": 244
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/aa973156-330a-4fbc-b1c1-7a424428ba64.png",
+      "localImagePath": "assets/images/paints/aa973156-330a-4fbc-b1c1-7a424428ba64.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "e131b3cb-50e8-4479-ae0b-88cadcc09e96",
+      "name": "Jokaero Orange",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#ED3814",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 237,
+        "g": 56,
+        "b": 20
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/61067004-a4eb-4c14-bb7e-fd58d0748342.png",
+      "localImagePath": "assets/images/paints/61067004-a4eb-4c14-bb7e-fd58d0748342.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "dfeddecd-f788-464d-9b30-691b9da8b77d",
+          "name": "Ta'unar Ochre 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ce7249",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1a12f106-5872-4b01-9cf3-edbbb73fc11b.png",
+          "localImagePath": "assets/images/paints/1a12f106-5872-4b01-9cf3-edbbb73fc11b.png"
+        },
+        {
+          "id": "308c2020-0ba3-4c32-a0dc-1f7a26f0c52d",
+          "name": "Chotec Orange 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#b33432",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d2fc486b-9660-44e6-8045-4f61c3331325.png",
+          "localImagePath": "assets/images/paints/d2fc486b-9660-44e6-8045-4f61c3331325.png"
+        },
+        {
+          "id": "c700e787-3752-4de6-bdf7-28a4ade76c21",
+          "name": "Ta'unar Ochre 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e2844b",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/9cb28e2c-651a-4f33-a268-1fa9cd020588.png",
+          "localImagePath": "assets/images/paints/9cb28e2c-651a-4f33-a268-1fa9cd020588.png"
+        }
+      ]
+    },
+    {
+      "id": "df3368ae-2fee-4b47-b851-f03f7d14c873",
+      "name": "Karak Stone",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#B7945C",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 183,
+        "g": 148,
+        "b": 92
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/84bacd88-3743-4cec-9673-ea0d1603b041.png",
+      "localImagePath": "assets/images/paints/84bacd88-3743-4cec-9673-ea0d1603b041.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "227f8a24-90a3-4521-a5ca-eb2daec7f83c",
+          "name": "Gnarlwood 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#877b68",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png",
+          "localImagePath": "assets/images/paints/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png"
+        },
+        {
+          "id": "d293b354-327d-4c11-be24-9efe78395c64",
+          "name": "Dataslate Grey 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#737069",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/287ea8cf-9b1c-439c-ae4f-fdb529472f10.png",
+          "localImagePath": "assets/images/paints/287ea8cf-9b1c-439c-ae4f-fdb529472f10.png"
+        },
+        {
+          "id": "c6d1ba24-ca4b-4674-9464-15736a9d01af",
+          "name": "Gnarlwood 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#766858",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/128f0f08-a0aa-4b4e-869e-3161f0c41214.png",
+          "localImagePath": "assets/images/paints/128f0f08-a0aa-4b4e-869e-3161f0c41214.png"
+        }
+      ]
+    },
+    {
+      "id": "b9872c83-b87c-4456-93b5-3cf6ae7f65d3",
+      "name": "Kislev Flesh",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#D1A570",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 209,
+        "g": 165,
+        "b": 112
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/83c2026c-b5a4-4a00-bc65-ce12171c0970.png",
+      "localImagePath": "assets/images/paints/83c2026c-b5a4-4a00-bc65-ce12171c0970.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "ff4464b7-8610-4d4b-93fe-31e1b6c4b25d",
+          "name": "Celestine Skin 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#d6967b",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/06e9ae3b-a14a-4ef2-92f6-d32688d9369b.png",
+          "localImagePath": "assets/images/paints/06e9ae3b-a14a-4ef2-92f6-d32688d9369b.png"
+        },
+        {
+          "id": "20a726f8-133c-45e2-9ff4-0bec8b652226",
+          "name": "Celestine Skin 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e7a98c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2384ec9a-51a9-4d25-9bce-f8894a3c49d7.png",
+          "localImagePath": "assets/images/paints/2384ec9a-51a9-4d25-9bce-f8894a3c49d7.png"
+        },
+        {
+          "id": "45ac4ffd-47fa-4fc0-9108-c3b4c0d5fbd2",
+          "name": "Celestine Skin 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#dbb39a",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/de5c5e9d-8329-476c-a302-3eac6b529af6.png",
+          "localImagePath": "assets/images/paints/de5c5e9d-8329-476c-a302-3eac6b529af6.png"
+        }
+      ]
+    },
+    {
+      "id": "eaff871f-883d-5747-a923-78e45d25b8aa",
+      "name": "Knight-Questor Flesh",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#996563",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 153,
+        "g": 101,
+        "b": 99
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1dd72194-aa63-4e68-a609-cdf1fc0e4963.png",
+      "localImagePath": "assets/images/paints/1dd72194-aa63-4e68-a609-cdf1fc0e4963.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "025bcf79-3735-492b-b559-733f162b1076",
+          "name": "Carthalos Skin 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#775347",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/7d07c31f-7c89-4c91-8fde-390885c4a57c.png",
+          "localImagePath": "assets/images/paints/7d07c31f-7c89-4c91-8fde-390885c4a57c.png"
+        },
+        {
+          "id": "af091cda-68d8-4270-a2ee-98e16e044633",
+          "name": "Carthalos Skin 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#5d3b38",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b37132e9-6c20-40e3-a263-9a6d5b904886.png",
+          "localImagePath": "assets/images/paints/b37132e9-6c20-40e3-a263-9a6d5b904886.png"
+        },
+        {
+          "id": "3e1e8aa3-7a8a-441a-b6e5-4f3ebd1e6151",
+          "name": "Gnarlwood 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#504236",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/85061958-e49f-4529-b30b-c1d20db436fe.png",
+          "localImagePath": "assets/images/paints/85061958-e49f-4529-b30b-c1d20db436fe.png"
+        }
+      ]
+    },
+    {
+      "id": "9d345022-f4d8-455a-8199-3b3e112ca770",
+      "name": "Pink Horror",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#8E2757",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 142,
+        "g": 39,
+        "b": 87
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/c0814d2b-78b0-49ed-aa9e-3901aff9ae82.png",
+      "localImagePath": "assets/images/paints/c0814d2b-78b0-49ed-aa9e-3901aff9ae82.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "e161b207-9a17-423b-908a-26958f0709d9",
+          "name": "Magnus The Red 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#a64677",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/63b0ba99-2839-4406-bd55-b352c20598a5.png",
+          "localImagePath": "assets/images/paints/63b0ba99-2839-4406-bd55-b352c20598a5.png"
+        },
+        {
+          "id": "d58ccb2e-e948-4900-bb55-8220d89845e4",
+          "name": "Eye Of Terror 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#cf477c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/79beec65-b3c9-484e-9c5c-c5146f5216fe.png",
+          "localImagePath": "assets/images/paints/79beec65-b3c9-484e-9c5c-c5146f5216fe.png"
+        },
+        {
+          "id": "928e653d-0b3c-4441-a97e-ca12355b1cfd",
+          "name": "Magnus The Red 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#962259",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/7c7104c0-7d17-4a9f-bde1-594799ca8771.png",
+          "localImagePath": "assets/images/paints/7c7104c0-7d17-4a9f-bde1-594799ca8771.png"
+        }
+      ]
+    },
+    {
+      "id": "f421665e-2edb-429b-98ca-905bc7dc025c",
+      "name": "Runelord Brass",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "metallic",
+      "gradientStartHex": "#F5EDE3",
+      "gradientMiddleHex": "#877663",
+      "gradientEndHex": "#49392C",
+      "rgb": {
+        "r": 245,
+        "g": 237,
+        "b": 227
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8465611c-ebc5-4276-870a-81e76a61a2fc.png",
+      "localImagePath": "assets/images/paints/8465611c-ebc5-4276-870a-81e76a61a2fc.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "c9aaebda-787b-4de6-847e-66592aa081dd",
+      "name": "Screaming Skull",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#B9C099",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 185,
+        "g": 192,
+        "b": 153
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/feadbd31-db86-4ca6-af29-cfad41db7f48.png",
+      "localImagePath": "assets/images/paints/feadbd31-db86-4ca6-af29-cfad41db7f48.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "68b6ba98-9617-4bb4-92e7-a074f50d0e3b",
+          "name": "Necrolith Bone 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#bfab88",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b890d6ca-b863-4c0f-8d54-575973681fd5.png",
+          "localImagePath": "assets/images/paints/b890d6ca-b863-4c0f-8d54-575973681fd5.png"
+        },
+        {
+          "id": "b5738aa2-3fea-4021-bbc6-81adbcad1b66",
+          "name": "Necrolith Bone 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#bbb79f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/838e247e-fe2e-4e5b-9783-bb569a7a4683.png",
+          "localImagePath": "assets/images/paints/838e247e-fe2e-4e5b-9783-bb569a7a4683.png"
+        },
+        {
+          "id": "227f8a24-90a3-4521-a5ca-eb2daec7f83c",
+          "name": "Gnarlwood 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#877b68",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png",
+          "localImagePath": "assets/images/paints/33aff8e2-7ab9-40aa-a0de-0111bb9a4f90.png"
+        }
+      ]
+    },
+    {
+      "id": "001ff0cf-ed2a-48e4-91b7-75066ca2fbe3",
+      "name": "Skarsnik Green",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#588F6B",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 88,
+        "g": 143,
+        "b": 107
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/50abc224-4188-4952-a3e6-8a2856b5f759.png",
+      "localImagePath": "assets/images/paints/50abc224-4188-4952-a3e6-8a2856b5f759.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "c445ff4b-b390-490b-9606-e0b1fc95f957",
+          "name": "Kasrkin Green 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#43703e",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/5c48b5cc-1bf0-4e25-b6fa-1428ee609bdf.png",
+          "localImagePath": "assets/images/paints/5c48b5cc-1bf0-4e25-b6fa-1428ee609bdf.png"
+        },
+        {
+          "id": "b99cffcc-62e9-46e9-b376-6975799648a4",
+          "name": "Kruleboyz Green 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4d7c39",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1148d230-9f0c-4695-9ac3-12ab287e759b.png",
+          "localImagePath": "assets/images/paints/1148d230-9f0c-4695-9ac3-12ab287e759b.png"
+        },
+        {
+          "id": "2d5f2f14-5a2e-4a43-a203-3c5652f1e4fe",
+          "name": "Green Morkshroom 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#076358",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/e7a5da2c-28d1-44f5-80c8-a91d2bb962fc.png",
+          "localImagePath": "assets/images/paints/e7a5da2c-28d1-44f5-80c8-a91d2bb962fc.png"
+        }
+      ]
+    },
+    {
+      "id": "5feae433-a844-43f1-bef9-472a451cc585",
+      "name": "Skullcrusher Brass",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FFFFFF",
+      "gradientMiddleHex": "#F3C468",
+      "gradientEndHex": "#C38841",
+      "rgb": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d5a3afad-1cc7-42a0-b9aa-d6ec1f38ad93.png",
+      "localImagePath": "assets/images/paints/d5a3afad-1cc7-42a0-b9aa-d6ec1f38ad93.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "746d0437-59a0-4940-8476-2b62726595fc",
+      "name": "Slaanesh Grey",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#8B8893",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 139,
+        "g": 136,
+        "b": 147
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d2132f9b-9c07-4fea-b7d5-c882cec3f7dd.png",
+      "localImagePath": "assets/images/paints/d2132f9b-9c07-4fea-b7d5-c882cec3f7dd.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "c4337134-66fa-45a1-b943-ad9309ad4c9b",
+          "name": "Enrapturess Dusk 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#817a86",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/31004524-d91a-4451-91a0-5ecb3558d295.png",
+          "localImagePath": "assets/images/paints/31004524-d91a-4451-91a0-5ecb3558d295.png"
+        },
+        {
+          "id": "0367fc55-1cf9-494c-a576-87318edf5ca0",
+          "name": "Enrapturess Dusk 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#6e6773",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/67fab591-9cbc-4af4-bc02-34a0234ae866.png",
+          "localImagePath": "assets/images/paints/67fab591-9cbc-4af4-bc02-34a0234ae866.png"
+        },
+        {
+          "id": "0f58df51-8a39-4ce5-b6db-2043a327d0bd",
+          "name": "Enrapturess Dusk 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#534d5e",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a7470119-34bc-42d0-9efd-78dec5c065ad.png",
+          "localImagePath": "assets/images/paints/a7470119-34bc-42d0-9efd-78dec5c065ad.png"
+        }
+      ]
+    },
+    {
+      "id": "327d7902-d58c-4150-aad5-2c872d6d0651",
+      "name": "Squig Orange",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#A74D42",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 167,
+        "g": 77,
+        "b": 66
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/0fd90201-3d5b-42cd-b811-ea5bc77a103b.png",
+      "localImagePath": "assets/images/paints/0fd90201-3d5b-42cd-b811-ea5bc77a103b.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "308c2020-0ba3-4c32-a0dc-1f7a26f0c52d",
+          "name": "Chotec Orange 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#b33432",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d2fc486b-9660-44e6-8045-4f61c3331325.png",
+          "localImagePath": "assets/images/paints/d2fc486b-9660-44e6-8045-4f61c3331325.png"
+        },
+        {
+          "id": "ce644023-d5be-4784-a793-89b96c1ae304",
+          "name": "Bloodtoof Red 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#e93c42",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8cebedae-f3de-4d4b-a279-a98e37743fc0.png",
+          "localImagePath": "assets/images/paints/8cebedae-f3de-4d4b-a279-a98e37743fc0.png"
+        },
+        {
+          "id": "e42d1128-633b-49f5-8d0f-710b9062ec2d",
+          "name": "Chotec Orange 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#db4e3a",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/83e6395a-49aa-4144-8be3-d1d561ffd4df.png",
+          "localImagePath": "assets/images/paints/83e6395a-49aa-4144-8be3-d1d561ffd4df.png"
+        }
+      ]
+    },
+    {
+      "id": "5cb9ca6d-0a8c-4a53-8c8a-44dbfdf87204",
+      "name": "Stegadon Scale Green",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#06455D",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 6,
+        "g": 69,
+        "b": 93
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/51f681bd-aa00-4f4f-9719-12cc20d24432.png",
+      "localImagePath": "assets/images/paints/51f681bd-aa00-4f4f-9719-12cc20d24432.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "0b2628e9-eb05-43fb-b70a-4228bdb844e8",
+          "name": "Craventhrone Cloak 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#0b232d",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/915b8eda-6027-40c4-999a-fb6309a3df54.png",
+          "localImagePath": "assets/images/paints/915b8eda-6027-40c4-999a-fb6309a3df54.png"
+        },
+        {
+          "id": "73513629-982e-44a3-91d1-4e8888ec4dbe",
+          "name": "Seraphon Blue 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#00464f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/eb2e1bee-3645-48cb-8d07-d2261814ebb6.png",
+          "localImagePath": "assets/images/paints/eb2e1bee-3645-48cb-8d07-d2261814ebb6.png"
+        },
+        {
+          "id": "1f617d88-e704-4f38-9db4-3dcca4d2223a",
+          "name": "Green Morkshroom 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#173230",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/e6f1ae72-d492-482c-9a8e-1907a832cc57.png",
+          "localImagePath": "assets/images/paints/e6f1ae72-d492-482c-9a8e-1907a832cc57.png"
+        }
+      ]
+    },
+    {
+      "id": "3a7752b9-72c7-4fed-b8e2-c69277b79737",
+      "name": "Stormhost Silver",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "metallic",
+      "gradientStartHex": "#FAFAFA",
+      "gradientMiddleHex": "#D6D9DB",
+      "gradientEndHex": "#9DA3A7",
+      "rgb": {
+        "r": 250,
+        "g": 250,
+        "b": 250
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/0b33ba52-6c96-46e0-8a8f-9f42875f17ed.png",
+      "localImagePath": "assets/images/paints/0b33ba52-6c96-46e0-8a8f-9f42875f17ed.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "a3281712-a681-4d3d-9279-5d8de69ba9d0",
+      "name": "Tallarn Sand",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#A07409",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 160,
+        "g": 116,
+        "b": 9
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/8b943c83-9c81-4d8d-8c98-48a351b8073c.png",
+      "localImagePath": "assets/images/paints/8b943c83-9c81-4d8d-8c98-48a351b8073c.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "63e9c001-c10e-44a9-92c8-d5f5d028c108",
+          "name": "Khemri Sands 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ae7929",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4f9ede4c-e048-4cee-9081-c76e0bf72427.png",
+          "localImagePath": "assets/images/paints/4f9ede4c-e048-4cee-9081-c76e0bf72427.png"
+        },
+        {
+          "id": "2a490490-572e-4a29-abc8-fc6d407ea9ca",
+          "name": "Khemri Sands 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#8a5e15",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/27ee80cd-cc72-44f7-a6a0-a648c1f6330f.png",
+          "localImagePath": "assets/images/paints/27ee80cd-cc72-44f7-a6a0-a648c1f6330f.png"
+        },
+        {
+          "id": "cac6d2e3-bcf7-47f4-92ff-034e1f8ae159",
+          "name": "Necrolith Bone 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#867562",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/785253f4-09dc-4583-8f3f-313c9a8086fe.png",
+          "localImagePath": "assets/images/paints/785253f4-09dc-4583-8f3f-313c9a8086fe.png"
+        }
+      ]
+    },
+    {
+      "id": "5fad2686-e4f8-4f56-a59c-bd96cc19e36d",
+      "name": "Ulthuan Grey",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#C4DDD5",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 196,
+        "g": 221,
+        "b": 213
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/870e8308-8d90-4e06-93a7-97ac437bc584.png",
+      "localImagePath": "assets/images/paints/870e8308-8d90-4e06-93a7-97ac437bc584.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "42f091bf-4c35-4794-9f30-255219ce89c7",
+          "name": "Dataslate Grey 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#878983",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png",
+          "localImagePath": "assets/images/paints/ce11dadf-3bbe-4974-b85d-eed1008bef5c.png"
+        },
+        {
+          "id": "d293b354-327d-4c11-be24-9efe78395c64",
+          "name": "Dataslate Grey 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#737069",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/287ea8cf-9b1c-439c-ae4f-fdb529472f10.png",
+          "localImagePath": "assets/images/paints/287ea8cf-9b1c-439c-ae4f-fdb529472f10.png"
+        },
+        {
+          "id": "a8818d67-582f-40f3-99d9-f2172bee26b4",
+          "name": "Blackstone Void 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#9b9d9f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/6a10fc46-d3cc-4fa1-8c92-1cb2209504bf.png",
+          "localImagePath": "assets/images/paints/6a10fc46-d3cc-4fa1-8c92-1cb2209504bf.png"
+        }
+      ]
+    },
+    {
+      "id": "f9978ec0-0131-4f71-9730-c73ea290fd83",
+      "name": "Ushabti Bone",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#ABA173",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 171,
+        "g": 161,
+        "b": 115
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d87e9600-8a72-4241-94be-01aec47407b7.png",
+      "localImagePath": "assets/images/paints/d87e9600-8a72-4241-94be-01aec47407b7.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "b81f8eb4-e3b8-4235-ae9b-01b60a95af2e",
+          "name": "Necrolith Bone 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#b79f7f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/78b2e47b-e29b-4995-8b7e-161046b7a781.png",
+          "localImagePath": "assets/images/paints/78b2e47b-e29b-4995-8b7e-161046b7a781.png"
+        },
+        {
+          "id": "68b6ba98-9617-4bb4-92e7-a074f50d0e3b",
+          "name": "Necrolith Bone 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#bfab88",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b890d6ca-b863-4c0f-8d54-575973681fd5.png",
+          "localImagePath": "assets/images/paints/b890d6ca-b863-4c0f-8d54-575973681fd5.png"
+        },
+        {
+          "id": "6aa76acc-d9f1-484d-a221-efdad2087e53",
+          "name": "Necrolith Bone 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ae916c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/49a202c5-bb2d-4ca8-b63a-56a6659572ef.png",
+          "localImagePath": "assets/images/paints/49a202c5-bb2d-4ca8-b63a-56a6659572ef.png"
+        }
+      ]
+    },
+    {
+      "id": "61bb3847-bac0-4719-8d80-e8e8742e316d",
+      "name": "Waaagh! Flesh",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "flat",
+      "gradientStartHex": "#0B3B36",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 11,
+        "g": 59,
+        "b": 54
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a1d7d4d5-f757-48bd-b5e6-c324cd258c35.png",
+      "localImagePath": "assets/images/paints/a1d7d4d5-f757-48bd-b5e6-c324cd258c35.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "ca66a303-f68e-4f48-9af2-58270cc520b8",
+          "name": "Kasrkin Green 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#224430",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2b008237-2570-4c84-a7fb-d51596947399.png",
+          "localImagePath": "assets/images/paints/2b008237-2570-4c84-a7fb-d51596947399.png"
+        },
+        {
+          "id": "b99cffcc-62e9-46e9-b376-6975799648a4",
+          "name": "Kruleboyz Green 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4d7c39",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1148d230-9f0c-4695-9ac3-12ab287e759b.png",
+          "localImagePath": "assets/images/paints/1148d230-9f0c-4695-9ac3-12ab287e759b.png"
+        },
+        {
+          "id": "4feadd20-847e-4192-bf4e-ee56f1c81c68",
+          "name": "Lustria Green 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#06682b",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2c84e6f3-3282-4661-aa35-4cb659d8742a.png",
+          "localImagePath": "assets/images/paints/2c84e6f3-3282-4661-aa35-4cb659d8742a.png"
+        }
+      ]
+    },
+    {
+      "id": "fd7cf5a6-eaad-4908-8dd8-8cde4323a1b9",
+      "name": "Warboss Green",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#317E57",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 49,
+        "g": 126,
+        "b": 87
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/0603a752-195c-4128-9e6f-595830e5eec2.png",
+      "localImagePath": "assets/images/paints/0603a752-195c-4128-9e6f-595830e5eec2.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "c445ff4b-b390-490b-9606-e0b1fc95f957",
+          "name": "Kasrkin Green 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#43703e",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/5c48b5cc-1bf0-4e25-b6fa-1428ee609bdf.png",
+          "localImagePath": "assets/images/paints/5c48b5cc-1bf0-4e25-b6fa-1428ee609bdf.png"
+        },
+        {
+          "id": "e0d49c0d-0c33-44bc-99b3-41da6d1be487",
+          "name": "Kruleboyz Green 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#637e3f",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/06b25e09-7235-49ee-816c-7160d20dd551.png",
+          "localImagePath": "assets/images/paints/06b25e09-7235-49ee-816c-7160d20dd551.png"
+        },
+        {
+          "id": "b99cffcc-62e9-46e9-b376-6975799648a4",
+          "name": "Kruleboyz Green 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4d7c39",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/1148d230-9f0c-4695-9ac3-12ab287e759b.png",
+          "localImagePath": "assets/images/paints/1148d230-9f0c-4695-9ac3-12ab287e759b.png"
+        }
+      ]
+    },
+    {
+      "id": "70aceb8a-715a-4116-8747-c1ba53a76d79",
+      "name": "Warplock Bronze",
+      "range": "warhammer_colour",
+      "category": "base",
+      "potStyle": "metallic",
+      "gradientStartHex": "#F2C2A8",
+      "gradientMiddleHex": "#AA6243",
+      "gradientEndHex": "#440808",
+      "rgb": {
+        "r": 242,
+        "g": 194,
+        "b": 168
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/977951b2-97d6-413c-a120-10ac03df2a8d.png",
+      "localImagePath": "assets/images/paints/977951b2-97d6-413c-a120-10ac03df2a8d.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": []
+    },
+    {
+      "id": "dda970e7-53a9-4770-98eb-3d1ed68e5679",
+      "name": "Warpstone Glow",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#0F702A",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 15,
+        "g": 112,
+        "b": 42
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/20c4c5d2-689e-4e7e-a798-df059c3acf82.png",
+      "localImagePath": "assets/images/paints/20c4c5d2-689e-4e7e-a798-df059c3acf82.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "5fc57304-eed1-42eb-930f-b568dd1b9f0b",
+          "name": "Hierotek Green 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#006930",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/3977007b-8957-435a-870a-65d1dac1f9a5.png",
+          "localImagePath": "assets/images/paints/3977007b-8957-435a-870a-65d1dac1f9a5.png"
+        },
+        {
+          "id": "ad538394-9704-45d1-b223-73c1cbfbfe81",
+          "name": "Plague Toad Venom 1",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#4d8832",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/a9da405e-d143-4bf3-be8f-c6c9d55cfac8.png",
+          "localImagePath": "assets/images/paints/a9da405e-d143-4bf3-be8f-c6c9d55cfac8.png"
+        },
+        {
+          "id": "f367a802-6fd2-44fb-ae1b-30d895ac19e6",
+          "name": "Plague Toad Venom 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#599938",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/762f4c3a-2eb1-4766-96d8-0314c0c96d01.png",
+          "localImagePath": "assets/images/paints/762f4c3a-2eb1-4766-96d8-0314c0c96d01.png"
+        }
+      ]
+    },
+    {
+      "id": "c7ed3986-9a0c-4710-80a2-cbcc288f6184",
+      "name": "Wazdakka Red",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#880804",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 136,
+        "g": 8,
+        "b": 4
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/b5d7c338-18bc-42a5-ab1b-8e3ca918f0ca.png",
+      "localImagePath": "assets/images/paints/b5d7c338-18bc-42a5-ab1b-8e3ca918f0ca.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "a146f26d-885f-465b-936a-e41788f3bbd4",
+          "name": "Carmine Blades 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#72051c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/bad0fda6-c63e-4491-86aa-ee8b8b91d7a5.png",
+          "localImagePath": "assets/images/paints/bad0fda6-c63e-4491-86aa-ee8b8b91d7a5.png"
+        },
+        {
+          "id": "0b47090f-8298-4a2c-8604-85182189583d",
+          "name": "Carmine Blades 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#8d0425",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/7f407269-bc43-4474-9eff-05978485a61d.png",
+          "localImagePath": "assets/images/paints/7f407269-bc43-4474-9eff-05978485a61d.png"
+        },
+        {
+          "id": "3bf12650-e38c-4cca-bb39-e9a3d11dd7db",
+          "name": "Carmine Blades 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#593639",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/2b8a9f5d-0595-4458-8b7e-ffa589dd2b00.png",
+          "localImagePath": "assets/images/paints/2b8a9f5d-0595-4458-8b7e-ffa589dd2b00.png"
+        }
+      ]
+    },
+    {
+      "id": "d8d7c239-22d9-48e9-87d2-454832396e18",
+      "name": "White Scar",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#FFFFFF",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/ad832421-3eca-41a6-adaa-0b7c328ffc1a.png",
+      "localImagePath": "assets/images/paints/ad832421-3eca-41a6-adaa-0b7c328ffc1a.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "26c5348f-9734-44cf-96ef-60b4208893e1",
+          "name": "Blackstone Void 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ffffff",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d74d6a9a-95bd-458b-844b-3c350390e261.png",
+          "localImagePath": "assets/images/paints/d74d6a9a-95bd-458b-844b-3c350390e261.png"
+        },
+        {
+          "id": "26c5348f-9734-44cf-96ef-60b4208893e1",
+          "name": "Blackstone Void 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ffffff",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d74d6a9a-95bd-458b-844b-3c350390e261.png",
+          "localImagePath": "assets/images/paints/d74d6a9a-95bd-458b-844b-3c350390e261.png"
+        },
+        {
+          "id": "26c5348f-9734-44cf-96ef-60b4208893e1",
+          "name": "Blackstone Void 5",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#ffffff",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/d74d6a9a-95bd-458b-844b-3c350390e261.png",
+          "localImagePath": "assets/images/paints/d74d6a9a-95bd-458b-844b-3c350390e261.png"
+        }
+      ]
+    },
+    {
+      "id": "cf768fd8-384f-4c72-a55b-ff5914a64bf1",
+      "name": "Xereus Purple",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#47125A",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 71,
+        "g": 18,
+        "b": 90
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/33ebd619-8c06-48db-8d6b-3a5bf3e7ddd2.png",
+      "localImagePath": "assets/images/paints/33ebd619-8c06-48db-8d6b-3a5bf3e7ddd2.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "fee1911e-b7f7-475f-a3bc-d3a89144b573",
+          "name": "Hive Fleet Purple 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#3b2053",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/89a2110d-0101-46af-b4e6-1d039679d0c3.png",
+          "localImagePath": "assets/images/paints/89a2110d-0101-46af-b4e6-1d039679d0c3.png"
+        },
+        {
+          "id": "b9c00d72-73ae-4504-a329-d5a1d1b78b21",
+          "name": "Hive Fleet Purple 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#655390",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/eb29cafa-9ce1-4305-85c5-8d57cf245d34.png",
+          "localImagePath": "assets/images/paints/eb29cafa-9ce1-4305-85c5-8d57cf245d34.png"
+        },
+        {
+          "id": "1353fff7-2a04-4a93-ba3c-c8e60a55aec7",
+          "name": "Shalaxi Violet 4",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#6673b7",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/37f63760-81b5-477f-b910-83457771c299.png",
+          "localImagePath": "assets/images/paints/37f63760-81b5-477f-b910-83457771c299.png"
+        }
+      ]
+    },
+    {
+      "id": "14ee7b60-7769-47a1-bc4a-004e10c75c3d",
+      "name": "Yriel Yellow",
+      "range": "warhammer_colour",
+      "category": "layer",
+      "potStyle": "flat",
+      "gradientStartHex": "#FFD900",
+      "gradientMiddleHex": null,
+      "gradientEndHex": null,
+      "rgb": {
+        "r": 255,
+        "g": 217,
+        "b": 0
+      },
+      "isInInventory": false,
+      "isInWishlist": true,
+      "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fb35787d-a38f-4f56-83e8-1d1cab655201.png",
+      "localImagePath": "assets/images/paints/fb35787d-a38f-4f56-83e8-1d1cab655201.png",
+      "warhammerProRange": null,
+      "compatibleToneProPaints": [
+        {
+          "id": "41e0fc0b-7c8b-4238-9a06-bc1bb2ca3b32",
+          "name": "Hawkshroud Yellow 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#f6a221",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/bb03a6a9-2055-42cb-99ae-b558af2707d2.png",
+          "localImagePath": "assets/images/paints/bb03a6a9-2055-42cb-99ae-b558af2707d2.png"
+        },
+        {
+          "id": "61e0bf17-aeca-403c-b6a2-95bd3c76b925",
+          "name": "Megaboss Yellow 2",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#f5cd2c",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/4d8b404e-e992-4015-a2d3-22df704a4cb6.png",
+          "localImagePath": "assets/images/paints/4d8b404e-e992-4015-a2d3-22df704a4cb6.png"
+        },
+        {
+          "id": "fb1800bd-ca3a-4621-a1c6-6b22479619cd",
+          "name": "Hawkshroud Yellow 3",
+          "category": "tone",
+          "range": "warhammer_pro",
+          "gradientStartHex": "#fabb14",
+          "imageUrl": "https://cdn.apps.paint.warhammer.com/images/fea1866a-e6a5-43db-9188-ffb949bd3e8a.png",
+          "localImagePath": "assets/images/paints/fea1866a-e6a5-43db-9188-ffb949bd3e8a.png"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "c80dfdc7-0c8b-489d-83f6-4e9752693be2",
+      "name": "Armageddon",
+      "imageUrl": null,
+      "localImagePath": null,
+      "notes": [],
+      "colours": [],
+      "recipes": [
+        {
+          "id": "b45f7fc8-e2bf-4f8f-931f-ea3b4dda281a",
+          "name": "Bannernob",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/a6033165-0f57-4dce-a0d9-e8dd2cf6b8d3.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/a6033165-0f57-4dce-a0d9-e8dd2cf6b8d3.jpg"
+          ]
+        },
+        {
+          "id": "d0f6cf1c-066a-4811-b442-4b8b0674c4e0",
+          "name": "Bigboss",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/e1a3bd3a-fda1-4542-9abd-0b252d230736.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/e1a3bd3a-fda1-4542-9abd-0b252d230736.jpg"
+          ]
+        },
+        {
+          "id": "6b663399-0d67-46c4-9a24-3e820e68c768",
+          "name": "Big Mek Dakkarig",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/82ce575d-345e-4916-b239-cbf4baee3903.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/82ce575d-345e-4916-b239-cbf4baee3903.jpg"
+          ]
+        },
+        {
+          "id": "bd5ce377-f645-4d43-93ba-13fb016a072c",
+          "name": "Blood Angels Ancient",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/1ce330da-0a45-44a2-9759-81912a6489df.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/1ce330da-0a45-44a2-9759-81912a6489df.jpg"
+          ]
+        },
+        {
+          "id": "8a2a4332-b77d-4e7d-811e-8aef7f0db31e",
+          "name": "Blood Angels Captain with Relic Shield",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/eacfb841-3cca-4548-9698-238a3fbc92e1.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/eacfb841-3cca-4548-9698-238a3fbc92e1.jpg"
+          ]
+        },
+        {
+          "id": "51e946bb-ff44-428c-8659-35206c379b64",
+          "name": "Blood Angels Chaplain with Jump Pack",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/94014b24-c0e5-4eb3-b12a-ee6d910824a3.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/94014b24-c0e5-4eb3-b12a-ee6d910824a3.jpg"
+          ]
+        },
+        {
+          "id": "6e671558-9750-4e4a-b206-5774449ecc3c",
+          "name": "Blood Angels Eradicator with Heavy Bolter",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/d120b0e0-2932-4802-8930-9161898bbb6d.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/d120b0e0-2932-4802-8930-9161898bbb6d.jpg"
+          ]
+        },
+        {
+          "id": "77004664-2355-4efc-82b5-074bbedc5510",
+          "name": "Blood Angels Intercessors",
+          "range": "warhammer_colour",
+          "images": [
+            "https://cdn.citadelcolour.com/Miniatures/180815ba-51d4-5372-9382-c611dec430ea.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/180815ba-51d4-5372-9382-c611dec430ea.jpg"
+          ]
+        },
+        {
+          "id": "50dac58f-0beb-4392-8642-dfdc268f0c2d",
+          "name": "Blood Angels Land Speeder",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/90413f94-fcbc-49a0-abd5-7425105f5721.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/90413f94-fcbc-49a0-abd5-7425105f5721.jpg"
+          ]
+        },
+        {
+          "id": "a5b09948-d791-412e-b2eb-3dbb110dd8d8",
+          "name": "Blood Angels Librarian",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/c19022aa-a95d-459f-b747-3b7241d48567.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/c19022aa-a95d-459f-b747-3b7241d48567.jpg"
+          ]
+        },
+        {
+          "id": "3b9db346-506c-4064-9bf5-f39d15b2db06",
+          "name": "Blood Angels Lieutenant Tolmeron",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/f497d04a-5a18-4861-8008-e94c9d1c8674.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/f497d04a-5a18-4861-8008-e94c9d1c8674.jpg"
+          ]
+        },
+        {
+          "id": "fa24e2b1-51f1-4a83-b37b-488acd7d856b",
+          "name": "Blood Angels Vanguard Veteran",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/69f84ccc-1be3-4af2-9853-605a8f5f61d1.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/69f84ccc-1be3-4af2-9853-605a8f5f61d1.jpg"
+          ]
+        },
+        {
+          "id": "daf22a70-6531-4f1e-90d2-a172d5b00d51",
+          "name": "Gretchin",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/02b47d64-ed6c-4e61-9af3-2d20199a9a12.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/02b47d64-ed6c-4e61-9af3-2d20199a9a12.jpg"
+          ]
+        },
+        {
+          "id": "9bb58f48-2f89-4493-a382-48deab779369",
+          "name": "Grot Orderly",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/ece94ecb-e87d-44f8-b0bc-265a1d84bcce.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/ece94ecb-e87d-44f8-b0bc-265a1d84bcce.jpg"
+          ]
+        },
+        {
+          "id": "44141d0b-415e-4f92-9560-0c18b7b4a09e",
+          "name": "Ork Boyz",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/a25acab6-5393-460a-9a18-a3f231b86b94.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/a25acab6-5393-460a-9a18-a3f231b86b94.jpg"
+          ]
+        },
+        {
+          "id": "bde2ac74-2246-473b-8bfa-7a341de667bc",
+          "name": "Painboy",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/bed95c88-15b7-4652-a59e-5530b8d44e3d.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/bed95c88-15b7-4652-a59e-5530b8d44e3d.jpg"
+          ]
+        },
+        {
+          "id": "1d30a0cc-aa77-48db-aac5-5767c425fe45",
+          "name": "Warboss",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/7eb0472a-9235-4ba1-9b22-c88475bf3034.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/7eb0472a-9235-4ba1-9b22-c88475bf3034.jpg"
+          ]
+        },
+        {
+          "id": "06f573cf-726a-4a7b-89a5-5ae25f8ee767",
+          "name": "Wartrakk",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/a1edd2fa-28c7-45fa-bde7-042440e92292.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/a1edd2fa-28c7-45fa-bde7-042440e92292.jpg"
+          ]
+        },
+        {
+          "id": "9886d4bd-812d-47e8-aa48-ddd5c40fa18c",
+          "name": "Weirdboy",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/2979fa4d-b3e4-44c5-8400-003f65d22588.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/2979fa4d-b3e4-44c5-8400-003f65d22588.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6b282f2b-eaf8-450f-ab93-3aa1e594bd36",
+      "name": "Custodes",
+      "imageUrl": null,
+      "localImagePath": null,
+      "notes": [],
+      "colours": [],
+      "recipes": [
+        {
+          "id": "0c583298-8176-4a35-b92d-892101f9b13c",
+          "name": "Trajann Valoris",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/e722ba63-1385-442c-bb8f-b7fc28c5190e.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/e722ba63-1385-442c-bb8f-b7fc28c5190e.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "06b69d7d-4f26-44e6-819b-7c792d801c47",
+      "name": "Dante",
+      "imageUrl": null,
+      "localImagePath": null,
+      "notes": [],
+      "colours": [],
+      "recipes": [
+        {
+          "id": "3cef28e2-7ea1-40dc-924f-e45bc34dc1f0",
+          "name": "Commander Dante",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/796ec74b-2968-4991-994a-f719728d7a49.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/796ec74b-2968-4991-994a-f719728d7a49.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "85f23500-d6c1-49c9-ad14-abaf0f571622",
+      "name": "Starter set",
+      "imageUrl": null,
+      "localImagePath": null,
+      "notes": [],
+      "colours": [],
+      "recipes": [
+        {
+          "id": "8535fe7f-579d-4f5f-8b38-230f8a36a9f6",
+          "name": "Hive Fleet Leviathan Ripper Swarm",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/018feb4b-ba4f-4b37-96f4-c29e98683570.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/018feb4b-ba4f-4b37-96f4-c29e98683570.jpg"
+          ]
+        },
+        {
+          "id": "ce7218cd-dc08-4dde-bbe6-6d2b871750a5",
+          "name": "Hive Fleet Leviathan Termagant",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/d70616c4-49f6-49a1-9d4f-dee5125dc331.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/d70616c4-49f6-49a1-9d4f-dee5125dc331.jpg"
+          ]
+        },
+        {
+          "id": "9cf20b44-29fc-4136-9d12-c532d110c0e7",
+          "name": "Ultramarines Infernus Marine",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/642a1c6a-a163-4a97-957e-b26b6e827267.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/642a1c6a-a163-4a97-957e-b26b6e827267.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "64c79bca-62ca-459b-8b8a-5a38d4b23eab",
+      "name": "TITUS",
+      "imageUrl": null,
+      "localImagePath": null,
+      "notes": [],
+      "colours": [],
+      "recipes": [
+        {
+          "id": "83b76ac1-5352-45ca-9834-f1620b49efcf",
+          "name": "Captain Titus",
+          "range": "warhammer_colour",
+          "images": [
+            "https://dzqkzkzhlz5nt.cloudfront.net/miniatures/4657a83f-b798-4d33-802f-a770e7cc9106.jpg"
+          ],
+          "localImagePaths": [
+            "assets/images/models/4657a83f-b798-4d33-802f-a770e7cc9106.jpg"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public read-only catalog collections and manifest/bundles
+    match /catalog_meta/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /paints/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /paint_compatibility/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /third_party_paints/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /colours/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /colour_groups/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /games/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /factions/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /recipes/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Optional per-user cloud sync document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
