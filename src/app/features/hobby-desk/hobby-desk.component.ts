@@ -1,7 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CatalogService } from '../../core/services/catalog.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { PaintModalService } from '../../core/services/paint-modal.service';
@@ -30,853 +30,9 @@ interface UnifiedPaintRow {
 
 @Component({
   selector: 'app-hobby-desk',
-  standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  template: `
-    <div class="page-container">
-      <!-- Top Hero Header -->
-      <header class="desk-header">
-        <div class="desk-title-group">
-          <img src="/icons/ic_hobby_desk.svg" alt="" class="desk-icon" />
-          <div>
-            <h1>Hobby Desk</h1>
-            <p class="subtitle">
-              Manage your projects, paint inventory, wishlist, cross-brand equivalents, and My Warhammer account sync.
-            </p>
-          </div>
-        </div>
-
-        <div class="desk-kpi-strip">
-          <button class="kpi-pill" (click)="activeTab.set('projects')">
-            <span class="kpi-num">{{ userState.projects().length }}</span>
-            <span class="kpi-label">Projects</span>
-          </button>
-          <button class="kpi-pill owned" (click)="openPaintsTab('inventory')">
-            <span class="kpi-num">{{ userState.state().inventoryPaintIds.length }}</span>
-            <span class="kpi-label">Owned Paints</span>
-          </button>
-          <button class="kpi-pill wishlist" (click)="openPaintsTab('wishlist')">
-            <span class="kpi-num">{{ userState.state().wishlistPaintIds.length }}</span>
-            <span class="kpi-label">Wishlist</span>
-          </button>
-        </div>
-      </header>
-
-      <!-- Sub-Navigation Tabs -->
-      <nav class="subtab-bar">
-        <button
-          class="subtab-btn"
-          [class.active]="activeTab() === 'projects'"
-          (click)="activeTab.set('projects')"
-        >
-          <img src="/icons/ic_project.svg" alt="" class="tab-ic" />
-          <span>My Projects ({{ userState.projects().length }})</span>
-        </button>
-
-        <button
-          class="subtab-btn"
-          [class.active]="activeTab() === 'paints'"
-          (click)="activeTab.set('paints')"
-        >
-          <img src="/icons/ic_paint.svg" alt="" class="tab-ic" />
-          <span>My Paints & Catalogue</span>
-        </button>
-
-        <button
-          class="subtab-btn"
-          [class.active]="activeTab() === 'converter'"
-          (click)="activeTab.set('converter')"
-        >
-          <img src="/icons/ic_compare.svg" alt="" class="tab-ic" />
-          <span>Cross-Brand Converter</span>
-        </button>
-
-        <button
-          class="subtab-btn"
-          [class.active]="activeTab() === 'settings'"
-          (click)="activeTab.set('settings')"
-        >
-          <img src="/icons/ic_inventory.svg" alt="" class="tab-ic" />
-          <span>Account & Data Sync</span>
-        </button>
-      </nav>
-
-      <!-- Quick Onboarding Banner when Blank Slate -->
-      @if (
-        userState.projects().length === 0 &&
-        userState.state().inventoryPaintIds.length === 0 &&
-        userState.state().wishlistPaintIds.length === 0 &&
-        activeTab() !== 'settings'
-      ) {
-        <div class="onboarding-banner studio-card">
-          <div class="onboarding-text">
-            <h3>Start Fresh or Import a My Warhammer Account</h3>
-            <p>
-              Your local browser Hobby Desk starts with a clean slate. Create projects and track paints below, import your own live
-              <strong>My Warhammer</strong> account via Auth0 PKCE, or load the extracted APK account snapshot (64 owned paints, 34 wishlist paints, and 5 projects) with one click.
-            </p>
-          </div>
-          <div class="onboarding-actions">
-            <button class="btn btn-gold" (click)="loadExtractedSnapshot()">
-              ⚡ Load Extracted Account Snapshot
-            </button>
-            <button class="btn btn-secondary" (click)="activeTab.set('settings')">
-              Import Another My Warhammer Account →
-            </button>
-          </div>
-        </div>
-      }
-
-      <!-- ====================================================================
-           SUB-TAB 1: MY PROJECTS
-           ==================================================================== -->
-      @if (activeTab() === 'projects') {
-        <section class="tab-content">
-          <div class="toolbar-row">
-            <div class="search-box">
-              <input
-                type="text"
-                class="input-control"
-                placeholder="Search your projects..."
-                [(ngModel)]="projectSearch"
-              />
-            </div>
-
-            <div class="toolbar-right">
-              <select class="input-control sort-select" [(ngModel)]="projectSort">
-                <option value="updated">Recently Updated</option>
-                <option value="created">Newest Created</option>
-                <option value="alpha">Alphabetical (A–Z)</option>
-              </select>
-
-              <button class="btn btn-gold" (click)="showNewProjectModal.set(true)">
-                + New Project
-              </button>
-            </div>
-          </div>
-
-          @if (filteredProjects().length > 0) {
-            <div class="projects-grid">
-              @for (proj of filteredProjects(); track proj.id) {
-                <div class="project-card studio-card interactive" (click)="openProject(proj.id)">
-                  <div class="project-thumb-wrap">
-                    <img
-                      [src]="getProjectCover(proj)"
-                      [alt]="proj.name"
-                      class="project-thumb"
-                    />
-                    @if (getProjectReadiness(proj); as ready) {
-                      <span
-                        class="readiness-pill"
-                        [class.full]="ready.matchPercent === 100"
-                      >
-                        {{ ready.matchPercent }}% Paint Ready ({{ ready.ownedDirectCount + ready.substitutedCount }}/{{ ready.totalRequired }})
-                      </span>
-                    }
-                  </div>
-
-                  <div class="project-body">
-                    <h3 class="project-title">{{ proj.name }}</h3>
-                    <div class="project-counts">
-                      <span>{{ proj.recipeIds.length }} Models</span>
-                      <span>•</span>
-                      <span>{{ proj.colourIds.length }} Colours</span>
-                      <span>•</span>
-                      <span>{{ proj.notes.length }} Notes</span>
-                    </div>
-                  </div>
-
-                  <div class="project-footer" (click)="$event.stopPropagation()">
-                    <button
-                      class="btn btn-sm btn-ghost"
-                      (click)="userState.duplicateProject(proj.id)"
-                      title="Duplicate Project"
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      class="btn btn-sm btn-ghost danger-text"
-                      (click)="confirmDeleteProject(proj.id, proj.name)"
-                      title="Delete Project"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="empty-state studio-card">
-              <img src="/icons/ic_project.svg" alt="" class="empty-ic" />
-              <h3>No Projects Yet</h3>
-              <p>
-                Create a hobby project to group model recipes, colour guides, painting checklists, and see an automatic rollup of required & missing paints.
-              </p>
-              <div class="empty-btn-row">
-                <button class="btn btn-gold" (click)="showNewProjectModal.set(true)">
-                  + Create First Project
-                </button>
-                <button class="btn btn-secondary" (click)="loadExtractedSnapshot()">
-                  Load Extracted Account Snapshot (5 Projects)
-                </button>
-              </div>
-            </div>
-          }
-        </section>
-      }
-
-      <!-- ====================================================================
-           SUB-TAB 2: MY PAINTS (INVENTORY, WISHLIST, CATALOGUE & CUSTOM PAINTS)
-           ==================================================================== -->
-      @if (activeTab() === 'paints') {
-        <section class="tab-content">
-          <div class="paints-mode-row">
-            <div class="chip-bar">
-              <button
-                class="chip"
-                [class.active]="paintSubMode() === 'inventory'"
-                (click)="paintSubMode.set('inventory')"
-              >
-                ✓ My Inventory ({{ userState.state().inventoryPaintIds.length }})
-              </button>
-              <button
-                class="chip"
-                [class.active]="paintSubMode() === 'wishlist'"
-                (click)="paintSubMode.set('wishlist')"
-              >
-                ★ My Wishlist ({{ userState.state().wishlistPaintIds.length }})
-              </button>
-              <button
-                class="chip"
-                [class.active]="paintSubMode() === 'catalogue'"
-                (click)="paintSubMode.set('catalogue')"
-              >
-                All Paints Catalogue ({{ allUnifiedPaints().length }})
-              </button>
-            </div>
-
-            <button class="btn btn-secondary" (click)="showCustomPaintModal.set(true)">
-              + Add Custom 3rd-Party Paint
-            </button>
-          </div>
-
-          <div class="toolbar-row">
-            <div class="search-box">
-              <input
-                type="text"
-                class="input-control"
-                placeholder="Search by paint name, hex code, brand, or SKU..."
-                [(ngModel)]="paintSearch"
-              />
-            </div>
-
-            <div class="toolbar-right">
-              <select class="input-control filter-select" [(ngModel)]="selectedBrandFilter">
-                <option value="all">All Brands</option>
-                <option value="Citadel Classic">Citadel Colour (Classic)</option>
-                <option value="Citadel Tone Pro">Citadel Tone Pro</option>
-                @for (b of catalog.thirdPartyBrands(); track b) {
-                  <option [value]="b">{{ b }}</option>
-                }
-              </select>
-
-              <select class="input-control filter-select" [(ngModel)]="selectedCategoryFilter">
-                <option value="all">All Categories</option>
-                @for (cat of availableCategories(); track cat) {
-                  <option [value]="cat">{{ cat }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          @if (filteredPaints().length > 0) {
-            <div class="paints-grid">
-              @for (p of filteredPaints(); track p.id) {
-                <div class="paint-card studio-card">
-                  <button class="paint-card-main" (click)="paintModal.openPaint(p.id)">
-                    @if (p.localImagePath) {
-                      <img
-                        [src]="img.resolve(p.localImagePath, p.imageUrl)"
-                        [alt]="p.name"
-                        class="paint-pot-thumb"
-                        loading="lazy"
-                      />
-                    } @else {
-                      <span class="paint-swatch" [style.background]="p.hex"></span>
-                    }
-
-                    <div class="paint-card-info">
-                      <span class="paint-card-name">{{ p.name }}</span>
-                      <div class="paint-card-meta">
-                        <span
-                          class="mini-brand"
-                          [class.pro]="p.isTonePro"
-                          [class.tp]="!p.isCitadel"
-                        >
-                          {{ p.rangeLabel }}
-                        </span>
-                        <span>• {{ p.category }}</span>
-                      </div>
-                    </div>
-                  </button>
-
-                  <div class="paint-card-actions">
-                    <button
-                      class="icon-toggle"
-                      [class.active-owned]="userState.isOwned(p.id)"
-                      (click)="userState.toggleInventory(p.id)"
-                      title="Toggle Inventory"
-                    >
-                      {{ userState.isOwned(p.id) ? '✓ Owned' : '+ Own' }}
-                    </button>
-                    <button
-                      class="icon-toggle"
-                      [class.active-wish]="userState.isWishlisted(p.id)"
-                      (click)="userState.toggleWishlist(p.id)"
-                      title="Toggle Wishlist"
-                    >
-                      {{ userState.isWishlisted(p.id) ? '★' : '☆' }}
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="empty-state studio-card">
-              <h3>No Matching Paints</h3>
-              <p>
-                @if (paintSubMode() === 'inventory') {
-                  Your Inventory has no paints matching the current filters. Switch to "All Paints Catalogue" to add pots you own, or import your My Warhammer account.
-                } @else if (paintSubMode() === 'wishlist') {
-                  Your Wishlist is currently empty. Add missing paints from any Model, Colour, or Project guide!
-                } @else {
-                  No paints match your current search or brand/category filter.
-                }
-              </p>
-              @if (paintSubMode() !== 'catalogue') {
-                <button class="btn btn-gold" (click)="paintSubMode.set('catalogue')">
-                  Browse Full Paint Catalogue
-                </button>
-              }
-            </div>
-          }
-        </section>
-      }
-
-      <!-- ====================================================================
-           SUB-TAB 3: COMPARISON & CROSS-BRAND CONVERTER TOOL
-           ==================================================================== -->
-      @if (activeTab() === 'converter') {
-        <section class="tab-content">
-          <div class="converter-header studio-card">
-            <div class="chip-bar">
-              <button
-                class="chip"
-                [class.active]="converterMode() === 'cross-brand'"
-                (click)="converterMode.set('cross-brand')"
-              >
-                🌐 Multi-Brand Converter (Citadel ↔ Army Painter / Vallejo / Two Thin Coats / Pro Acryl / AK 3G)
-              </button>
-              <button
-                class="chip"
-                [class.active]="converterMode() === 'tone-pro'"
-                (click)="converterMode.set('tone-pro')"
-              >
-                ✨ Official Citadel Classic ↔ Tone Pro ({{ catalog.compatibilityLinks().length }} Mappings)
-              </button>
-            </div>
-
-            <div class="toolbar-row" style="margin-top: 12px">
-              <div class="search-box">
-                <input
-                  type="text"
-                  class="input-control"
-                  placeholder="Search any Citadel or 3rd-party paint to find equivalents..."
-                  [(ngModel)]="converterSearch"
-                />
-              </div>
-
-              @if (converterMode() === 'cross-brand') {
-                <div class="toolbar-right">
-                  <select class="input-control filter-select" [(ngModel)]="converterTargetBrand">
-                    <option value="all">All 3rd-Party Brands</option>
-                    @for (b of catalog.thirdPartyBrands(); track b) {
-                      <option [value]="b">{{ b }}</option>
-                    }
-                  </select>
-                  <label class="checkbox-inline">
-                    <input type="checkbox" [(ngModel)]="converterOnlyOwned" />
-                    <span>Only show paints where I own either side</span>
-                  </label>
-                </div>
-              }
-            </div>
-          </div>
-
-          @if (converterMode() === 'cross-brand') {
-            <div class="converter-list">
-              @for (row of filteredCrossBrandRows().slice(0, 120); track row.citadel.id) {
-                <div class="converter-row studio-card">
-                  <!-- Left: Citadel Paint -->
-                  <div class="conv-side citadel-side">
-                    <button class="conv-paint-btn" (click)="paintModal.openPaint(row.citadel.id)">
-                      <span
-                        class="paint-swatch"
-                        [style.background]="row.citadel.gradientStartHex"
-                      ></span>
-                      <div class="conv-info">
-                        <span class="conv-name">{{ row.citadel.name }}</span>
-                        <span class="conv-meta">
-                          {{ row.citadel.range === 'warhammer_pro' ? 'Citadel Tone Pro' : 'Citadel Classic' }} • {{ row.citadel.category }}
-                        </span>
-                      </div>
-                    </button>
-                    <button
-                      class="btn btn-sm"
-                      [class.btn-owned]="userState.isOwned(row.citadel.id)"
-                      [class.btn-ghost]="!userState.isOwned(row.citadel.id)"
-                      (click)="userState.toggleInventory(row.citadel.id)"
-                    >
-                      {{ userState.isOwned(row.citadel.id) ? '✓ Owned' : '+ Own' }}
-                    </button>
-                  </div>
-
-                  <!-- Arrow -->
-                  <div class="conv-arrow">⇄</div>
-
-                  <!-- Right: Equivalent 3rd-Party Paints -->
-                  <div class="conv-equivalents">
-                    @for (eq of row.matches; track eq.thirdPartyPaintId) {
-                      <div class="conv-eq-pill">
-                        <button
-                          class="conv-eq-main"
-                          (click)="paintModal.openPaint(eq.thirdPartyPaintId)"
-                        >
-                          <span class="mini-swatch" [style.background]="eq.hex"></span>
-                          <div class="conv-eq-text">
-                            <span class="conv-eq-name">{{ eq.name }}</span>
-                            <span class="conv-eq-brand">
-                              {{ eq.brand }} • {{ eq.range }} • ΔE {{ eq.deltaE }}
-                            </span>
-                          </div>
-                        </button>
-                        <button
-                          class="btn btn-sm"
-                          [class.btn-owned]="userState.isOwned(eq.thirdPartyPaintId)"
-                          [class.btn-ghost]="!userState.isOwned(eq.thirdPartyPaintId)"
-                          (click)="userState.toggleInventory(eq.thirdPartyPaintId)"
-                        >
-                          {{ userState.isOwned(eq.thirdPartyPaintId) ? '✓' : '+' }}
-                        </button>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <!-- Mode 2: Official Classic <-> Tone Pro -->
-            <div class="converter-list">
-              @for (group of filteredToneProGroups(); track group.classicId) {
-                <div class="converter-row studio-card">
-                  <div class="conv-side citadel-side">
-                    <button class="conv-paint-btn" (click)="paintModal.openPaint(group.classicId)">
-                      <span class="paint-swatch" [style.background]="group.classicHex"></span>
-                      <div class="conv-info">
-                        <span class="conv-name">{{ group.classicName }}</span>
-                        <span class="conv-meta">Citadel Classic • {{ group.classicCategory }}</span>
-                      </div>
-                    </button>
-                    <button
-                      class="btn btn-sm"
-                      [class.btn-owned]="userState.isOwned(group.classicId)"
-                      [class.btn-ghost]="!userState.isOwned(group.classicId)"
-                      (click)="userState.toggleInventory(group.classicId)"
-                    >
-                      {{ userState.isOwned(group.classicId) ? '✓ Owned' : '+ Own' }}
-                    </button>
-                  </div>
-
-                  <div class="conv-arrow">⇄</div>
-
-                  <div class="conv-equivalents">
-                    @for (tp of group.toneProList; track tp.tone_pro_paint_id) {
-                      <div class="conv-eq-pill">
-                        <button
-                          class="conv-eq-main"
-                          (click)="paintModal.openPaint(tp.tone_pro_paint_id)"
-                        >
-                          <span class="mini-swatch" [style.background]="tp.tone_pro_hex"></span>
-                          <div class="conv-eq-text">
-                            <span class="conv-eq-name">{{ tp.tone_pro_paint_name }}</span>
-                            <span class="conv-eq-brand">Citadel Tone Pro</span>
-                          </div>
-                        </button>
-                        <button
-                          class="btn btn-sm"
-                          [class.btn-owned]="userState.isOwned(tp.tone_pro_paint_id)"
-                          [class.btn-ghost]="!userState.isOwned(tp.tone_pro_paint_id)"
-                          (click)="userState.toggleInventory(tp.tone_pro_paint_id)"
-                        >
-                          {{ userState.isOwned(tp.tone_pro_paint_id) ? '✓' : '+' }}
-                        </button>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          }
-        </section>
-      }
-
-      <!-- ====================================================================
-           SUB-TAB 4: ACCOUNT, MY WARHAMMER IMPORTER & SETTINGS
-           ==================================================================== -->
-      @if (activeTab() === 'settings') {
-        <section class="tab-content settings-grid">
-          <!-- Card 1: Multi-User My Warhammer Account Importer -->
-          <div class="settings-card studio-card">
-            <span class="badge badge-gold">Multi-User Importer</span>
-            <h3>Import from Any "My Warhammer" Account</h3>
-            <p class="settings-desc">
-              Any user can import their live Inventory, Wishlist, and custom Projects from the official Citadel Colour app using either the self-service Auth0 PKCE flow or a file upload.
-            </p>
-
-            <div class="import-mode-selector">
-              <label class="radio-label">
-                <input type="radio" name="importMode" value="merge" [(ngModel)]="importMode" />
-                <span>Merge with current browser data (Recommended)</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="importMode" value="replace" [(ngModel)]="importMode" />
-                <span>Replace current browser data</span>
-              </label>
-            </div>
-
-            <div class="wizard-steps">
-              <div class="wizard-step">
-                <div class="step-num">1</div>
-                <div class="step-content">
-                  <strong>Quick Snapshot (Extracted APK Account)</strong>
-                  <p>Load the pre-extracted account snapshot (64 owned paints, 34 wishlist paints, 5 projects).</p>
-                  <button class="btn btn-gold btn-sm" (click)="loadExtractedSnapshot()">
-                    ⚡ Import Extracted Account Snapshot
-                  </button>
-                </div>
-              </div>
-
-              <div class="wizard-step">
-                <div class="step-num">2</div>
-                <div class="step-content">
-                  <strong>Self-Service My Warhammer Login (Auth0 PKCE)</strong>
-                  <p>
-                    Click below to open <code>login.mywarhammer.com</code> in a new tab. After signing in, open DevTools Network tab, copy the <code>citadel-colour://.../callback?code=...</code> redirect URL, and paste it below.
-                  </p>
-                  <div class="step-actions">
-                    <button class="btn btn-secondary btn-sm" (click)="startPkceLogin()">
-                      🔑 Open My Warhammer Login
-                    </button>
-                    <button class="btn btn-ghost btn-sm" (click)="copyPkceLoginUrl()">
-                      {{ pkceUrlCopied() ? '✓ Copied Login URL!' : '📋 Copy Login URL to Clipboard' }}
-                    </button>
-                  </div>
-                  <div class="pkce-paste-row">
-                    <input
-                      type="text"
-                      class="input-control"
-                      placeholder="Paste citadel-colour://login.mywarhammer.com/.../callback?code=... here"
-                      [(ngModel)]="pastedCallbackUrl"
-                    />
-                    <button
-                      class="btn btn-gold btn-sm"
-                      [disabled]="!pastedCallbackUrl.trim() || pkceBusy()"
-                      (click)="submitPkceCallback()"
-                    >
-                      {{ pkceBusy() ? 'Importing...' : 'Exchange & Import' }}
-                    </button>
-                  </div>
-                  @if (pkceError()) {
-                    <p class="error-msg">{{ pkceError() }}</p>
-                  }
-                </div>
-              </div>
-
-              <div class="wizard-step">
-                <div class="step-num">3</div>
-                <div class="step-content">
-                  <strong>Upload JSON or CSV File</strong>
-                  <p>
-                    Upload any <code>user_account.json</code>, web app backup JSON, or <code>user_inventory_wishlist.csv</code>.
-                  </p>
-                  <input
-                    type="file"
-                    accept=".json,.csv"
-                    (change)="onFileUpload($event)"
-                    class="file-input"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 2: Substitution Preferences & Local Backup -->
-          <div class="settings-card studio-card">
-            <span class="badge badge-sub">Readiness & Portability</span>
-            <h3>"Can I Paint This?" Rules & Browser Backups</h3>
-            <p class="settings-desc">
-              Configure how the app calculates model and colour paint readiness across your inventory.
-            </p>
-
-            <div class="pref-toggles">
-              <label class="toggle-row">
-                <input
-                  type="checkbox"
-                  [ngModel]="userState.preferences().allowCompatibleSubstitutions"
-                  (ngModelChange)="userState.updatePreferences({ allowCompatibleSubstitutions: $event })"
-                />
-                <div>
-                  <strong>Allow Official Citadel ↔ Tone Pro Substitutions</strong>
-                  <p>Count a required paint as covered if you own its official Tone Pro or Classic Citadel counterpart.</p>
-                </div>
-              </label>
-
-              <label class="toggle-row">
-                <input
-                  type="checkbox"
-                  [ngModel]="userState.preferences().allowThirdPartySubstitutions"
-                  (ngModelChange)="userState.updatePreferences({ allowThirdPartySubstitutions: $event })"
-                />
-                <div>
-                  <strong>Allow 3rd-Party Brand Paint Substitutions</strong>
-                  <p>Count a required Citadel paint as covered if you own a linked equivalent from The Army Painter, Vallejo, Two Thin Coats, Pro Acryl, or AK 3G.</p>
-                </div>
-              </label>
-            </div>
-
-            <hr class="divider" />
-
-            <h4>Local Browser Backup & Reset</h4>
-            <div class="backup-btn-row">
-              <button class="btn btn-secondary" (click)="userState.exportBackupJson()">
-                ⬇ Export Full JSON Backup
-              </button>
-              <button class="btn btn-ghost danger-text" (click)="confirmResetData()">
-                🗑 Reset Local Data to Blank Slate
-              </button>
-            </div>
-          </div>
-
-          <!-- Card 3: Catalog Manifest & Cache Freshness -->
-          <div class="settings-card studio-card">
-            <span class="badge badge-owned">Smart IndexedDB Cache</span>
-            <h3>Catalog Manifest & Cache Freshness</h3>
-            <p class="settings-desc">
-              On startup, the app hydrates immediately from browser IndexedDB and checks <code>catalog_meta/manifest</code> (1 read) to diff SHA-256 bundle hashes before downloading any updates.
-            </p>
-
-            @if (catalog.manifest(); as mf) {
-              <div class="manifest-meta">
-                <div><strong>Catalog Version:</strong> {{ mf.catalogVersion }}</div>
-                <div><strong>Manifest Updated:</strong> {{ mf.updatedAt | date:'medium' }}</div>
-                <div><strong>Sync Status:</strong> <span class="status-tag">{{ catalog.syncStatus() }}</span></div>
-                @if (catalog.lastCheckedAt()) {
-                  <div><strong>Last Checked:</strong> {{ catalog.lastCheckedAt() | date:'mediumTime' }}</div>
-                }
-              </div>
-
-              <div class="bundle-table">
-                @for (entry of manifestBundlesList(); track entry.key) {
-                  <div class="bundle-row">
-                    <span class="bundle-name">{{ entry.key }}</span>
-                    <code class="bundle-hash">{{ entry.hash.slice(0, 12) }}…</code>
-                  </div>
-                }
-              </div>
-            }
-
-            <div class="backup-btn-row" style="margin-top: 12px">
-              <button class="btn btn-secondary btn-sm" (click)="catalog.initializeCatalog(false)">
-                ↻ Check Manifest Now (1 Read)
-              </button>
-              <button class="btn btn-ghost btn-sm" (click)="catalog.initializeCatalog(true)">
-                ⚡ Force Full Cache Rebuild
-              </button>
-            </div>
-          </div>
-
-          <!-- Card 4: Optional Firebase Cloud Sync & Auth -->
-          <div class="settings-card studio-card">
-            <span class="badge badge-pro">Optional Cloud Sync</span>
-            <h3>Firebase Auth & Cross-Device Sync</h3>
-            <p class="settings-desc">
-              By default, all user data stays 100% private in your local browser. Optionally connect a Firebase project to sync <code>users/{{ '{' }}uid{{ '}' }}</code> across devices.
-            </p>
-
-            @if (userState.currentUser(); as user) {
-              <div class="signed-in-box">
-                <div>
-                  <strong>Signed in as:</strong> {{ user.email || user.uid }}
-                  <span class="badge badge-owned" style="margin-left: 8px">{{ userState.cloudSyncStatus() }}</span>
-                </div>
-                <button class="btn btn-secondary btn-sm" (click)="userState.signOutCloud()">
-                  Sign Out
-                </button>
-              </div>
-            } @else {
-              <div class="auth-form">
-                <div class="form-row">
-                  <input
-                    type="email"
-                    class="input-control"
-                    placeholder="Email address"
-                    [(ngModel)]="authEmail"
-                  />
-                  <input
-                    type="password"
-                    class="input-control"
-                    placeholder="Password"
-                    [(ngModel)]="authPassword"
-                  />
-                </div>
-                <div class="backup-btn-row">
-                  <button class="btn btn-gold btn-sm" (click)="handleEmailAuth(false)">
-                    Sign In
-                  </button>
-                  <button class="btn btn-secondary btn-sm" (click)="handleEmailAuth(true)">
-                    Create Account
-                  </button>
-                  <button class="btn btn-secondary btn-sm" (click)="handleGoogleAuth()">
-                    Sign In with Google
-                  </button>
-                </div>
-                @if (authError()) {
-                  <p class="error-msg">{{ authError() }}</p>
-                }
-              </div>
-            }
-
-            <details class="fb-config-details">
-              <summary>Configure Firebase Project Credentials (JSON)</summary>
-              <div class="fb-config-body">
-                <textarea
-                  class="input-control code-area"
-                  rows="4"
-                  placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "..."}'
-                  [(ngModel)]="firebaseConfigJson"
-                ></textarea>
-                <button class="btn btn-secondary btn-sm" (click)="applyFirebaseConfig()">
-                  Save Firebase Config & Reload
-                </button>
-              </div>
-            </details>
-          </div>
-        </section>
-      }
-    </div>
-
-    <!-- Modal: Create New Project -->
-    @if (showNewProjectModal()) {
-      <div class="modal-backdrop" (click)="showNewProjectModal.set(false)">
-        <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Create New Hobby Project</h3>
-            <button class="close-btn" (click)="showNewProjectModal.set(false)">✕</button>
-          </div>
-          <div class="modal-body">
-            <label class="field-label">Project Name</label>
-            <input
-              type="text"
-              class="input-control"
-              placeholder="e.g., Ultramarines 2nd Company, Spearhead Box..."
-              [(ngModel)]="newProjectName"
-              (keyup.enter)="createNewProject()"
-            />
-            <div class="modal-footer-btns">
-              <button class="btn btn-ghost" (click)="showNewProjectModal.set(false)">Cancel</button>
-              <button class="btn btn-gold" (click)="createNewProject()">Create Project</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- Modal: Add Custom 3rd-Party Paint -->
-    @if (showCustomPaintModal()) {
-      <div class="modal-backdrop" (click)="showCustomPaintModal.set(false)">
-        <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Add Custom 3rd-Party Paint</h3>
-            <button class="close-btn" (click)="showCustomPaintModal.set(false)">✕</button>
-          </div>
-          <div class="modal-body">
-            <div class="form-grid">
-              <div>
-                <label class="field-label">Brand</label>
-                <input
-                  type="text"
-                  class="input-control"
-                  placeholder="e.g., The Army Painter, Scale75, Kimera..."
-                  [(ngModel)]="customPaintForm.brand"
-                />
-              </div>
-              <div>
-                <label class="field-label">Range</label>
-                <input
-                  type="text"
-                  class="input-control"
-                  placeholder="e.g., Warpaints Fanatic, Speedpaint 2.0..."
-                  [(ngModel)]="customPaintForm.range"
-                />
-              </div>
-              <div>
-                <label class="field-label">Paint Name</label>
-                <input
-                  type="text"
-                  class="input-control"
-                  placeholder="e.g., Matt Black"
-                  [(ngModel)]="customPaintForm.name"
-                />
-              </div>
-              <div>
-                <label class="field-label">Category & Hex Swatch</label>
-                <div style="display: flex; gap: 8px">
-                  <select class="input-control" [(ngModel)]="customPaintForm.category">
-                    <option value="Base">Base</option>
-                    <option value="Layer">Layer</option>
-                    <option value="Shade">Shade / Wash</option>
-                    <option value="Contrast">Contrast / Speedpaint</option>
-                    <option value="Metallic">Metallic</option>
-                    <option value="Technical">Technical / Effect</option>
-                  </select>
-                  <input
-                    type="color"
-                    class="color-picker"
-                    [(ngModel)]="customPaintForm.hex"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top: 12px">
-              <label class="field-label">Equivalent Citadel Paint (Optional)</label>
-              <select class="input-control" [(ngModel)]="customPaintForm.citadelPaintId">
-                <option value="">-- None / Standalone --</option>
-                @for (cp of catalog.paints(); track cp.id) {
-                  <option [value]="cp.id">{{ cp.name }} ({{ cp.category }})</option>
-                }
-              </select>
-            </div>
-
-            <div class="modal-footer-btns">
-              <button class="btn btn-ghost" (click)="showCustomPaintModal.set(false)">Cancel</button>
-              <button class="btn btn-gold" (click)="saveCustomPaint()">Save & Add to Inventory</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './hobby-desk.component.ng.html',
   styles: [
     `
       .page-container {
@@ -1452,6 +608,24 @@ interface UnifiedPaintRow {
       .bundle-hash {
         color: var(--gold-bright);
       }
+      .signed-in-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .account-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid var(--gold-border);
+        background: var(--bg-elevated);
+      }
+      .account-email {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+      }
       .auth-form {
         display: flex;
         flex-direction: column;
@@ -1565,10 +739,32 @@ export class HobbyDeskComponent {
   readonly importer = inject(WarhammerImportService);
   private readonly readinessService = inject(InventoryMatchService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
+  readonly isAccountPage = signal(false);
   readonly activeTab = signal<'projects' | 'paints' | 'converter' | 'settings'>('projects');
   readonly paintSubMode = signal<'inventory' | 'wishlist' | 'catalogue'>('inventory');
   readonly converterMode = signal<'cross-brand' | 'tone-pro'>('cross-brand');
+
+  constructor() {
+    this.route.data.subscribe((data) => {
+      const isAccount = data['page'] === 'account' || this.router.url.startsWith('/account');
+      this.isAccountPage.set(isAccount);
+      if (isAccount) {
+        this.activeTab.set('settings');
+      }
+    });
+    this.route.queryParamMap.subscribe((params) => {
+      const tab = params.get('tab');
+      if (tab === 'paints' || tab === 'projects' || tab === 'converter' || tab === 'settings') {
+        this.activeTab.set(tab);
+      }
+      const sub = params.get('sub');
+      if (sub === 'inventory' || sub === 'wishlist' || sub === 'catalogue') {
+        this.paintSubMode.set(sub);
+      }
+    });
+  }
 
   // Filters
   projectSearch = '';
@@ -1755,15 +951,27 @@ export class HobbyDeskComponent {
 
   readonly manifestBundlesList = computed(() => {
     const mf = this.catalog.manifest();
-    if (!mf) return [];
+    if (!mf?.bundles) return [];
     return Object.entries(mf.bundles).map(([key, val]) => ({
       key,
-      hash: val.hash,
-      updatedAt: val.updatedAt,
+      hash: typeof val === 'string' ? val : val?.hash ?? '',
+      updatedAt: typeof val === 'string' ? mf.updatedAt : val?.updatedAt ?? mf.updatedAt,
     }));
   });
 
+  openProjectsTab(): void {
+    if (this.isAccountPage()) {
+      this.router.navigate(['/hobby-desk'], { queryParams: { tab: 'projects' } });
+      return;
+    }
+    this.activeTab.set('projects');
+  }
+
   openPaintsTab(sub: 'inventory' | 'wishlist' | 'catalogue'): void {
+    if (this.isAccountPage()) {
+      this.router.navigate(['/hobby-desk'], { queryParams: { tab: 'paints', sub } });
+      return;
+    }
     this.activeTab.set('paints');
     this.paintSubMode.set(sub);
   }
