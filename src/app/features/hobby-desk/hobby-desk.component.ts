@@ -577,6 +577,9 @@ interface UnifiedPaintRow {
                     <button class="btn btn-secondary btn-sm" (click)="startPkceLogin()">
                       🔑 Open My Warhammer Login
                     </button>
+                    <button class="btn btn-ghost btn-sm" (click)="copyPkceLoginUrl()">
+                      {{ pkceUrlCopied() ? '✓ Copied Login URL!' : '📋 Copy Login URL to Clipboard' }}
+                    </button>
                   </div>
                   <div class="pkce-paste-row">
                     <input
@@ -1370,6 +1373,12 @@ interface UnifiedPaintRow {
       .step-content p {
         color: var(--text-secondary);
       }
+      .step-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
       .pkce-paste-row {
         display: flex;
         gap: 8px;
@@ -1590,6 +1599,7 @@ export class HobbyDeskComponent {
   pastedCallbackUrl = '';
   readonly pkceBusy = signal(false);
   readonly pkceError = signal<string | null>(null);
+  readonly pkceUrlCopied = signal(false);
 
   // Auth & Firebase config
   authEmail = '';
@@ -1841,6 +1851,18 @@ export class HobbyDeskComponent {
     this.pkceError.set(null);
     const { authorizeUrl } = await this.importer.generateMyWarhammerLoginUrl();
     window.open(authorizeUrl, '_blank', 'noopener');
+  }
+
+  async copyPkceLoginUrl(): Promise<void> {
+    this.pkceError.set(null);
+    try {
+      const { authorizeUrl } = await this.importer.generateMyWarhammerLoginUrl();
+      await navigator.clipboard.writeText(authorizeUrl);
+      this.pkceUrlCopied.set(true);
+      setTimeout(() => this.pkceUrlCopied.set(false), 2500);
+    } catch (e: unknown) {
+      this.pkceError.set(e instanceof Error ? e.message : String(e));
+    }
   }
 
   async submitPkceCallback(): Promise<void> {

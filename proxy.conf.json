@@ -1,0 +1,18 @@
+{
+  "/gw-auth-api": {
+    "target": "https://login.mywarhammer.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/gw-auth-api": ""
+    }
+  },
+  "/gw-paint-api": {
+    "target": "https://api.apps.paint.warhammer.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/gw-paint-api": ""
+    }
+  }
+}

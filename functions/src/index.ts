@@ -2,59 +2,19 @@
  * Stateless Firebase Cloud Function (`importMyWarhammerAccount`)
  *
  * Exchanges an Auth0 PKCE authorization `code` + `codeVerifier` against
- * `https://login.mywarhammer.com/oauth/token`, queries `https://api.citadelcolour.com`
- * for the authenticated user's live `{ user { inventory wishlist projects { ... } } }`,
+ * `https://login.mywarhammer.com/oauth/token`, queries `https://api.apps.paint.warhammer.com`
+ * for the authenticated user's live `/inventory`, `/wishlist`, and `/projects`,
  * and returns the normalized JSON payload to the browser without persisting credentials.
  */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 const AUTH0_TOKEN_URL = 'https://login.mywarhammer.com/oauth/token';
-const AUTH0_CLIENT_ID = '256418625992-265571283910099920';
+const AUTH0_CLIENT_ID = 'GfkrpDHeRsWqbwJM1tB6deAjJnd8U8jp';
 const AUTH0_REDIRECT_URI =
   'citadel-colour://login.mywarhammer.com/android/com.gamesworkshop.citadelpaint/callback';
-const CITADEL_GRAPHQL_URL = 'https://api.citadelcolour.com';
-
-const USER_ACCOUNT_QUERY = `
-query GetUserAccount {
-  user {
-    inventory
-    wishlist
-    projects {
-      id
-      name
-      thumbnailUrl
-      createdAt
-      updatedAt
-      recipes {
-        id
-        name
-      }
-      colours {
-        id
-        name
-      }
-      notes {
-        id
-        title
-        createdAt
-        updatedAt
-        components {
-          ... on NoteTextComponent {
-            type
-            value: text
-          }
-          ... on NoteCheckboxComponent {
-            type
-            value: label
-            checked
-          }
-        }
-      }
-    }
-  }
-}
-`;
+const WARHAMMER_PAINT_API_URL = 'https://api.apps.paint.warhammer.com';
+const DEFAULT_FILTERS_BODY = '{}';
 
 export const importMyWarhammerAccount = onCall(
   { cors: true },
@@ -96,47 +56,60 @@ export const importMyWarhammerAccount = onCall(
       access_token?: string;
       id_token?: string;
     };
-    const bearer = tokenJson.id_token || tokenJson.access_token;
+    const bearer = tokenJson.access_token || tokenJson.id_token;
     if (!bearer) {
       throw new HttpsError('unauthenticated', 'No bearer token returned from My Warhammer.');
     }
 
-    // 2. Query Citadel Colour GraphQL API for user account data
-    const gqlResp = await fetch(CITADEL_GRAPHQL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${bearer}`,
-      },
-      body: JSON.stringify({ query: USER_ACCOUNT_QUERY }),
-    });
-
-    if (!gqlResp.ok) {
-      throw new HttpsError(
-        'internal',
-        `Citadel Colour GraphQL request failed (${gqlResp.status}).`
-      );
-    }
-
-    const gqlJson = (await gqlResp.json()) as {
-      data?: {
-        user?: {
-          inventory?: string[];
-          wishlist?: string[];
-          projects?: unknown[];
-        };
-      };
+    const headers = {
+      Accept: 'application/json',
+      Authorization: `Bearer ${bearer}`,
     };
 
-    const user = gqlJson.data?.user;
-    if (!user) {
-      throw new HttpsError('not-found', 'Could not load user profile from Citadel Colour API.');
-    }
+    const fetchApi = async <T>(
+      path: string,
+      method: 'GET' | 'POST' = 'GET',
+      body?: string
+    ): Promise<T> => {
+      const reqHeaders: Record<string, string> = {
+        ...headers,
+        ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+      };
+      const resp = await fetch(`${WARHAMMER_PAINT_API_URL}${path}`, {
+        method,
+        headers: reqHeaders,
+        body,
+      });
+      if (!resp.ok) {
+        throw new HttpsError(
+          'internal',
+          `Citadel Colour REST API request failed (${resp.status}) on ${path}.`
+        );
+      }
+      return (await resp.json()) as T;
+    };
+
+    // 2. Query Citadel Colour v3 REST API for user account data
+    const [inventoryList, wishlistList, projectsSummary] = await Promise.all([
+      fetchApi<Array<{ id: string }>>('/inventory/paints?locale=en', 'POST', DEFAULT_FILTERS_BODY),
+      fetchApi<Array<{ id: string }>>('/wishlist/paints?locale=en', 'POST', DEFAULT_FILTERS_BODY),
+      fetchApi<Array<{ id: string }>>('/projects?locale=en', 'GET'),
+    ]);
+
+    const detailedProjects = await Promise.all(
+      (projectsSummary ?? []).map(async (p) => {
+        try {
+          return await fetchApi<Record<string, unknown>>(`/projects/${p.id}?locale=en`);
+        } catch {
+          return p as Record<string, unknown>;
+        }
+      })
+    );
 
     return {
-      inventoryPaintIds: user.inventory ?? [],
-      wishlistPaintIds: user.wishlist ?? [],
-      projects: user.projects ?? [],
+      inventoryPaintIds: (inventoryList ?? []).map((p) => p.id).filter(Boolean),
+      wishlistPaintIds: (wishlistList ?? []).map((p) => p.id).filter(Boolean),
+      projects: detailedProjects,
       importedAt: new Date().toISOString(),
     };
   }

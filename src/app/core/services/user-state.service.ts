@@ -565,20 +565,31 @@ export class UserStateService {
           }));
           return {
             id: String(rn['id'] ?? `note_${id}_${idx}`),
-            title: String(rn['title'] ?? 'Project Note'),
+            title: String(rn['title'] ?? rn['name'] ?? 'Project Note'),
             createdAt: String(rn['createdAt'] ?? createdAt),
             updatedAt: String(rn['updatedAt'] ?? updatedAt),
             components,
           };
         });
 
+        const firstRecipe = Array.isArray(rp['recipes'])
+          ? (rp['recipes'][0] as Record<string, unknown> | undefined)
+          : undefined;
+        const firstRecipeImg = Array.isArray(firstRecipe?.['images'])
+          ? (firstRecipe['images'][0] as string | undefined)
+          : undefined;
+        const firstRecipeLocalImg = Array.isArray(firstRecipe?.['localImagePaths'])
+          ? (firstRecipe['localImagePaths'][0] as string | undefined)
+          : undefined;
+
+        const thumbUrl = rp['thumbnailUrl'] ?? rp['imageUrl'] ?? firstRecipeImg;
+        const localThumb = rp['localThumbnailPath'] ?? rp['localImagePath'] ?? firstRecipeLocalImg;
+
         return {
           id,
           name,
-          thumbnailUrl: rp['thumbnailUrl'] ? String(rp['thumbnailUrl']) : undefined,
-          localThumbnailPath: rp['localThumbnailPath']
-            ? String(rp['localThumbnailPath'])
-            : undefined,
+          thumbnailUrl: thumbUrl ? String(thumbUrl) : undefined,
+          localThumbnailPath: localThumb ? String(localThumb) : undefined,
           createdAt,
           updatedAt,
           recipeIds: Array.from(new Set(recipeIds)),
