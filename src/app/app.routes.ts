@@ -10,6 +10,7 @@ import { SearchComponent } from './features/search/search.component';
 export const routes: Routes = [
   { path: '', redirectTo: 'hobby-desk', pathMatch: 'full' },
   { path: 'hobby-desk', component: HobbyDeskComponent },
+  { path: 'account', component: HobbyDeskComponent, data: { page: 'account' } },
   { path: 'projects/:id', component: ProjectDetailComponent },
   { path: 'models', component: PaintModelComponent },
   { path: 'models/:id', component: ModelDetailComponent },

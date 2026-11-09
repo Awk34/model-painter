@@ -1,0 +1,180 @@
+<div class="app-shell">
+  <!-- Desktop Left Navigation Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-box" routerLink="/hobby-desk">
+      <div class="brand-crest">
+        <img src="/icons/ic_warhammerpro.svg" alt="" class="crest-img" />
+      </div>
+      <div class="brand-titles">
+        <span class="brand-main">CITADEL COLOUR</span>
+        <span class="brand-sub">Paint Warhammer Web</span>
+      </div>
+    </div>
+
+    <nav class="side-nav">
+      <a
+        routerLink="/hobby-desk"
+        routerLinkActive="active"
+        class="nav-link"
+      >
+        <img src="/icons/ic_hobby_desk.svg" alt="" class="nav-ic" />
+        <span>Hobby Desk</span>
+        @if (userState.projects().length > 0) {
+          <span class="nav-count">{{ userState.projects().length }}</span>
+        }
+      </a>
+
+      <a
+        routerLink="/models"
+        routerLinkActive="active"
+        class="nav-link"
+      >
+        <img src="/icons/ic_models.svg" alt="" class="nav-ic" />
+        <span>Paint A Model</span>
+        <span class="nav-count muted">{{ catalog.models().length | number }}</span>
+      </a>
+
+      <a
+        routerLink="/colours"
+        routerLinkActive="active"
+        class="nav-link"
+      >
+        <img src="/icons/ic_colour.svg" alt="" class="nav-ic" />
+        <span>Paint A Colour</span>
+        <span class="nav-count muted">{{ catalog.colours().length }}</span>
+      </a>
+
+      <a
+        routerLink="/search"
+        routerLinkActive="active"
+        class="nav-link"
+      >
+        <img src="/icons/ic_search.svg" alt="" class="nav-ic" />
+        <span>Search</span>
+        <kbd class="shortcut-kbd">⌘K</kbd>
+      </a>
+    </nav>
+
+    <!-- Sidebar Inventory & Wishlist Summary Box -->
+    <div class="sidebar-stats studio-card">
+      <div class="stat-line">
+        <span>Paints Owned</span>
+        <strong class="owned-txt">{{ userState.state().inventoryPaintIds.length }}</strong>
+      </div>
+      <div class="stat-line">
+        <span>Paint Wishlist</span>
+        <strong class="wish-txt">{{ userState.state().wishlistPaintIds.length }}</strong>
+      </div>
+      <div class="stat-line">
+        <span>Models Owned</span>
+        <strong class="owned-txt">{{ userState.state().inventoryModelIds.length }}</strong>
+      </div>
+      <div class="stat-line">
+        <span>Model Wishlist</span>
+        <strong class="wish-txt">{{ userState.state().wishlistModelIds.length }}</strong>
+      </div>
+      <!-- <div class="stat-line">
+        <span>3rd-Party Brands</span>
+        <strong>{{ catalog.thirdPartyBrands().length }}</strong>
+      </div> -->
+      @if (catalog.syncStatus() !== CatalogSyncStatus.UpToDate) {
+        <div class="stat-line">
+          <span>Catalog Cache</span>
+          <span class="cache-dot" [attr.data-status]="catalog.syncStatus()">
+            ● {{ catalog.syncStatus() }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <!-- User Account Widget at Bottom of Left Nav -->
+    <div
+      class="sidebar-user-widget studio-card"
+      routerLink="/account"
+      routerLinkActive="active"
+    >
+      @if (userState.currentUser(); as user) {
+        <img
+          [src]="avatarUrl()"
+          (error)="onAvatarError()"
+          referrerpolicy="no-referrer"
+          alt="User profile picture"
+          class="user-avatar"
+        />
+        <div class="user-meta">
+          <strong class="user-name">{{ user.displayName || user.email || 'Hobbyist' }}</strong>
+          @if (user.displayName && user.email) {
+            <span class="user-sub">{{ user.email }}</span>
+          } @else {
+            <span class="user-sub">● {{ userState.cloudSyncStatus() }}</span>
+          }
+        </div>
+      } @else {
+        <img
+          src="/icons/ic_profile.svg"
+          alt="User placeholder"
+          class="user-avatar placeholder"
+        />
+        <div class="user-meta">
+          <span class="user-guest-label">Guest</span>
+          <span class="user-sub">Local Mode</span>
+        </div>
+        <a
+          routerLink="/account"
+          class="btn btn-gold btn-sm sign-in-btn"
+          (click)="$event.stopPropagation()"
+        >
+          Sign In
+        </a>
+      }
+    </div>
+  </aside>
+
+  <!-- Main Viewport -->
+  <main class="main-viewport">
+    @if (catalog.loading() && catalog.models().length === 0) {
+      <div class="boot-loader">
+        <img src="/icons/ic_hobby_desk.svg" alt="" class="pulse-ic" />
+        <h2>Hydrating Citadel Colour Catalog...</h2>
+        <p>Loading 4,531 Model Guides, 596 Colours, 487 Citadel Paints & 145 Cross-Brand Equivalents</p>
+      </div>
+    } @else {
+      <router-outlet></router-outlet>
+    }
+  </main>
+
+  <!-- Mobile Bottom Nav Bar -->
+  <nav class="mobile-bottom-nav">
+    <a routerLink="/hobby-desk" routerLinkActive="active" class="mob-tab">
+      <img src="/icons/ic_hobby_desk.svg" alt="" />
+      <span>Hobby Desk</span>
+    </a>
+    <a routerLink="/models" routerLinkActive="active" class="mob-tab">
+      <img src="/icons/ic_models.svg" alt="" />
+      <span>Paint Model</span>
+    </a>
+    <a routerLink="/colours" routerLinkActive="active" class="mob-tab">
+      <img src="/icons/ic_colour.svg" alt="" />
+      <span>Paint Colour</span>
+    </a>
+    <a routerLink="/search" routerLinkActive="active" class="mob-tab">
+      <img src="/icons/ic_search.svg" alt="" />
+      <span>Search</span>
+    </a>
+    <a routerLink="/account" routerLinkActive="active" class="mob-tab">
+      <img src="/icons/ic_profile.svg" alt="" />
+      <span>Account</span>
+    </a>
+  </nav>
+
+  <!-- Global Paint Detail Modal -->
+  <app-paint-detail-modal></app-paint-detail-modal>
+
+  <!-- Toast Notification -->
+  @if (userState.toastMessage(); as msg) {
+    <div class="toast-banner">
+      <span>{{ msg }}</span>
+    </div>
+  }
+</div>
+

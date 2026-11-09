@@ -11,17 +11,9 @@ export class ImageService {
    */
   resolve(localPath?: string | null, remoteUrl?: string | null): string {
     const fbCfg = getStoredFirebaseConfig();
-    if (localPath && localPath.trim().length > 0) {
-      if (fbCfg?.storageBucket) {
-        const encoded = encodeURIComponent(localPath.replace(/^\//, ''));
-        return `https://firebasestorage.googleapis.com/v0/b/${fbCfg.storageBucket}/o/${encoded}?alt=media`;
-      }
-      if (
-        typeof window !== 'undefined' &&
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ) {
-        return localPath.startsWith('/') ? localPath : `/${localPath}`;
-      }
+    if (localPath && localPath.trim().length > 0 && fbCfg?.storageBucket) {
+      const encoded = encodeURIComponent(localPath.replace(/^\//, ''));
+      return `https://firebasestorage.googleapis.com/v0/b/${fbCfg.storageBucket}/o/${encoded}?alt=media`;
     }
     if (remoteUrl && remoteUrl.trim().length > 0) {
       return remoteUrl;

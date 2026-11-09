@@ -1,0 +1,176 @@
+<div class="page-container">
+  <!-- Search Hero -->
+  <header class="search-hero studio-card">
+    <div class="search-title-row">
+      <img src="/icons/ic_search.svg" alt="" class="search-ic" />
+      <div>
+        <h1>Global Search</h1>
+        <p class="subtitle">
+          Instant search across {{ catalog.models().length | number }} Models, {{ catalog.colours().length }} Colours, {{ catalog.paints().length }} Citadel Paints, and {{ catalog.thirdPartyPaints().length }} 3rd-Party Paints.
+        </p>
+      </div>
+    </div>
+
+    <div class="big-search-wrap">
+      <input
+        type="text"
+        class="input-control big-search"
+        placeholder="Type any miniature, faction, Citadel paint, Army Painter / Vallejo / Two Thin Coats paint, or colour scheme..."
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+        autofocus
+      />
+      @if (query()) {
+        <button class="clear-btn" (click)="query.set('')">✕ Clear</button>
+      }
+    </div>
+
+    <div class="chip-bar">
+      <button
+        class="chip"
+        [class.active]="tab() === 'all'"
+        (click)="tab.set('all')"
+      >
+        All Results ({{ totalCount() }})
+      </button>
+      <button
+        class="chip"
+        [class.active]="tab() === 'models'"
+        (click)="tab.set('models')"
+      >
+        Models ({{ matchedModels().length }})
+      </button>
+      <button
+        class="chip"
+        [class.active]="tab() === 'colours'"
+        (click)="tab.set('colours')"
+      >
+        Colours ({{ matchedColours().length }})
+      </button>
+      <button
+        class="chip"
+        [class.active]="tab() === 'paints'"
+        (click)="tab.set('paints')"
+      >
+        Citadel & 3rd-Party Paints ({{ matchedCitadelPaints().length + matchedThirdPartyPaints().length }})
+      </button>
+    </div>
+  </header>
+
+  <!-- Paints Section -->
+  @if (
+    (tab() === 'all' || tab() === 'paints') &&
+    (matchedCitadelPaints().length > 0 || matchedThirdPartyPaints().length > 0)
+  ) {
+    <section class="result-section">
+      <h2>Paints ({{ matchedCitadelPaints().length + matchedThirdPartyPaints().length }})</h2>
+      <div class="paints-grid">
+        @for (cp of matchedCitadelPaints().slice(0, 24); track cp.id) {
+          <div class="paint-item studio-card">
+            <button class="paint-main" (click)="paintModal.openPaint(cp.id)">
+              <span class="paint-swatch" [style.background]="cp.gradientStartHex"></span>
+              <div class="p-info">
+                <strong>{{ cp.name }}</strong>
+                <span>{{ cp.range === 'warhammer_pro' ? 'Citadel Tone Pro' : 'Citadel Colour' }} • {{ cp.category }}</span>
+              </div>
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-owned]="userState.isOwned(cp.id)"
+              [class.btn-ghost]="!userState.isOwned(cp.id)"
+              (click)="userState.toggleInventory(cp.id)"
+            >
+              {{ userState.isOwned(cp.id) ? '✓ Owned' : '+ Own' }}
+            </button>
+          </div>
+        }
+
+        @for (tp of matchedThirdPartyPaints().slice(0, 24); track tp.id) {
+          <div class="paint-item studio-card">
+            <button class="paint-main" (click)="paintModal.openPaint(tp.id)">
+              <span class="paint-swatch" [style.background]="tp.hex"></span>
+              <div class="p-info">
+                <strong>{{ tp.name }}</strong>
+                <span>{{ tp.brand }} • {{ tp.range }}</span>
+              </div>
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-owned]="userState.isOwned(tp.id)"
+              [class.btn-ghost]="!userState.isOwned(tp.id)"
+              (click)="userState.toggleInventory(tp.id)"
+            >
+              {{ userState.isOwned(tp.id) ? '✓ Owned' : '+ Own' }}
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Colours Section -->
+  @if ((tab() === 'all' || tab() === 'colours') && matchedColours().length > 0) {
+    <section class="result-section">
+      <h2>Colour Guides ({{ matchedColours().length }})</h2>
+      <div class="cards-grid">
+        @for (c of matchedColours().slice(0, 24); track c.id) {
+          <div
+            class="result-card studio-card interactive"
+            (click)="router.navigate(['/colours', c.id])"
+          >
+            <div class="c-swatch-bar" [style.background]="c.hex"></div>
+            <div class="r-body">
+              <strong>{{ c.name }}</strong>
+              <span>{{ c.colourGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Models Section -->
+  @if ((tab() === 'all' || tab() === 'models') && matchedModels().length > 0) {
+    <section class="result-section">
+      <h2>Model Painting Guides ({{ matchedModels().length }})</h2>
+      <div class="cards-grid">
+        @for (m of matchedModels().slice(0, 36); track m.id) {
+          <div
+            class="result-card studio-card interactive"
+            (click)="router.navigate(['/models', m.id])"
+          >
+            <div class="m-img-box">
+              <img
+                [src]="img.resolve(m.localPrimaryImage, m.primaryImage)"
+                [alt]="m.name"
+                loading="lazy"
+              />
+            </div>
+            <div class="r-body">
+              <strong>{{ m.name }}</strong>
+              <span>{{ m.factionNames.slice(0, 2).join(' • ') || m.gameNames[0] }}</span>
+            </div>
+            <div class="r-actions" (click)="$event.stopPropagation()">
+              <button
+                class="btn btn-sm"
+                [class.btn-owned]="userState.isModelOwned(m.id)"
+                [class.btn-ghost]="!userState.isModelOwned(m.id)"
+                (click)="userState.toggleModelInventory(m.id)"
+              >
+                {{ userState.isModelOwned(m.id) ? '✓ Owned' : '+ Own Model' }}
+              </button>
+              <button
+                class="btn btn-sm"
+                [class.btn-wishlist]="userState.isModelWishlisted(m.id)"
+                [class.btn-ghost]="!userState.isModelWishlisted(m.id)"
+                (click)="userState.toggleModelWishlist(m.id)"
+              >
+                {{ userState.isModelWishlisted(m.id) ? '★' : '☆' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

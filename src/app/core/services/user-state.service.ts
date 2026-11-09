@@ -1,5 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import {
+  CloudSyncStatus,
   ThirdPartyPaint,
   UserAccountState,
   UserPreferences,
@@ -27,6 +28,8 @@ function createDefaultState(): UserAccountState {
     updatedAt: new Date().toISOString(),
     inventoryPaintIds: [],
     wishlistPaintIds: [],
+    inventoryModelIds: [],
+    wishlistModelIds: [],
     customPaints: [],
     customCompatibilityOverrides: {},
     projects: [],
@@ -51,12 +54,14 @@ function createDefaultState(): UserAccountState {
 export class UserStateService {
   readonly state = signal<UserAccountState>(this.loadInitialState());
   readonly currentUser = signal<User | null>(null);
-  readonly cloudSyncStatus = signal<'local-only' | 'synced' | 'syncing' | 'error'>('local-only');
+  readonly cloudSyncStatus = signal<CloudSyncStatus>(CloudSyncStatus.LocalOnly);
   readonly toastMessage = signal<string | null>(null);
 
   /** Fast reactive sets for O(1) lookup */
   readonly inventorySet = computed(() => new Set(this.state().inventoryPaintIds));
   readonly wishlistSet = computed(() => new Set(this.state().wishlistPaintIds));
+  readonly modelInventorySet = computed(() => new Set(this.state().inventoryModelIds ?? []));
+  readonly modelWishlistSet = computed(() => new Set(this.state().wishlistModelIds ?? []));
   readonly projects = computed(() => this.state().projects);
   readonly preferences = computed(() => this.state().preferences);
   readonly customPaints = computed(() => this.state().customPaints);
@@ -84,6 +89,12 @@ export class UserStateService {
           : [],
         wishlistPaintIds: Array.isArray(parsed.wishlistPaintIds)
           ? Array.from(new Set(parsed.wishlistPaintIds))
+          : [],
+        inventoryModelIds: Array.isArray(parsed.inventoryModelIds)
+          ? Array.from(new Set(parsed.inventoryModelIds))
+          : [],
+        wishlistModelIds: Array.isArray(parsed.wishlistModelIds)
+          ? Array.from(new Set(parsed.wishlistModelIds))
           : [],
         customPaints: Array.isArray(parsed.customPaints) ? parsed.customPaints : [],
         customCompatibilityOverrides:
@@ -217,6 +228,52 @@ export class UserStateService {
       this.showToast(`Added ${added} paint${added > 1 ? 's' : ''} to your Inventory`);
     }
     return added;
+  }
+
+  /* ========================================================================
+     MODEL INVENTORY & WISHLIST ACTIONS
+     ======================================================================== */
+
+  isModelOwned(modelId: string): boolean {
+    return this.modelInventorySet().has(modelId);
+  }
+
+  isModelWishlisted(modelId: string): boolean {
+    return this.modelWishlistSet().has(modelId);
+  }
+
+  toggleModelInventory(modelId: string): void {
+    this.commit((prev) => {
+      const inv = new Set(prev.inventoryModelIds ?? []);
+      const wish = new Set(prev.wishlistModelIds ?? []);
+      if (inv.has(modelId)) {
+        inv.delete(modelId);
+      } else {
+        inv.add(modelId);
+        // Moving to model inventory automatically clears from model wishlist
+        wish.delete(modelId);
+      }
+      return {
+        ...prev,
+        inventoryModelIds: Array.from(inv),
+        wishlistModelIds: Array.from(wish),
+      };
+    });
+  }
+
+  toggleModelWishlist(modelId: string): void {
+    this.commit((prev) => {
+      const wish = new Set(prev.wishlistModelIds ?? []);
+      if (wish.has(modelId)) {
+        wish.delete(modelId);
+      } else {
+        wish.add(modelId);
+      }
+      return {
+        ...prev,
+        wishlistModelIds: Array.from(wish),
+      };
+    });
   }
 
   /* ========================================================================
@@ -519,12 +576,24 @@ export class UserStateService {
       const incomingWish = Array.isArray(rawPayload['wishlistPaintIds'])
         ? (rawPayload['wishlistPaintIds'] as string[])
         : [];
+      const incomingModelInv = Array.isArray(rawPayload['inventoryModelIds'])
+        ? (rawPayload['inventoryModelIds'] as string[])
+        : [];
+      const incomingModelWish = Array.isArray(rawPayload['wishlistModelIds'])
+        ? (rawPayload['wishlistModelIds'] as string[])
+        : [];
 
       const invSet = new Set([...base.inventoryPaintIds, ...incomingInv]);
       const wishSet = new Set([...base.wishlistPaintIds, ...incomingWish]);
       // Ensure owned items are not simultaneously wishlisted
       for (const id of invSet) {
         wishSet.delete(id);
+      }
+
+      const modelInvSet = new Set([...(base.inventoryModelIds ?? []), ...incomingModelInv]);
+      const modelWishSet = new Set([...(base.wishlistModelIds ?? []), ...incomingModelWish]);
+      for (const id of modelInvSet) {
+        modelWishSet.delete(id);
       }
 
       // Normalize projects from either web app backup or extracted APK user_account.json
@@ -618,6 +687,8 @@ export class UserStateService {
         ...base,
         inventoryPaintIds: Array.from(invSet),
         wishlistPaintIds: Array.from(wishSet),
+        inventoryModelIds: Array.from(modelInvSet),
+        wishlistModelIds: Array.from(modelWishSet),
         customPaints: Array.from(customPaintMap.values()),
         projects: Array.from(projectMap.values()),
       };
@@ -663,7 +734,7 @@ export class UserStateService {
   initAuthListener(): void {
     const fb = getFirebaseHandles();
     if (!fb) {
-      this.cloudSyncStatus.set('local-only');
+      this.cloudSyncStatus.set(CloudSyncStatus.LocalOnly);
       return;
     }
     onAuthStateChanged(fb.auth, async (user) => {
@@ -673,7 +744,7 @@ export class UserStateService {
         this.unsubscribeFirestore = null;
       }
       if (user) {
-        this.cloudSyncStatus.set('syncing');
+        this.cloudSyncStatus.set(CloudSyncStatus.Syncing);
         const userDocRef = doc(fb.db, 'users', user.uid);
         try {
           const snap = await getDoc(userDocRef);
@@ -685,18 +756,25 @@ export class UserStateService {
             if (docSnap.exists()) {
               const remote = docSnap.data() as UserAccountState;
               if (remote.updatedAt && remote.updatedAt > this.state().updatedAt) {
-                this.state.set(remote);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+                const normalized: UserAccountState = {
+                  ...remote,
+                  inventoryPaintIds: remote.inventoryPaintIds ?? [],
+                  wishlistPaintIds: remote.wishlistPaintIds ?? [],
+                  inventoryModelIds: remote.inventoryModelIds ?? [],
+                  wishlistModelIds: remote.wishlistModelIds ?? [],
+                };
+                this.state.set(normalized);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
               }
             }
           });
-          this.cloudSyncStatus.set('synced');
+          this.cloudSyncStatus.set(CloudSyncStatus.Synced);
         } catch (err) {
           console.warn('Firestore user sync failed:', err);
-          this.cloudSyncStatus.set('error');
+          this.cloudSyncStatus.set(CloudSyncStatus.Error);
         }
       } else {
-        this.cloudSyncStatus.set('local-only');
+        this.cloudSyncStatus.set(CloudSyncStatus.LocalOnly);
       }
     });
   }
@@ -706,11 +784,11 @@ export class UserStateService {
     const user = this.currentUser();
     if (!fb || !user) return;
     try {
-      this.cloudSyncStatus.set('syncing');
+      this.cloudSyncStatus.set(CloudSyncStatus.Syncing);
       await setDoc(doc(fb.db, 'users', user.uid), stateToSave, { merge: true });
-      this.cloudSyncStatus.set('synced');
+      this.cloudSyncStatus.set(CloudSyncStatus.Synced);
     } catch {
-      this.cloudSyncStatus.set('error');
+      this.cloudSyncStatus.set(CloudSyncStatus.Error);
     }
   }
 

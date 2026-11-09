@@ -26,13 +26,21 @@
         <span class="kpi-num">{{ userState.projects().length }}</span>
         <span class="kpi-label">Projects</span>
       </button>
+      <button class="kpi-pill owned" (click)="openModelsTab('inventory')">
+        <span class="kpi-num">{{ userState.state().inventoryModelIds.length }}</span>
+        <span class="kpi-label">Owned Models</span>
+      </button>
+      <button class="kpi-pill wishlist" (click)="openModelsTab('wishlist')">
+        <span class="kpi-num">{{ userState.state().wishlistModelIds.length }}</span>
+        <span class="kpi-label">Model Wishlist</span>
+      </button>
       <button class="kpi-pill owned" (click)="openPaintsTab('inventory')">
         <span class="kpi-num">{{ userState.state().inventoryPaintIds.length }}</span>
         <span class="kpi-label">Owned Paints</span>
       </button>
       <button class="kpi-pill wishlist" (click)="openPaintsTab('wishlist')">
         <span class="kpi-num">{{ userState.state().wishlistPaintIds.length }}</span>
-        <span class="kpi-label">Wishlist</span>
+        <span class="kpi-label">Paint Wishlist</span>
       </button>
     </div>
   </header>
@@ -47,6 +55,15 @@
       >
         <img src="/icons/ic_project.svg" alt="" class="tab-ic" />
         <span>My Projects ({{ userState.projects().length }})</span>
+      </button>
+
+      <button
+        class="subtab-btn"
+        [class.active]="activeTab() === 'models'"
+        (click)="activeTab.set('models')"
+      >
+        <img src="/icons/ic_models.svg" alt="" class="tab-ic" />
+        <span>My Models ({{ userState.state().inventoryModelIds.length }} / {{ userState.state().wishlistModelIds.length }}★)</span>
       </button>
 
       <button
@@ -107,14 +124,6 @@
                   [alt]="proj.name"
                   class="project-thumb"
                 />
-                @if (getProjectReadiness(proj); as ready) {
-                  <span
-                    class="readiness-pill"
-                    [class.full]="ready.matchPercent === 100"
-                  >
-                    {{ ready.matchPercent }}% Paint Ready ({{ ready.ownedDirectCount + ready.substitutedCount }}/{{ ready.totalRequired }})
-                  </span>
-                }
               </div>
 
               <div class="project-body">
@@ -126,6 +135,47 @@
                   <span>•</span>
                   <span>{{ proj.notes.length }} Notes</span>
                 </div>
+
+                @if (getProjectReadiness(proj); as staged) {
+                  <div class="card-stage-grid">
+                    <div
+                      class="card-stage-pill"
+                      [class.ready-full]="staged.base.totalRequired > 0 && staged.base.matchPercent === 100"
+                    >
+                      <span class="cs-label">1. Base</span>
+                      <strong class="cs-val">
+                        {{ staged.base.totalRequired > 0 ? staged.base.matchPercent + '%' : '—' }}
+                      </strong>
+                      <span class="cs-sub">
+                        {{ staged.base.ownedDirectCount + staged.base.substitutedCount }}/{{ staged.base.totalRequired }}
+                      </span>
+                    </div>
+                    <div
+                      class="card-stage-pill"
+                      [class.ready-full]="staged.detail.totalRequired > 0 && staged.detail.matchPercent === 100"
+                    >
+                      <span class="cs-label">2. Detail</span>
+                      <strong class="cs-val">
+                        {{ staged.detail.totalRequired > 0 ? staged.detail.matchPercent + '%' : '—' }}
+                      </strong>
+                      <span class="cs-sub">
+                        {{ staged.detail.ownedDirectCount + staged.detail.substitutedCount }}/{{ staged.detail.totalRequired }}
+                      </span>
+                    </div>
+                    <div
+                      class="card-stage-pill"
+                      [class.ready-full]="staged.artificer.totalRequired > 0 && staged.artificer.matchPercent === 100"
+                    >
+                      <span class="cs-label">3. Artificer</span>
+                      <strong class="cs-val">
+                        {{ staged.artificer.totalRequired > 0 ? staged.artificer.matchPercent + '%' : '—' }}
+                      </strong>
+                      <span class="cs-sub">
+                        {{ staged.artificer.ownedDirectCount + staged.artificer.substitutedCount }}/{{ staged.artificer.totalRequired }}
+                      </span>
+                    </div>
+                  </div>
+                }
               </div>
 
               <div class="project-footer" (click)="$event.stopPropagation()">
@@ -162,6 +212,180 @@
               Import My Warhammer Account →
             </a>
           </div>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ====================================================================
+       SUB-TAB 1B: MY MODELS (MODEL INVENTORY, MODEL WISHLIST & CATALOGUE)
+       ==================================================================== -->
+  @if (!isAccountPage() && activeTab() === 'models') {
+    <section class="tab-content">
+      <div class="paints-mode-row">
+        <div class="chip-bar">
+          <button
+            class="chip"
+            [class.active]="modelSubMode() === 'inventory'"
+            (click)="modelSubMode.set('inventory'); modelVisibleLimit.set(60)"
+          >
+            ✓ My Model Inventory ({{ userState.state().inventoryModelIds.length }})
+          </button>
+          <button
+            class="chip"
+            [class.active]="modelSubMode() === 'wishlist'"
+            (click)="modelSubMode.set('wishlist'); modelVisibleLimit.set(60)"
+          >
+            ★ My Model Wishlist ({{ userState.state().wishlistModelIds.length }})
+          </button>
+          <button
+            class="chip"
+            [class.active]="modelSubMode() === 'catalogue'"
+            (click)="modelSubMode.set('catalogue'); modelVisibleLimit.set(60)"
+          >
+            All Models Catalogue ({{ catalog.models().length | number }})
+          </button>
+        </div>
+
+        <a routerLink="/models" class="btn btn-secondary">
+          Explore Full Model Hierarchy →
+        </a>
+      </div>
+
+      <div class="toolbar-row">
+        <div class="search-box">
+          <input
+            type="text"
+            class="input-control"
+            placeholder="Search models by name, faction, or game system..."
+            [ngModel]="modelSearch()"
+            (ngModelChange)="modelSearch.set($event); modelVisibleLimit.set(60)"
+          />
+        </div>
+
+        <div class="toolbar-right">
+          <select
+            class="input-control filter-select"
+            [ngModel]="selectedModelGameFilter()"
+            (ngModelChange)="selectedModelGameFilter.set($event); modelVisibleLimit.set(60)"
+          >
+            <option value="all">All Game Systems</option>
+            @for (g of catalog.games(); track g.id) {
+              <option [value]="g.id">{{ g.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (displayedModels().length > 0) {
+        <div class="desk-models-grid">
+          @for (item of displayedModels(); track item.model.id) {
+            <div
+              class="desk-model-card studio-card interactive"
+              (click)="openModel(item.model.id)"
+            >
+              <div class="desk-model-thumb-wrap">
+                <img
+                  [src]="img.resolve(item.model.localPrimaryImage, item.model.primaryImage)"
+                  [alt]="item.model.name"
+                  class="desk-model-thumb"
+                  loading="lazy"
+                />
+              </div>
+
+              <div class="desk-model-body">
+                <h3 class="desk-model-title">{{ item.model.name }}</h3>
+                <span class="desk-model-sub">
+                  {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Warhammer Miniature' }}
+                </span>
+
+                <div class="card-stage-grid">
+                  <div
+                    class="card-stage-pill"
+                    [class.ready-full]="item.staged.base.totalRequired > 0 && item.staged.base.matchPercent === 100"
+                  >
+                    <span class="cs-label">1. Base</span>
+                    <strong class="cs-val">
+                      {{ item.staged.base.totalRequired > 0 ? item.staged.base.matchPercent + '%' : '—' }}
+                    </strong>
+                    <span class="cs-sub">
+                      {{ item.staged.base.ownedDirectCount + item.staged.base.substitutedCount }}/{{ item.staged.base.totalRequired }}
+                    </span>
+                  </div>
+                  <div
+                    class="card-stage-pill"
+                    [class.ready-full]="item.staged.detail.totalRequired > 0 && item.staged.detail.matchPercent === 100"
+                  >
+                    <span class="cs-label">2. Detail</span>
+                    <strong class="cs-val">
+                      {{ item.staged.detail.totalRequired > 0 ? item.staged.detail.matchPercent + '%' : '—' }}
+                    </strong>
+                    <span class="cs-sub">
+                      {{ item.staged.detail.ownedDirectCount + item.staged.detail.substitutedCount }}/{{ item.staged.detail.totalRequired }}
+                    </span>
+                  </div>
+                  <div
+                    class="card-stage-pill"
+                    [class.ready-full]="item.staged.artificer.totalRequired > 0 && item.staged.artificer.matchPercent === 100"
+                  >
+                    <span class="cs-label">3. Artificer</span>
+                    <strong class="cs-val">
+                      {{ item.staged.artificer.totalRequired > 0 ? item.staged.artificer.matchPercent + '%' : '—' }}
+                    </strong>
+                    <span class="cs-sub">
+                      {{ item.staged.artificer.ownedDirectCount + item.staged.artificer.substitutedCount }}/{{ item.staged.artificer.totalRequired }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="desk-model-actions" (click)="$event.stopPropagation()">
+                <button
+                  class="icon-toggle"
+                  [class.active-owned]="userState.isModelOwned(item.model.id)"
+                  (click)="userState.toggleModelInventory(item.model.id)"
+                  title="Toggle Model Inventory"
+                >
+                  {{ userState.isModelOwned(item.model.id) ? '✓ Owned' : '+ Own Model' }}
+                </button>
+                <button
+                  class="icon-toggle"
+                  [class.active-wish]="userState.isModelWishlisted(item.model.id)"
+                  (click)="userState.toggleModelWishlist(item.model.id)"
+                  title="Toggle Model Wishlist"
+                >
+                  {{ userState.isModelWishlisted(item.model.id) ? '★' : '☆' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (filteredModels().length > modelVisibleLimit()) {
+          <div style="display: flex; justify-content: center; padding: 12px 0">
+            <button class="btn btn-secondary" (click)="loadMoreModels()">
+              Load More Models ({{ filteredModels().length - modelVisibleLimit() | number }} remaining)
+            </button>
+          </div>
+        }
+      } @else {
+        <div class="empty-state studio-card">
+          <img src="/icons/ic_models.svg" alt="" class="empty-ic" />
+          <h3>No Matching Models</h3>
+          <p>
+            @if (modelSubMode() === 'inventory') {
+              Your Model Inventory is empty or has no models matching the current filters. Switch to "All Models Catalogue" or visit "Paint A Model" to mark miniatures you own!
+            } @else if (modelSubMode() === 'wishlist') {
+              Your Model Wishlist is currently empty. Mark any miniature you plan to collect or paint with ★!
+            } @else {
+              No models match your current search or game system filter.
+            }
+          </p>
+          @if (modelSubMode() !== 'catalogue') {
+            <button class="btn btn-gold" (click)="modelSubMode.set('catalogue')">
+              Browse All Models Catalogue
+            </button>
+          }
         </div>
       }
     </section>

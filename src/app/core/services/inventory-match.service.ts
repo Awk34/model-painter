@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import {
   InventoryReadinessResult,
   PaintSubstituteMatch,
+  StagedReadinessResult,
 } from '../models/warhammer.models';
 import { CatalogService } from './catalog.service';
 import { UserStateService } from './user-state.service';
@@ -20,8 +21,8 @@ export class InventoryMatchService {
    * - Official Citadel Classic <-> Tone Pro compatibility (when `allowCompatibleSubstitutions` is enabled)
    * - Pre-seeded & custom 3rd-party paint equivalents (when `allowThirdPartySubstitutions` is enabled)
    */
-  evaluateReadiness(requiredPaintIds: string[]): InventoryReadinessResult {
-    const deduped = Array.from(new Set(requiredPaintIds.filter(Boolean)));
+  evaluateReadiness(requiredPaintIds?: string[] | null): InventoryReadinessResult {
+    const deduped = Array.from(new Set((requiredPaintIds ?? []).filter(Boolean)));
     if (deduped.length === 0) {
       return {
         totalRequired: 0,
@@ -164,6 +165,34 @@ export class InventoryMatchService {
       ownedDirectIds,
       substitutedByPaintId,
       missingPaintIds,
+    };
+  }
+
+  /**
+   * Computes "Can I Paint This?" readiness split across the 3 Citadel finish tiers:
+   * 1. Base Finish (Battle Ready)
+   * 2. Detail Finish (Parade Ready)
+   * 3. Artificer Finish (Masterclass)
+   */
+  evaluateStagedReadiness(stages: {
+    base?: string[] | null;
+    detail?: string[] | null;
+    artificer?: string[] | null;
+    all?: string[] | null;
+  }): StagedReadinessResult {
+    const baseIds = stages.base ?? [];
+    const detailIds = stages.detail ?? [];
+    const artificerIds = stages.artificer ?? [];
+    const allIds =
+      stages.all && stages.all.length > 0
+        ? stages.all
+        : [...baseIds, ...detailIds, ...artificerIds];
+
+    return {
+      base: this.evaluateReadiness(baseIds),
+      detail: this.evaluateReadiness(detailIds),
+      artificer: this.evaluateReadiness(artificerIds),
+      overall: this.evaluateReadiness(allIds),
     };
   }
 }

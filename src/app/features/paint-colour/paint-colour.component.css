@@ -1,0 +1,226 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.section-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #1b1f27 0%, #121419 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.hero-ic {
+  width: 42px;
+  height: 42px;
+}
+.hero-left h1 {
+  font-size: 1.9rem;
+  color: var(--gold-bright);
+}
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+.groups-panel {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.groups-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.field-label {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.basing-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.base-ic {
+  width: 18px;
+  height: 18px;
+}
+.mini-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  align-items: center;
+}
+.search-input-wrap {
+  flex: 1;
+  min-width: 240px;
+}
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.filter-select {
+  width: auto;
+  min-width: 210px;
+}
+.results-meta {
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+.colours-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+  gap: 16px;
+}
+.colour-card {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.colour-preview-box {
+  position: relative;
+  height: 175px;
+  background: radial-gradient(circle at center, #292f3b 0%, #14171d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+.colour-preview-box img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.fallback-swatch {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+}
+.swatch-corner {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.type-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+.ready-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(13, 14, 17, 0.86);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.ready-badge.ready-full {
+  color: var(--status-owned);
+  border-color: rgba(41, 194, 106, 0.5);
+}
+.colour-card-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.colour-name {
+  font-size: 1.05rem;
+}
+.colour-groups {
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+.card-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+.card-stage-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 4px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-void);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-sans);
+  text-align: center;
+}
+.card-stage-pill.target-active {
+  border-color: var(--gold-border);
+}
+.card-stage-pill.ready-full {
+  border-color: rgba(41, 194, 106, 0.5);
+  background: rgba(41, 194, 106, 0.08);
+}
+.card-stage-pill.ready-full .cs-val {
+  color: var(--status-owned);
+}
+.cs-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.cs-val {
+  font-size: 0.8rem;
+  color: var(--gold-bright);
+  line-height: 1.2;
+}
+.cs-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}

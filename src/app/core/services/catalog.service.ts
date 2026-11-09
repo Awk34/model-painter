@@ -1,6 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import {
   CatalogManifest,
+  CatalogSyncStatus,
   CitadelThirdPartyMatchRef,
   ColourDetails,
   ColourGroup,
@@ -26,7 +27,7 @@ const STORE_COLOURS = 'colours';
 })
 export class CatalogService {
   readonly loading = signal<boolean>(true);
-  readonly syncStatus = signal<'hydrating' | 'up-to-date' | 'updating' | 'offline-cached'>('hydrating');
+  readonly syncStatus = signal<CatalogSyncStatus>(CatalogSyncStatus.Hydrating);
   readonly lastCheckedAt = signal<string | null>(null);
   readonly updatedBundlesList = signal<string[]>([]);
 
@@ -142,9 +143,10 @@ export class CatalogService {
   });
 
   private dbPromise: Promise<IDBDatabase> | null = null;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initializeCatalog();
+    this.initPromise = this.initializeCatalog();
   }
 
   private openIdb(): Promise<IDBDatabase> {
@@ -225,8 +227,14 @@ export class CatalogService {
    * 3. Compare bundle hashes and fetch ONLY changed/missing bundles.
    */
   async initializeCatalog(forceFullRefresh = false): Promise<void> {
+    const run = this.runInitializeCatalog(forceFullRefresh);
+    this.initPromise = run;
+    return run;
+  }
+
+  private async runInitializeCatalog(forceFullRefresh = false): Promise<void> {
     this.loading.set(true);
-    this.syncStatus.set('hydrating');
+    this.syncStatus.set(CatalogSyncStatus.Hydrating);
 
     if (forceFullRefresh) {
       await this.idbClearAll();
@@ -248,15 +256,17 @@ export class CatalogService {
       const staleBundles: string[] = [];
 
       for (const bundleId of requiredBundles) {
-        const remoteHash = remoteManifest.bundles[bundleId]?.hash;
-        const localHash = cachedManifest?.bundles?.[bundleId]?.hash;
+        const remoteEntry = remoteManifest.bundles[bundleId];
+        const localEntry = cachedManifest?.bundles?.[bundleId];
+        const remoteHash = typeof remoteEntry === 'string' ? remoteEntry : remoteEntry?.hash;
+        const localHash = typeof localEntry === 'string' ? localEntry : localEntry?.hash;
         if (!cachedManifest || remoteHash !== localHash) {
           staleBundles.push(bundleId);
         }
       }
 
       if (staleBundles.length > 0) {
-        this.syncStatus.set('updating');
+        this.syncStatus.set(CatalogSyncStatus.Updating);
         this.updatedBundlesList.set(staleBundles);
         await Promise.all(
           staleBundles.map(async (bundleId) => {
@@ -271,10 +281,10 @@ export class CatalogService {
       }
 
       this.lastCheckedAt.set(new Date().toISOString());
-      this.syncStatus.set('up-to-date');
+      this.syncStatus.set(CatalogSyncStatus.UpToDate);
     } catch (err) {
       console.warn('Manifest check failed, using cached/fallback data:', err);
-      this.syncStatus.set('offline-cached');
+      this.syncStatus.set(CatalogSyncStatus.OfflineCached);
     } finally {
       this.loading.set(false);
     }
@@ -335,7 +345,28 @@ export class CatalogService {
       );
     }
     if (coloursBundle) {
-      this.colours.set(coloursBundle.colours ?? []);
+      const normalizedColours = (coloursBundle.colours ?? []).map((c) => {
+        const rawGroups = (c.colourGroups ?? []) as (string | { name?: string })[];
+        const normalizedGroups = rawGroups
+          .map((g) => (typeof g === 'string' ? g : g?.name ?? ''))
+          .filter(Boolean);
+        const basePaintIds = c.basePaintIds ?? c.paintsByStage?.base ?? [];
+        const detailPaintIds = c.detailPaintIds ?? c.paintsByStage?.detail ?? [];
+        const artificerPaintIds = c.artificerPaintIds ?? c.paintsByStage?.artificer ?? [];
+        const requiredPaintIds =
+          c.requiredPaintIds ??
+          c.allPaintIds ??
+          Array.from(new Set([...basePaintIds, ...detailPaintIds, ...artificerPaintIds]));
+        return {
+          ...c,
+          colourGroups: normalizedGroups,
+          basePaintIds,
+          detailPaintIds,
+          artificerPaintIds,
+          requiredPaintIds,
+        };
+      });
+      this.colours.set(normalizedColours);
       this.colourGroups.set(coloursBundle.colourGroups ?? []);
     }
     if (gamesBundle) {
@@ -349,7 +380,29 @@ export class CatalogService {
       ...(m3?.models ?? []),
       ...(m4?.models ?? []),
       ...(m5?.models ?? []),
-    ];
+    ].map((m) => ({
+      ...m,
+      gameIds: m.gameIds ?? [],
+      gameNames: m.gameNames ?? [],
+      factionIds: m.factionIds ?? [],
+      factionNames: m.factionNames ?? [],
+      colourIds: m.colourIds ?? [],
+      paintsByStage: {
+        base: m.paintsByStage?.base ?? [],
+        detail: m.paintsByStage?.detail ?? [],
+        artificer: m.paintsByStage?.artificer ?? [],
+      },
+      requiredPaintIds:
+        m.requiredPaintIds ??
+        m.allPaintIds ??
+        Array.from(
+          new Set([
+            ...(m.paintsByStage?.base ?? []),
+            ...(m.paintsByStage?.detail ?? []),
+            ...(m.paintsByStage?.artificer ?? []),
+          ])
+        ),
+    }));
     if (allModels.length > 0) {
       this.models.set(allModels);
     }
@@ -379,6 +432,9 @@ export class CatalogService {
    * Checks IndexedDB cache and validates `updatedAt` against the model summary in `models_index_*`.
    */
   async getModelRecipe(recipeId: string): Promise<ModelRecipe | null> {
+    if (this.models().length === 0 && this.initPromise) {
+      await this.initPromise;
+    }
     const summary = this.modelById().get(recipeId);
     const cached = await this.idbGet<ModelRecipe>(STORE_RECIPES, recipeId);
 
@@ -396,29 +452,15 @@ export class CatalogService {
           return data;
         }
       } catch {
-        // fallback to static JSON
+        // fallback to summary synthesis
       }
-    }
-
-    try {
-      const resp = await fetch(`/data/recipes/${recipeId}.json`);
-      if (resp.ok) {
-        const data = (await resp.json()) as ModelRecipe;
-        if (summary?.updatedAt) {
-          data.updatedAt = summary.updatedAt;
-        }
-        await this.idbSet(STORE_RECIPES, recipeId, data);
-        return data;
-      }
-    } catch {
-      // fall through to summary synthesis
     }
 
     if (cached) return cached;
     if (!summary) return null;
 
     // Synthesize from bundle summary when running without split recipe files
-    const colourPoints = summary.colourIds
+    const colourPoints = (summary.colourIds ?? [])
       .map((cid, idx) => {
         const col = this.colourById().get(cid);
         if (!col) return null;
@@ -435,20 +477,28 @@ export class CatalogService {
       })
       .filter((x): x is NonNullable<typeof x> => Boolean(x));
 
-    const steps = summary.requiredPaintIds
+    const baseSet = new Set(summary.paintsByStage?.base ?? []);
+    const detailSet = new Set(summary.paintsByStage?.detail ?? []);
+
+    const steps = (summary.requiredPaintIds ?? [])
       .map((pid, idx) => {
         const p = this.paintById().get(pid);
         if (!p) return null;
+        const catLower = (p.category ?? '').toLowerCase();
+        const paintingStage = baseSet.has(pid)
+          ? 'Base Finish'
+          : detailSet.has(pid)
+          ? 'Detail Finish'
+          : catLower === 'base' || catLower === 'spray'
+          ? 'Base Finish'
+          : catLower === 'shade' || catLower === 'contrast'
+          ? 'Detail Finish'
+          : 'Artificer Finish';
         return {
           id: `st_${pid}`,
           stepOrder: idx + 1,
           stepNumber: idx + 1,
-          paintingStage:
-            p.category === 'Base'
-              ? 'Base Finish'
-              : p.category === 'Shade' || p.category === 'Contrast'
-              ? 'Detail Finish'
-              : 'Artificer Finish',
+          paintingStage,
           techniqueName: p.category,
           paint: {
             id: p.id,
@@ -467,15 +517,15 @@ export class CatalogService {
       id: summary.id,
       name: summary.name,
       range: summary.range,
-      games: summary.gameIds.map((gid, i) => ({
+      games: (summary.gameIds ?? []).map((gid, i) => ({
         id: gid,
-        name: summary.gameNames[i] ?? 'Warhammer',
+        name: summary.gameNames?.[i] ?? 'Warhammer',
       })),
-      factions: summary.factionIds.map((fid, i) => ({
-        gameId: summary.gameIds[0] ?? '',
-        gameName: summary.gameNames[0] ?? '',
+      factions: (summary.factionIds ?? []).map((fid, i) => ({
+        gameId: summary.gameIds?.[0] ?? '',
+        gameName: summary.gameNames?.[0] ?? '',
         factionId: fid,
-        factionName: summary.factionNames[i] ?? '',
+        factionName: summary.factionNames?.[i] ?? '',
       })),
       images: summary.primaryImage ? [summary.primaryImage] : [],
       localImagePaths: summary.localPrimaryImage ? [summary.localPrimaryImage] : [],
@@ -497,6 +547,9 @@ export class CatalogService {
    * Checks IndexedDB cache and validates `updatedAt` against the colour summary in `colours_bundle`.
    */
   async getColourDetails(colourId: string): Promise<ColourDetails | null> {
+    if (this.colours().length === 0 && this.initPromise) {
+      await this.initPromise;
+    }
     const summary = this.colourById().get(colourId);
     const cached = await this.idbGet<ColourDetails>(STORE_COLOURS, colourId);
 
@@ -514,23 +567,63 @@ export class CatalogService {
           return data;
         }
       } catch {
-        // fallback to static JSON
+        // fallback to summary synthesis
       }
     }
 
-    try {
-      const resp = await fetch(`/data/colours/${colourId}.json`);
-      if (resp.ok) {
-        const data = (await resp.json()) as ColourDetails;
-        if (summary?.updatedAt) {
-          data.updatedAt = summary.updatedAt;
-        }
-        await this.idbSet(STORE_COLOURS, colourId, data);
-        return data;
-      }
-    } catch {
-      // fall through
-    }
-    return cached ?? null;
+    if (cached) return cached;
+    if (!summary) return null;
+
+    const toSteps = (ids?: string[]) =>
+      (ids ?? [])
+        .map((pid, idx) => {
+          const p = this.paintById().get(pid);
+          if (!p) return null;
+          return {
+            id: `cs_${pid}_${idx}`,
+            stepOrder: idx + 1,
+            technique: p.category,
+            paint: {
+              id: p.id,
+              name: p.name,
+              category: p.category,
+              range: p.range,
+              hex: p.gradientStartHex,
+              gradientStartHex: p.gradientStartHex,
+              imageUrl: p.imageUrl,
+              localImagePath: p.localImagePath,
+            },
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => Boolean(x));
+
+    return {
+      id: summary.id,
+      name: summary.name,
+      hex: summary.hex,
+      range: summary.range,
+      guideType: summary.guideType,
+      colourGroups: summary.colourGroups,
+      imageUrl: summary.imageUrl,
+      localImagePath: summary.localImagePath,
+      headerImage: summary.headerImage,
+      localHeaderImagePath: summary.localHeaderImagePath,
+      baseFinish: {
+        backpackImage: summary.imageUrl,
+        localBackpackImagePath: summary.localImagePath,
+        stages: toSteps(summary.basePaintIds),
+      },
+      detailFinish: {
+        backpackImage: summary.imageUrl,
+        localBackpackImagePath: summary.localImagePath,
+        stages: toSteps(summary.detailPaintIds),
+      },
+      artificerFinish: {
+        backpackImage: summary.imageUrl,
+        localBackpackImagePath: summary.localImagePath,
+        stages: toSteps(summary.artificerPaintIds),
+      },
+      updatedAt: summary.updatedAt,
+    };
   }
 }

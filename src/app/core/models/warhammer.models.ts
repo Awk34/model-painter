@@ -1,3 +1,17 @@
+export enum CatalogSyncStatus {
+  Hydrating = 'hydrating',
+  UpToDate = 'up-to-date',
+  Updating = 'updating',
+  OfflineCached = 'offline-cached',
+}
+
+export enum CloudSyncStatus {
+  LocalOnly = 'local-only',
+  Synced = 'synced',
+  Syncing = 'syncing',
+  Error = 'error',
+}
+
 export interface ToneProPentadPaint {
   id: string;
   name: string;
@@ -85,6 +99,12 @@ export interface ColourSummary {
   detailPaintIds: string[];
   artificerPaintIds: string[];
   requiredPaintIds: string[];
+  allPaintIds?: string[];
+  paintsByStage?: {
+    base?: string[];
+    detail?: string[];
+    artificer?: string[];
+  };
   updatedAt?: string;
 }
 
@@ -169,6 +189,12 @@ export interface ModelSummary {
   factionNames: string[];
   colourIds: string[];
   requiredPaintIds: string[];
+  allPaintIds?: string[];
+  paintsByStage?: {
+    base?: string[];
+    detail?: string[];
+    artificer?: string[];
+  };
   updatedAt?: string;
 }
 
@@ -241,16 +267,17 @@ export interface ModelRecipe {
 
 export interface CatalogBundleMeta {
   hash: string;
-  updatedAt: string;
+  updatedAt?: string;
   sizeBytes?: number;
   count?: number;
 }
 
 export interface CatalogManifest {
-  catalogVersion: string;
+  catalogVersion?: string;
+  schemaVersion?: number;
   updatedAt: string;
-  bundles: Record<string, CatalogBundleMeta>;
-  counts: {
+  bundles: Record<string, CatalogBundleMeta | string>;
+  counts?: {
     paints: number;
     thirdPartyPaints: number;
     colours: number;
@@ -298,6 +325,8 @@ export interface UserAccountState {
   updatedAt: string;
   inventoryPaintIds: string[];
   wishlistPaintIds: string[];
+  inventoryModelIds: string[];
+  wishlistModelIds: string[];
   customPaints: ThirdPartyPaint[];
   /** Maps Citadel Paint ID -> Array of user-linked Equivalent Paint IDs */
   customCompatibilityOverrides: Record<string, string[]>;
@@ -315,6 +344,8 @@ export interface PaintSubstituteMatch {
   deltaE?: number;
 }
 
+export type FinishStageKey = 'base' | 'detail' | 'artificer';
+
 export interface InventoryReadinessResult {
   totalRequired: number;
   ownedDirectCount: number;
@@ -324,4 +355,11 @@ export interface InventoryReadinessResult {
   ownedDirectIds: string[];
   substitutedByPaintId: Record<string, PaintSubstituteMatch>;
   missingPaintIds: string[];
+}
+
+export interface StagedReadinessResult {
+  base: InventoryReadinessResult;
+  detail: InventoryReadinessResult;
+  artificer: InventoryReadinessResult;
+  overall: InventoryReadinessResult;
 }

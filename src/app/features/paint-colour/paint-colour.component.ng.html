@@ -1,0 +1,198 @@
+<div class="page-container">
+  <!-- Header -->
+  <header class="section-hero">
+    <div class="hero-left">
+      <img src="/icons/ic_colour.svg" alt="" class="hero-ic" />
+      <div>
+        <h1>Paint A Colour</h1>
+        <p class="subtitle">
+          Explore {{ catalog.colours().length }} official Citadel colour & basing guides across {{ catalog.colourGroups().length }} colour families, complete with Base, Detail, and Artificer Space Marine backpack showcases.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 16 Colour Group Filter Chips -->
+  <section class="groups-panel studio-card">
+    <div class="groups-top-row">
+      <span class="field-label">Filter by Colour Family:</span>
+
+      <label class="basing-toggle">
+        <input
+          type="checkbox"
+          [ngModel]="onlyBasing()"
+          (ngModelChange)="onlyBasing.set($event)"
+        />
+        <img src="/icons/ic_bases.svg" alt="" class="base-ic" />
+        <span>Only show guides for painting bases (17 Basing Guides)</span>
+      </label>
+    </div>
+
+    <div class="chip-bar">
+      <button
+        class="chip"
+        [class.active]="!selectedGroup()"
+        (click)="selectedGroup.set(null)"
+      >
+        All Colour Families ({{ catalog.colours().length }})
+      </button>
+
+      @for (grp of catalog.colourGroups(); track grp.id) {
+        <button
+          class="chip"
+          [class.active]="selectedGroup() === grp.name"
+          (click)="selectedGroup.set(grp.name)"
+        >
+          @if (grp.hex) {
+            <span class="mini-dot" [style.background]="grp.hex"></span>
+          }
+          <span>{{ grp.name }}</span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <!-- Search, Range & Readiness Filter Bar -->
+  <section class="filters-bar studio-card">
+    <div class="search-input-wrap">
+      <input
+        type="text"
+        class="input-control"
+        placeholder="Search colours by name, shade, or family (e.g., Ultramarine Blue, Pale Skin, Lava Base)..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+
+    <div class="filter-controls">
+      <select
+        class="input-control filter-select"
+        [ngModel]="targetStage()"
+        (ngModelChange)="targetStage.set($event)"
+        title="Target Finish Stage for Readiness Filtering"
+      >
+        <option value="base">Target: 1. Base Finish (Battle Ready)</option>
+        <option value="detail">Target: 2. Detail Finish (Parade Ready)</option>
+        <option value="artificer">Target: 3. Artificer Finish</option>
+      </select>
+
+      <select
+        class="input-control filter-select"
+        [ngModel]="readinessFilter()"
+        (ngModelChange)="readinessFilter.set($event)"
+      >
+        <option value="all">Can I Paint This? — All Colours</option>
+        <option value="ready100">✓ 100% Ready for Target Finish</option>
+        <option value="missing1">⚡ Missing ≤ 1 Paint for Target Finish</option>
+        <option value="sortReady">Sort by Highest Match % (Target Finish)</option>
+      </select>
+
+      <select
+        class="input-control filter-select"
+        [ngModel]="rangeFilter()"
+        (ngModelChange)="rangeFilter.set($event)"
+      >
+        <option value="all">All Paint Ranges</option>
+        <option value="warhammer_colour">Citadel Colour (Classic)</option>
+        <option value="warhammer_pro">Citadel Tone Pro</option>
+      </select>
+    </div>
+  </section>
+
+  <div class="results-meta">
+    <span>Showing <strong>{{ filteredColours().length }}</strong> matching colour guides</span>
+  </div>
+
+  <!-- Colours Grid -->
+  @if (filteredColours().length > 0) {
+    <div class="colours-grid">
+      @for (item of filteredColours(); track item.colour.id) {
+        <div
+          class="colour-card studio-card interactive"
+          (click)="openColour(item.colour.id)"
+        >
+          <div class="colour-preview-box">
+            @if (item.colour.localImagePath || item.colour.imageUrl) {
+              <img
+                [src]="img.resolve(item.colour.localImagePath, item.colour.imageUrl)"
+                [alt]="item.colour.name"
+                loading="lazy"
+              />
+            } @else {
+              <div class="fallback-swatch" [style.background]="item.colour.hex"></div>
+            }
+
+            <span
+              class="swatch-corner"
+              [style.background]="item.colour.hex"
+              [title]="item.colour.hex"
+            ></span>
+
+            @if (item.colour.guideType === 'basing') {
+              <span class="type-tag badge badge-gold">Basing Guide</span>
+            } @else if (item.colour.range === 'warhammer_pro') {
+              <span class="type-tag badge badge-pro">Tone Pro</span>
+            }
+          </div>
+
+          <div class="colour-card-body">
+            <h3 class="colour-name">{{ item.colour.name }}</h3>
+            <p class="colour-groups">
+              {{ item.colour.colourGroups.join(' • ') }} • {{ item.colour.requiredPaintIds.length }} Paints
+            </p>
+
+            <!-- 3-Tier "Can I Paint This?" Readiness Breakdown -->
+            <div class="card-stage-grid">
+              <div
+                class="card-stage-pill"
+                [class.target-active]="targetStage() === 'base'"
+                [class.ready-full]="item.staged.base.totalRequired > 0 && item.staged.base.matchPercent === 100"
+              >
+                <span class="cs-label">1. Base</span>
+                <strong class="cs-val">
+                  {{ item.staged.base.totalRequired > 0 ? item.staged.base.matchPercent + '%' : '—' }}
+                </strong>
+                <span class="cs-sub">
+                  {{ item.staged.base.ownedDirectCount + item.staged.base.substitutedCount }}/{{ item.staged.base.totalRequired }}
+                </span>
+              </div>
+
+              <div
+                class="card-stage-pill"
+                [class.target-active]="targetStage() === 'detail'"
+                [class.ready-full]="item.staged.detail.totalRequired > 0 && item.staged.detail.matchPercent === 100"
+              >
+                <span class="cs-label">2. Detail</span>
+                <strong class="cs-val">
+                  {{ item.staged.detail.totalRequired > 0 ? item.staged.detail.matchPercent + '%' : '—' }}
+                </strong>
+                <span class="cs-sub">
+                  {{ item.staged.detail.ownedDirectCount + item.staged.detail.substitutedCount }}/{{ item.staged.detail.totalRequired }}
+                </span>
+              </div>
+
+              <div
+                class="card-stage-pill"
+                [class.target-active]="targetStage() === 'artificer'"
+                [class.ready-full]="item.staged.artificer.totalRequired > 0 && item.staged.artificer.matchPercent === 100"
+              >
+                <span class="cs-label">3. Artificer</span>
+                <strong class="cs-val">
+                  {{ item.staged.artificer.totalRequired > 0 ? item.staged.artificer.matchPercent + '%' : '—' }}
+                </strong>
+                <span class="cs-sub">
+                  {{ item.staged.artificer.ownedDirectCount + item.staged.artificer.substitutedCount }}/{{ item.staged.artificer.totalRequired }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state studio-card">
+      <h3>No Colour Guides Match Your Filters</h3>
+      <button class="btn btn-gold" (click)="resetFilters()">Reset Filters</button>
+    </div>
+  }
+</div>

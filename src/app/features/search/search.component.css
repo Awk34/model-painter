@@ -1,0 +1,132 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.search-hero {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.search-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.search-ic {
+  width: 38px;
+  height: 38px;
+}
+.search-title-row h1 {
+  font-size: 1.85rem;
+  color: var(--gold-bright);
+}
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+.big-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.big-search {
+  font-size: 1.05rem;
+  padding: 14px 18px;
+}
+.clear-btn {
+  position: absolute;
+  right: 14px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+}
+.result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.result-section h2 {
+  font-size: 1.35rem;
+  color: var(--gold-bright);
+}
+.paints-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 10px;
+}
+.paint-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  gap: 10px;
+}
+.paint-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+.p-info {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+}
+.p-info span {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+.result-card {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.c-swatch-bar {
+  height: 64px;
+}
+.m-img-box {
+  height: 150px;
+  background: #15181f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+.m-img-box img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.r-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  flex: 1;
+}
+.r-body span {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+.r-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(0, 0, 0, 0.18);
+}

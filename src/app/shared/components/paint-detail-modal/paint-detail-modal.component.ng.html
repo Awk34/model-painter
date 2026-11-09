@@ -1,0 +1,280 @@
+@if (activePaintId(); as pid) {
+  <div class="modal-backdrop" (click)="close()">
+    <div class="modal-panel paint-modal" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="paint-header-main">
+          @if (citadelPaint(); as cp) {
+            <div class="pot-preview">
+              @if (cp.localImagePath || cp.imageUrl) {
+                <img
+                  [src]="img.resolve(cp.localImagePath, cp.imageUrl)"
+                  [alt]="cp.name"
+                  class="pot-img"
+                />
+              } @else {
+                <div
+                  class="paint-swatch large"
+                  [style.background]="cp.gradientStartHex"
+                ></div>
+              }
+            </div>
+            <div>
+              <div class="badge-row">
+                @if (cp.range === 'warhammer_pro') {
+                  <span class="badge badge-pro">Citadel Tone Pro</span>
+                } @else {
+                  <span class="badge badge-gold">Citadel Colour</span>
+                }
+                <span class="badge category-badge">{{ cp.category }}</span>
+                <span class="hex-pill">{{ cp.gradientStartHex }}</span>
+              </div>
+              <h2 class="paint-title">{{ cp.name }}</h2>
+            </div>
+          } @else {
+            @if (thirdPartyPaint(); as tp) {
+              <div class="pot-preview">
+                <div class="paint-swatch large" [style.background]="tp.hex"></div>
+              </div>
+              <div>
+                <div class="badge-row">
+                  <span class="badge badge-sub">{{ tp.brand }} — {{ tp.range }}</span>
+                  <span class="badge category-badge">{{ tp.category }}</span>
+                  @if (tp.code) {
+                    <span class="hex-pill">{{ tp.code }}</span>
+                  }
+                  <span class="hex-pill">{{ tp.hex }}</span>
+                </div>
+                <h2 class="paint-title">{{ tp.name }}</h2>
+              </div>
+            }
+          }
+        </div>
+
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <button
+          class="btn"
+          [class.btn-owned]="userState.isOwned(pid)"
+          [class.btn-secondary]="!userState.isOwned(pid)"
+          (click)="userState.toggleInventory(pid)"
+        >
+          <span>{{ userState.isOwned(pid) ? '✓ In Inventory' : '+ Add to Inventory' }}</span>
+        </button>
+
+        <button
+          class="btn"
+          [class.btn-wishlist]="userState.isWishlisted(pid)"
+          [class.btn-secondary]="!userState.isWishlisted(pid)"
+          (click)="userState.toggleWishlist(pid)"
+        >
+          <span>{{ userState.isWishlisted(pid) ? '★ On Wishlist' : '☆ Add to Wishlist' }}</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="modal-body">
+        <!-- Tone Pro 1-5 Pentad Strip -->
+        @if (citadelPaint()?.warhammerProRange?.length) {
+          <section class="modal-section">
+            <h3 class="section-title">Tone Pro 1–5 Pentad System</h3>
+            <p class="section-subtitle">
+              Official 5-step tonal progression for this Tone Pro triad/pentad family.
+            </p>
+            <div class="pentad-strip">
+              @for (step of citadelPaint()!.warhammerProRange!; track step.id; let idx = $index) {
+                <button
+                  class="pentad-step"
+                  [class.current]="step.id === pid"
+                  (click)="selectPaint(step.id)"
+                >
+                  <span class="pentad-num">{{ step.position || idx + 1 }}</span>
+                  <span class="pentad-swatch" [style.background]="step.hex"></span>
+                  <span class="pentad-name">{{ step.name }}</span>
+                  @if (userState.isOwned(step.id)) {
+                    <span class="owned-dot" title="Owned in Inventory">✓</span>
+                  }
+                </button>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Official Citadel Classic <-> Tone Pro Equivalents -->
+        @if (officialCitadelEquivalents().length > 0) {
+          <section class="modal-section">
+            <h3 class="section-title">
+              Official Citadel Classic ↔ Tone Pro Equivalents
+            </h3>
+            <div class="equiv-grid">
+              @for (eq of officialCitadelEquivalents(); track eq.id) {
+                <div class="equiv-card studio-card">
+                  <button class="equiv-main" (click)="selectPaint(eq.id)">
+                    <span class="paint-swatch" [style.background]="eq.hex"></span>
+                    <div class="equiv-info">
+                      <span class="equiv-name">{{ eq.name }}</span>
+                      <span class="equiv-meta">{{ eq.label }}</span>
+                    </div>
+                  </button>
+                  <button
+                    class="btn btn-sm"
+                    [class.btn-owned]="userState.isOwned(eq.id)"
+                    [class.btn-ghost]="!userState.isOwned(eq.id)"
+                    (click)="userState.toggleInventory(eq.id)"
+                  >
+                    {{ userState.isOwned(eq.id) ? '✓ Owned' : '+ Own' }}
+                  </button>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Cross-Brand 3rd-Party Equivalents (for Citadel Paints) -->
+        @if (citadelPaint()) {
+          <section class="modal-section">
+            <div class="section-header-row">
+              <div>
+                <h3 class="section-title">Cross-Brand 3rd-Party Paint Equivalents</h3>
+                <p class="section-subtitle">
+                  Owning any linked equivalent satisfies "Can I Paint This?" when 3rd-party substitutions are enabled.
+                </p>
+              </div>
+            </div>
+
+            @if (crossBrandMatches().length > 0) {
+              <div class="equiv-grid">
+                @for (m of crossBrandMatches(); track m.thirdPartyPaintId) {
+                  <div class="equiv-card studio-card">
+                    <button class="equiv-main" (click)="selectPaint(m.thirdPartyPaintId)">
+                      <span class="paint-swatch" [style.background]="m.hex"></span>
+                      <div class="equiv-info">
+                        <span class="equiv-name">{{ m.name }}</span>
+                        <span class="equiv-meta">
+                          {{ m.brand }} • {{ m.range }}
+                          @if (m.code) { ({{ m.code }}) }
+                        </span>
+                        <span class="delta-badge" [attr.data-quality]="m.matchQuality">
+                          ΔE {{ m.deltaE }} ({{ m.matchQuality }})
+                        </span>
+                      </div>
+                    </button>
+                    <button
+                      class="btn btn-sm"
+                      [class.btn-owned]="userState.isOwned(m.thirdPartyPaintId)"
+                      [class.btn-ghost]="!userState.isOwned(m.thirdPartyPaintId)"
+                      (click)="userState.toggleInventory(m.thirdPartyPaintId)"
+                    >
+                      {{ userState.isOwned(m.thirdPartyPaintId) ? '✓ Owned' : '+ Own' }}
+                    </button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="empty-hint">No pre-seeded cross-brand matches for this technical/specialty paint.</p>
+            }
+
+            <!-- Custom Override Linker -->
+            <div class="override-box">
+              <label class="override-label">Link Custom or 3rd-Party Equivalent Override:</label>
+              <div class="override-controls">
+                <select class="input-control" [(ngModel)]="selectedOverridePaintId">
+                  <option value="">Select a 3rd-party or custom paint...</option>
+                  @for (tp of allThirdPartyAndCustomPaints(); track tp.id) {
+                    <option [value]="tp.id">{{ tp.brand }} — {{ tp.name }} ({{ tp.range }})</option>
+                  }
+                </select>
+                <button
+                  class="btn btn-secondary"
+                  [disabled]="!selectedOverridePaintId"
+                  (click)="addCustomLink(pid)"
+                >
+                  + Link Equivalent
+                </button>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- Citadel Matches (when viewing a 3rd-Party Paint) -->
+        @if (thirdPartyPaint(); as tp) {
+          <section class="modal-section">
+            <h3 class="section-title">Equivalent Citadel Paints</h3>
+            <div class="equiv-grid">
+              @for (cm of tp.citadelMatches; track cm.citadelPaintId) {
+                <div class="equiv-card studio-card">
+                  <button class="equiv-main" (click)="selectPaint(cm.citadelPaintId)">
+                    <span class="paint-swatch" [style.background]="cm.citadelHex"></span>
+                    <div class="equiv-info">
+                      <span class="equiv-name">{{ cm.citadelPaintName }}</span>
+                      <span class="equiv-meta">
+                        {{ cm.citadelRange === 'warhammer_pro' ? 'Tone Pro' : 'Citadel Classic' }} • {{ cm.citadelCategory }}
+                      </span>
+                      <span class="delta-badge" [attr.data-quality]="cm.matchQuality">
+                        ΔE {{ cm.deltaE }} ({{ cm.matchQuality }})
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    class="btn btn-sm"
+                    [class.btn-owned]="userState.isOwned(cm.citadelPaintId)"
+                    [class.btn-ghost]="!userState.isOwned(cm.citadelPaintId)"
+                    (click)="userState.toggleInventory(cm.citadelPaintId)"
+                  >
+                    {{ userState.isOwned(cm.citadelPaintId) ? '✓ Owned' : '+ Own' }}
+                  </button>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Reverse Lookups: Colours & Models using this Paint -->
+        @if (citadelPaint()) {
+          <section class="modal-section">
+            <h3 class="section-title">
+              Colours Using This Paint ({{ coloursUsingPaint().length }})
+            </h3>
+            @if (coloursUsingPaint().length > 0) {
+              <div class="reverse-chip-list">
+                @for (col of coloursUsingPaint().slice(0, 24); track col.id) {
+                  <button class="reverse-chip" (click)="goToColour(col.id)">
+                    <span class="mini-dot" [style.background]="col.hex"></span>
+                    <span>{{ col.name }}</span>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="empty-hint">No colour guides directly list this paint.</p>
+            }
+          </section>
+
+          <section class="modal-section">
+            <h3 class="section-title">
+              Models Using This Paint ({{ modelsUsingPaint().length }})
+            </h3>
+            @if (modelsUsingPaint().length > 0) {
+              <div class="reverse-models-grid">
+                @for (mod of modelsUsingPaint().slice(0, 12); track mod.id) {
+                  <button class="reverse-model-card studio-card interactive" (click)="goToModel(mod.id)">
+                    <img
+                      [src]="img.resolve(mod.localPrimaryImage, mod.primaryImage)"
+                      [alt]="mod.name"
+                      loading="lazy"
+                    />
+                    <span>{{ mod.name }}</span>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="empty-hint">No model recipes directly list this paint.</p>
+            }
+          </section>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -5,12 +5,36 @@
 
     @if (recipe(); as r) {
       <div class="top-actions">
-        @if (readiness().missingCount > 0) {
+        <button
+          class="btn btn-sm"
+          [class.btn-owned]="userState.isModelOwned(r.id)"
+          [class.btn-secondary]="!userState.isModelOwned(r.id)"
+          (click)="userState.toggleModelInventory(r.id)"
+        >
+          {{ userState.isModelOwned(r.id) ? '✓ Model Owned' : '+ Own Model' }}
+        </button>
+        <button
+          class="btn btn-sm"
+          [class.btn-wishlist]="userState.isModelWishlisted(r.id)"
+          [class.btn-secondary]="!userState.isModelWishlisted(r.id)"
+          (click)="userState.toggleModelWishlist(r.id)"
+        >
+          {{ userState.isModelWishlisted(r.id) ? '★ Model Wishlisted' : '☆ Wishlist Model' }}
+        </button>
+        @if (stagedReadiness().base.missingCount > 0) {
           <button
             class="btn btn-gold btn-sm"
+            (click)="userState.addManyToWishlist(stagedReadiness().base.missingPaintIds)"
+          >
+            ★ Wishlist {{ stagedReadiness().base.missingCount }} Missing Base Paints
+          </button>
+        }
+        @if (readiness().missingCount > 0 && readiness().missingCount !== stagedReadiness().base.missingCount) {
+          <button
+            class="btn btn-secondary btn-sm"
             (click)="userState.addManyToWishlist(readiness().missingPaintIds)"
           >
-            ★ Add {{ readiness().missingCount }} Missing Paints to Wishlist
+            ★ Wishlist All {{ readiness().missingCount }} Missing Paints
           </button>
         }
         <button class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
@@ -108,24 +132,148 @@
           </p>
         }
 
-        <!-- "Can I Paint This?" Readiness Box -->
+        <!-- "Can I Paint This?" Readiness Box (Split by 3 Finish Levels) -->
         <div class="readiness-box">
           <div class="ready-header">
-            <strong>
-              Can I Paint This? — {{ readiness().matchPercent }}% Ready
-            </strong>
-            <span>
-              {{ readiness().ownedDirectCount }} Owned •
-              {{ readiness().substitutedCount }} Substituted •
-              {{ readiness().missingCount }} Missing
-            </span>
+            <strong>Can I Paint This? — Readiness by Detail Level</strong>
+            <span>Click a stage below to filter painting steps</span>
           </div>
-          <div class="progress-track">
+
+          <div class="stage-readiness-list">
+            <!-- 1. Base Finish -->
             <div
-              class="progress-fill"
-              [style.width.%]="readiness().matchPercent"
-              [class.complete]="readiness().matchPercent === 100"
-            ></div>
+              class="stage-ready-row"
+              [class.active]="stageFilter() === 'Base Finish'"
+              (click)="stageFilter.set(stageFilter() === 'Base Finish' ? 'all' : 'Base Finish')"
+            >
+              <div class="stage-ready-top">
+                <div class="stage-ready-title">
+                  <strong>1. Base Finish</strong>
+                  <span class="stage-tier-hint">Battle Ready</span>
+                </div>
+                <div class="stage-ready-stats">
+                  @if (stagedReadiness().base.totalRequired > 0) {
+                    <strong
+                      class="stage-pct"
+                      [class.complete]="stagedReadiness().base.matchPercent === 100"
+                    >
+                      {{ stagedReadiness().base.matchPercent }}%
+                    </strong>
+                    <span>
+                      ({{ stagedReadiness().base.ownedDirectCount + stagedReadiness().base.substitutedCount }}/{{ stagedReadiness().base.totalRequired }} Paints)
+                    </span>
+                    @if (stagedReadiness().base.missingCount > 0) {
+                      <button
+                        class="btn btn-sm btn-gold stage-wish-btn"
+                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().base.missingPaintIds)"
+                        title="Add missing Base Finish paints to Paint Wishlist"
+                      >
+                        ★ +{{ stagedReadiness().base.missingCount }} Missing
+                      </button>
+                    }
+                  } @else {
+                    <span>No paints required</span>
+                  }
+                </div>
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="stagedReadiness().base.matchPercent"
+                  [class.complete]="stagedReadiness().base.matchPercent === 100"
+                ></div>
+              </div>
+            </div>
+
+            <!-- 2. Detail Finish -->
+            <div
+              class="stage-ready-row"
+              [class.active]="stageFilter() === 'Detail Finish'"
+              (click)="stageFilter.set(stageFilter() === 'Detail Finish' ? 'all' : 'Detail Finish')"
+            >
+              <div class="stage-ready-top">
+                <div class="stage-ready-title">
+                  <strong>2. Detail Finish</strong>
+                  <span class="stage-tier-hint">Shade & Layer</span>
+                </div>
+                <div class="stage-ready-stats">
+                  @if (stagedReadiness().detail.totalRequired > 0) {
+                    <strong
+                      class="stage-pct"
+                      [class.complete]="stagedReadiness().detail.matchPercent === 100"
+                    >
+                      {{ stagedReadiness().detail.matchPercent }}%
+                    </strong>
+                    <span>
+                      ({{ stagedReadiness().detail.ownedDirectCount + stagedReadiness().detail.substitutedCount }}/{{ stagedReadiness().detail.totalRequired }} Paints)
+                    </span>
+                    @if (stagedReadiness().detail.missingCount > 0) {
+                      <button
+                        class="btn btn-sm btn-secondary stage-wish-btn"
+                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().detail.missingPaintIds)"
+                        title="Add missing Detail Finish paints to Paint Wishlist"
+                      >
+                        ★ +{{ stagedReadiness().detail.missingCount }} Missing
+                      </button>
+                    }
+                  } @else {
+                    <span>No paints required</span>
+                  }
+                </div>
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="stagedReadiness().detail.matchPercent"
+                  [class.complete]="stagedReadiness().detail.matchPercent === 100"
+                ></div>
+              </div>
+            </div>
+
+            <!-- 3. Artificer Finish -->
+            <div
+              class="stage-ready-row"
+              [class.active]="stageFilter() === 'Artificer Finish'"
+              (click)="stageFilter.set(stageFilter() === 'Artificer Finish' ? 'all' : 'Artificer Finish')"
+            >
+              <div class="stage-ready-top">
+                <div class="stage-ready-title">
+                  <strong>3. Artificer Finish</strong>
+                  <span class="stage-tier-hint">Edge Highlights</span>
+                </div>
+                <div class="stage-ready-stats">
+                  @if (stagedReadiness().artificer.totalRequired > 0) {
+                    <strong
+                      class="stage-pct"
+                      [class.complete]="stagedReadiness().artificer.matchPercent === 100"
+                    >
+                      {{ stagedReadiness().artificer.matchPercent }}%
+                    </strong>
+                    <span>
+                      ({{ stagedReadiness().artificer.ownedDirectCount + stagedReadiness().artificer.substitutedCount }}/{{ stagedReadiness().artificer.totalRequired }} Paints)
+                    </span>
+                    @if (stagedReadiness().artificer.missingCount > 0) {
+                      <button
+                        class="btn btn-sm btn-secondary stage-wish-btn"
+                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().artificer.missingPaintIds)"
+                        title="Add missing Artificer Finish paints to Paint Wishlist"
+                      >
+                        ★ +{{ stagedReadiness().artificer.missingCount }} Missing
+                      </button>
+                    }
+                  } @else {
+                    <span>No paints required</span>
+                  }
+                </div>
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="stagedReadiness().artificer.matchPercent"
+                  [class.complete]="stagedReadiness().artificer.matchPercent === 100"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
 
