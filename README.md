@@ -65,3 +65,4 @@ Then open `http://localhost:4200` in your browser.
 - `scripts/` — Data bundling (`build_third_party_paints.py`, `prepare_local_bundles.py`), APK asset extraction (`extract_apk_assets.py`), and Firebase seeding (`seed_firebase.py`).
 - `extractor/` — Phase 1–4 Python scripts used to extract the GraphQL catalog, user account data, CSV/JSON datasets, and `6,430` high-res media assets from the Android APK.
 - `docs/` — Architectural specifications (`warhammer_colour_web_app_plan.md` & `warhammer_colour_extraction_plan.md`).
+- `IDEAS.md` — Future feature ideas and roadmap (user-uploaded model builds/kitbashes with photos, paints, kits, and tools used; sponsored/affiliate links for paints, brushes, tools, and kits).
