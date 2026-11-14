@@ -35,7 +35,7 @@ function isValidConfig(cfg: unknown): cfg is FirebaseClientConfig {
 /**
  * Loads Firebase client configuration at startup without hardcoding API keys in Git:
  * 1. Purges any legacy/revoked `localStorage` config (`whc_firebase_config_v1`).
- * 2. Checks `/firebase-config.local.json` (gitignored local dev config).
+ * 2. Checks `/firebase-config.local.json` (gitignored local dev config or CI-injected config).
  * 3. Checks `/__/firebase/init.json` (auto-served by Firebase Hosting in production/previews).
  */
 export async function loadRuntimeFirebaseConfig(): Promise<void> {
