@@ -16,31 +16,62 @@ export interface FirebaseClientConfig {
 
 const FIREBASE_CONFIG_STORAGE_KEY = 'whc_firebase_config_v1';
 
-export const DEFAULT_FIREBASE_CONFIG: FirebaseClientConfig = {
-  apiKey: 'AIzaSyByG509x0FEeglKVCT0REfX3dEC750iRu4',
-  authDomain: 'model-painter-a8724.firebaseapp.com',
-  projectId: 'model-painter-a8724',
-  storageBucket: 'model-painter-a8724.firebasestorage.app',
-  messagingSenderId: '764662707107',
-  appId: '1:764662707107:web:becacf6cceabc7bd466016',
-};
+let runtimeConfig: FirebaseClientConfig | null = null;
+let cachedHandles: FirebaseHandles | null = null;
 
-export function getStoredFirebaseConfig(): FirebaseClientConfig {
+function isValidConfig(cfg: unknown): cfg is FirebaseClientConfig {
+  if (!cfg || typeof cfg !== 'object') return false;
+  const candidate = cfg as Partial<FirebaseClientConfig>;
+  return Boolean(candidate.apiKey && candidate.projectId && candidate.authDomain);
+}
+
+/**
+ * Loads Firebase client configuration at startup without hardcoding API keys in Git:
+ * 1. Checks `localStorage` override (`whc_firebase_config_v1`).
+ * 2. Checks `/firebase-config.local.json` (gitignored local dev config).
+ * 3. Checks `/__/firebase/init.json` (auto-served by Firebase Hosting in production/previews).
+ */
+export async function loadRuntimeFirebaseConfig(): Promise<void> {
+  const stored = getStoredFirebaseConfig();
+  if (stored) {
+    runtimeConfig = stored;
+    return;
+  }
+
+  for (const endpoint of ['/firebase-config.local.json', '/__/firebase/init.json']) {
+    try {
+      const resp = await fetch(endpoint, { cache: 'no-store' });
+      if (resp.ok) {
+        const data: unknown = await resp.json();
+        if (isValidConfig(data)) {
+          runtimeConfig = data;
+          cachedHandles = null;
+          return;
+        }
+      }
+    } catch {
+      // Ignore missing runtime endpoint and try next source
+    }
+  }
+}
+
+export function getStoredFirebaseConfig(): FirebaseClientConfig | null {
   try {
     const raw = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<FirebaseClientConfig>;
-      if (parsed && parsed.apiKey && parsed.projectId && parsed.authDomain) {
-        return parsed as FirebaseClientConfig;
+      const parsed: unknown = JSON.parse(raw);
+      if (isValidConfig(parsed)) {
+        return parsed;
       }
     }
   } catch {
     // ignore
   }
-  return DEFAULT_FIREBASE_CONFIG;
+  return runtimeConfig;
 }
 
 export function saveFirebaseConfig(config: FirebaseClientConfig | null): void {
+  cachedHandles = null;
   if (!config) {
     localStorage.removeItem(FIREBASE_CONFIG_STORAGE_KEY);
   } else {
@@ -55,8 +86,6 @@ export interface FirebaseHandles {
   storage: FirebaseStorage;
   functions: Functions;
 }
-
-let cachedHandles: FirebaseHandles | null = null;
 
 export function getFirebaseHandles(): FirebaseHandles | null {
   if (cachedHandles) return cachedHandles;

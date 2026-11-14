@@ -21,5 +21,6 @@ npm-debug.log*
 # Secrets / Service Account Keys
 serviceAccountKey.json
 *-firebase-adminsdk-*.json
+public/firebase-config.local.json
 .env
 .env.*

@@ -1,25 +1,11 @@
 {
-  "auth": {
-    "providers": {
-      "anonymous": true,
-      "emailPassword": true,
-      "googleSignIn": {
-        "oAuthBrandDisplayName": "Model Painter",
-        "supportEmail": "koroluka@gmail.com",
-        "authorizedRedirectUris": [
-          "https://model-painter-a8724.firebaseapp.com/__/auth/handler",
-          "https://model-painter-a8724.web.app/__/auth/handler",
-          "http://localhost"
-        ]
-      }
-    }
-  },
   "hosting": {
     "public": "dist/warhammer-webapp/browser",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/firebase-config.local.json"
     ],
     "rewrites": [
       {
