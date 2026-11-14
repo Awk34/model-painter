@@ -65,6 +65,11 @@
                 "glob": "user_account_snapshot.json",
                 "input": "public/data",
                 "output": "/data"
+              },
+              {
+                "glob": "firebase-config*.json",
+                "input": "public",
+                "output": "/"
               }
             ],
             "styles": [

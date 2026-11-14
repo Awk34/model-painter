@@ -8,11 +8,6 @@ import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
 import { WarhammerImportService } from '../../core/services/warhammer-import.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
-import {
-  FirebaseClientConfig,
-  getStoredFirebaseConfig,
-  saveFirebaseConfig,
-} from '../../core/services/firebase.config';
 
 interface UnifiedPaintRow {
   id: string;

@@ -29,6 +29,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Write Firebase Web Config from secret (if provided)
+        if: ${{ secrets.FIREBASE_WEB_CONFIG != '' }}
+        env:
+          FIREBASE_WEB_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
+        run: printf '%s\n' "$FIREBASE_WEB_CONFIG" > public/firebase-config.local.json
+
       - name: Build Angular application
         run: pnpm run build
 
