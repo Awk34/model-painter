@@ -11,22 +11,33 @@ export interface FirebaseClientConfig {
   storageBucket?: string;
   messagingSenderId?: string;
   appId?: string;
+  useCloudStorage?: boolean;
 }
 
 const FIREBASE_CONFIG_STORAGE_KEY = 'whc_firebase_config_v1';
 
-export function getStoredFirebaseConfig(): FirebaseClientConfig | null {
+export const DEFAULT_FIREBASE_CONFIG: FirebaseClientConfig = {
+  apiKey: 'AIzaSyByG509x0FEeglKVCT0REfX3dEC750iRu4',
+  authDomain: 'model-painter-a8724.firebaseapp.com',
+  projectId: 'model-painter-a8724',
+  storageBucket: 'model-painter-a8724.firebasestorage.app',
+  messagingSenderId: '764662707107',
+  appId: '1:764662707107:web:becacf6cceabc7bd466016',
+};
+
+export function getStoredFirebaseConfig(): FirebaseClientConfig {
   try {
     const raw = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.apiKey && parsed.projectId) {
-      return parsed;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<FirebaseClientConfig>;
+      if (parsed && parsed.apiKey && parsed.projectId && parsed.authDomain) {
+        return parsed as FirebaseClientConfig;
+      }
     }
   } catch {
     // ignore
   }
-  return null;
+  return DEFAULT_FIREBASE_CONFIG;
 }
 
 export function saveFirebaseConfig(config: FirebaseClientConfig | null): void {
@@ -50,7 +61,7 @@ let cachedHandles: FirebaseHandles | null = null;
 export function getFirebaseHandles(): FirebaseHandles | null {
   if (cachedHandles) return cachedHandles;
   const cfg = getStoredFirebaseConfig();
-  if (!cfg) return null;
+  if (!cfg || !cfg.apiKey || !cfg.projectId) return null;
   try {
     const app = getApps().length > 0 ? getApps()[0] : initializeApp(cfg);
     cachedHandles = {
