@@ -119,7 +119,6 @@ export class HobbyDeskComponent {
   authEmail = '';
   authPassword = '';
   readonly authError = signal<string | null>(null);
-  firebaseConfigJson = JSON.stringify(getStoredFirebaseConfig() ?? {}, null, 2);
 
   readonly filteredProjects = computed(() => {
     const q = this.projectSearch.trim().toLowerCase();
@@ -515,21 +514,6 @@ export class HobbyDeskComponent {
       await this.userState.signInWithGoogle();
     } catch (e: unknown) {
       this.authError.set(e instanceof Error ? e.message : String(e));
-    }
-  }
-
-  applyFirebaseConfig(): void {
-    try {
-      const trimmed = this.firebaseConfigJson.trim();
-      if (!trimmed || trimmed === '{}') {
-        saveFirebaseConfig(null);
-      } else {
-        const parsed = JSON.parse(trimmed) as FirebaseClientConfig;
-        saveFirebaseConfig(parsed);
-      }
-      window.location.reload();
-    } catch {
-      this.authError.set('Invalid Firebase config JSON format.');
     }
   }
 }
