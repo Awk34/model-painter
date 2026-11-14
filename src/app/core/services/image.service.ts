@@ -11,7 +11,12 @@ export class ImageService {
    */
   resolve(localPath?: string | null, remoteUrl?: string | null): string {
     const fbCfg = getStoredFirebaseConfig();
-    if (localPath && localPath.trim().length > 0 && fbCfg?.storageBucket) {
+    if (
+      localPath &&
+      localPath.trim().length > 0 &&
+      fbCfg?.storageBucket &&
+      fbCfg?.useCloudStorage
+    ) {
       const encoded = encodeURIComponent(localPath.replace(/^\//, ''));
       return `https://firebasestorage.googleapis.com/v0/b/${fbCfg.storageBucket}/o/${encoded}?alt=media`;
     }
