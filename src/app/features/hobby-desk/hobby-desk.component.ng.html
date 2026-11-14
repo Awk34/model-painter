@@ -780,21 +780,6 @@
             }
           </div>
         }
-
-        <details class="fb-config-details">
-          <summary>Configure Firebase Project Credentials (JSON)</summary>
-          <div class="fb-config-body">
-            <textarea
-              class="input-control code-area"
-              rows="4"
-              placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "..."}'
-              [(ngModel)]="firebaseConfigJson"
-            ></textarea>
-            <button class="btn btn-secondary btn-sm" (click)="applyFirebaseConfig()">
-              Save Firebase Config & Reload
-            </button>
-          </div>
-        </details>
       </div>
 
       <!-- Card 2: Multi-User My Warhammer Account Importer -->
