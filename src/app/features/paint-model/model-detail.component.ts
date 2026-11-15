@@ -1,21 +1,48 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FinishStageKey, ModelRecipe } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
-import { UserStateService } from '../../core/services/user-state.service';
-import { InventoryMatchService } from '../../core/services/inventory-match.service';
-import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
-import { ModelRecipe } from '../../core/models/catalog.models';
+import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { UserStateService } from '../../core/services/user-state.service';
+import { AddToProjectModalComponent } from '../../shared/components/add-to-project-modal/add-to-project-modal.component';
+import { StageReadinessBarsComponent } from '../../shared/components/stage-readiness-bars/stage-readiness-bars.component';
 import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
+import {
+  ModelPaintingStepsComponent,
+  ModelStageFilter,
+} from './components/model-painting-steps.component';
+
+const STAGE_KEY_TO_FILTER: Record<FinishStageKey, Exclude<ModelStageFilter, 'all'>> = {
+  base: 'Base Finish',
+  detail: 'Detail Finish',
+  artificer: 'Artificer Finish',
+};
+
+const FILTER_TO_STAGE_KEY: Record<ModelStageFilter, FinishStageKey | null> = {
+  all: null,
+  'Base Finish': 'base',
+  'Detail Finish': 'detail',
+  'Artificer Finish': 'artificer',
+};
 
 @Component({
   selector: 'app-model-detail',
-  imports: [CommonModule, FormsModule, RouterModule, UserPhotoGalleryComponent],
+  imports: [
+    DecimalPipe,
+    RouterModule,
+    UserPhotoGalleryComponent,
+    StageReadinessBarsComponent,
+    ModelPaintingStepsComponent,
+    AddToProjectModalComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './model-detail.component.ng.html',
   styleUrl: './model-detail.component.css',
+  host: {
+    '(document:keydown.escape)': 'closeZoomModal()',
+  },
 })
 export class ModelDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -23,7 +50,6 @@ export class ModelDetailComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
   readonly readinessService = inject(InventoryMatchService);
-  readonly paintModal = inject(PaintModalService);
   readonly img = inject(ImageService);
 
   readonly loading = signal(true);
@@ -31,44 +57,48 @@ export class ModelDetailComponent {
   readonly selectedImageIndex = signal(0);
   readonly showPins = signal(true);
   readonly selectedColorPointId = signal<string | null>(null);
-  readonly stageFilter = signal<'all' | 'Base Finish' | 'Detail Finish' | 'Artificer Finish'>('all');
-
+  readonly stageFilter = signal<ModelStageFilter>('all');
   readonly showProjectModal = signal(false);
   readonly userPhotosExpanded = signal(true);
-  newProjectName = '';
+  readonly zoomModalOpen = signal(false);
+  readonly showZoomPins = signal(false);
+  readonly zoomScale = signal(2);
+  readonly panX = signal(0);
+  readonly panY = signal(0);
+  readonly isPanning = signal(false);
+
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private panOriginX = 0;
+  private panOriginY = 0;
+  private activePointerId: number | null = null;
+
+  readonly activeStageKey = computed<FinishStageKey | null>(
+    () => FILTER_TO_STAGE_KEY[this.stageFilter()]
+  );
 
   readonly modelPhotoCount = computed(() => {
     const r = this.recipe();
-    if (!r) return 0;
-    return (
-      this.userState.getPhotosForTarget('model', r.id, 'showcase').length +
-      this.userState.getPhotosForTarget('model', r.id, 'reference').length
-    );
+    if (!r) {
+      return 0;
+    }
+    return this.userState.getTargetPhotoCount('model', r.id);
   });
-
-  constructor() {
-    this.route.paramMap.subscribe(async (params) => {
-      const id = params.get('id');
-      if (!id) return;
-      this.loading.set(true);
-      this.selectedImageIndex.set(0);
-      const data = await this.catalog.getModelRecipe(id);
-      this.recipe.set(data);
-      this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
-      this.loading.set(false);
-    });
-  }
 
   readonly activeImageUrl = computed(() => {
     const r = this.recipe();
-    if (!r) return '/icons/ic_models.svg';
+    if (!r) {
+      return '/icons/ic_models.svg';
+    }
     const idx = this.selectedImageIndex();
     return this.img.resolve(r.localImagePaths?.[idx], r.images?.[idx]);
   });
 
   readonly stagedReadiness = computed(() => {
     const r = this.recipe();
-    if (!r) return this.readinessService.evaluateStagedReadiness({});
+    if (!r) {
+      return this.readinessService.evaluateStagedReadiness({});
+    }
 
     const baseIds: string[] = [];
     const detailIds: string[] = [];
@@ -78,7 +108,9 @@ export class ModelDetailComponent {
     for (const area of r.paintingAreas ?? []) {
       for (const step of area.paintingSteps ?? []) {
         const pid = step.paint?.id;
-        if (!pid) continue;
+        if (!pid) {
+          continue;
+        }
         allIds.push(pid);
         const stage = (step.paintingStage ?? '').toLowerCase();
         if (stage.includes('base')) {
@@ -111,11 +143,38 @@ export class ModelDetailComponent {
 
   readonly readiness = computed(() => this.stagedReadiness().overall);
 
+  constructor() {
+    this.route.paramMap.subscribe(async (params) => {
+      const id = params.get('id');
+      if (!id) {
+        return;
+      }
+      this.loading.set(true);
+      this.selectedImageIndex.set(0);
+      this.zoomModalOpen.set(false);
+      this.isPanning.set(false);
+      this.activePointerId = null;
+      const data = await this.catalog.getModelRecipe(id);
+      this.recipe.set(data);
+      this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
+      this.loading.set(false);
+    });
+  }
+
+  onStageBarClick(key: FinishStageKey): void {
+    const target = STAGE_KEY_TO_FILTER[key];
+    this.stageFilter.set(this.stageFilter() === target ? 'all' : target);
+  }
+
   formatFactions(r: ModelRecipe): string {
     const names = new Set<string>();
     for (const f of r.factions ?? []) {
-      if (f.parentFactionName) names.add(f.parentFactionName);
-      if (f.factionName) names.add(f.factionName);
+      if (f.parentFactionName) {
+        names.add(f.parentFactionName);
+      }
+      if (f.factionName) {
+        names.add(f.factionName);
+      }
     }
     return Array.from(names).join(' • ');
   }
@@ -124,30 +183,106 @@ export class ModelDetailComponent {
     this.selectedColorPointId.set(cpId);
   }
 
-  filterSteps(steps: ModelRecipe['paintingAreas'][0]['paintingSteps']) {
-    const sf = this.stageFilter();
-    if (sf === 'all') return steps;
-    return steps.filter((s) => s.paintingStage === sf);
-  }
-
   goToColor(colorId: string): void {
     this.router.navigate(['/colors', colorId]);
   }
 
-  addToExistingProject(projectId: string, r: ModelRecipe): void {
-    this.userState.addRecipeToProject(projectId, r.id, r.localImagePaths?.[0]);
-    this.showProjectModal.set(false);
+  openZoomModal(): void {
+    this.zoomScale.set(2);
+    this.panX.set(0);
+    this.panY.set(0);
+    this.isPanning.set(false);
+    this.showZoomPins.set(false);
+    this.activePointerId = null;
+    this.zoomModalOpen.set(true);
   }
 
-  createProjectWithModel(r: ModelRecipe): void {
-    const created = this.userState.createProject(
-      this.newProjectName || r.name,
-      r.images?.[0],
-      r.localImagePaths?.[0]
-    );
-    if (!created) return;
-    this.userState.addRecipeToProject(created.id, r.id, r.localImagePaths?.[0]);
-    this.newProjectName = '';
-    this.showProjectModal.set(false);
+  toggleZoomPins(): void {
+    this.showZoomPins.set(!this.showZoomPins());
+  }
+
+  closeZoomModal(): void {
+    if (this.zoomModalOpen()) {
+      this.zoomModalOpen.set(false);
+      this.isPanning.set(false);
+      this.activePointerId = null;
+    }
+  }
+
+  setZoomScale(scale: number): void {
+    const clamped = Math.round(Math.min(4, Math.max(1, scale)) * 100) / 100;
+    this.zoomScale.set(clamped);
+    if (clamped <= 1) {
+      this.panX.set(0);
+      this.panY.set(0);
+    }
+  }
+
+  zoomIn(): void {
+    this.setZoomScale(this.zoomScale() + 0.5);
+  }
+
+  zoomOut(): void {
+    this.setZoomScale(this.zoomScale() - 0.5);
+  }
+
+  resetZoom(): void {
+    this.zoomScale.set(1);
+    this.panX.set(0);
+    this.panY.set(0);
+  }
+
+  toggleQuickZoom(): void {
+    if (this.zoomScale() > 1) {
+      this.resetZoom();
+    } else {
+      this.setZoomScale(2.5);
+    }
+  }
+
+  onZoomWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? 0.25 : -0.25;
+    this.setZoomScale(this.zoomScale() + delta);
+  }
+
+  onPanStart(event: PointerEvent): void {
+    if (this.zoomScale() <= 1 || event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    this.isPanning.set(true);
+    this.activePointerId = event.pointerId;
+    this.dragStartX = event.clientX;
+    this.dragStartY = event.clientY;
+    this.panOriginX = this.panX();
+    this.panOriginY = this.panY();
+    (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
+  }
+
+  onPanMove(event: PointerEvent): void {
+    if (!this.isPanning() || this.activePointerId !== event.pointerId) {
+      return;
+    }
+    this.panX.set(this.panOriginX + (event.clientX - this.dragStartX));
+    this.panY.set(this.panOriginY + (event.clientY - this.dragStartY));
+  }
+
+  onPanEnd(event: PointerEvent): void {
+    if (this.activePointerId !== event.pointerId) {
+      return;
+    }
+    const target = event.currentTarget as HTMLElement | null;
+    if (target?.hasPointerCapture?.(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+    this.isPanning.set(false);
+    this.activePointerId = null;
+  }
+
+  selectZoomAngle(index: number): void {
+    this.selectedImageIndex.set(index);
+    this.panX.set(0);
+    this.panY.set(0);
   }
 }

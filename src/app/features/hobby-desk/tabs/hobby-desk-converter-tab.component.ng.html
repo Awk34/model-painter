@@ -1,0 +1,180 @@
+<section class="tab-content">
+  <div class="converter-header studio-card">
+    <div class="chip-bar">
+      <button
+        type="button"
+        class="chip"
+        [class.active]="converterMode() === 'cross-brand'"
+        (click)="converterMode.set('cross-brand')"
+      >
+        🌐 Multi-Brand Converter (Citadel ↔ Army Painter / Vallejo / Two Thin Coats / Pro Acryl / AK 3G)
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.active]="converterMode() === 'tone-pro'"
+        (click)="converterMode.set('tone-pro')"
+      >
+        ✨ Official Citadel Classic ↔ Tone Pro ({{ catalog.compatibilityLinks().length }} Mappings)
+      </button>
+    </div>
+
+    <div class="toolbar-row converter-toolbar">
+      <div class="search-box">
+        <input
+          type="text"
+          class="input-control"
+          placeholder="Search any Citadel or 3rd-party paint to find equivalents..."
+          [ngModel]="converterSearch()"
+          (ngModelChange)="converterSearch.set($event)"
+        />
+      </div>
+
+      @if (converterMode() === 'cross-brand') {
+        <div class="toolbar-right">
+          <select
+            class="input-control filter-select"
+            [ngModel]="converterTargetBrand()"
+            (ngModelChange)="converterTargetBrand.set($event)"
+          >
+            <option value="all">All 3rd-Party Brands</option>
+            @for (b of catalog.thirdPartyBrands(); track b) {
+              <option [value]="b">{{ b }}</option>
+            }
+          </select>
+          <label class="checkbox-inline">
+            <input
+              type="checkbox"
+              [ngModel]="converterOnlyOwned()"
+              (ngModelChange)="converterOnlyOwned.set($event)"
+            />
+            <span>Only show paints where I own either side</span>
+          </label>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (converterMode() === 'cross-brand') {
+    <div class="converter-list">
+      @for (row of filteredCrossBrandRows().slice(0, 120); track row.citadel.id) {
+        <div class="converter-row studio-card">
+          <div class="conv-side citadel-side">
+            <button
+              type="button"
+              class="conv-paint-btn"
+              (click)="paintModal.openPaint(row.citadel.id)"
+            >
+              <span class="paint-swatch" [style.background]="row.citadel.gradientStartHex"></span>
+              <div class="conv-info">
+                <span class="conv-name">{{ row.citadel.name }}</span>
+                <span class="conv-meta">
+                  {{ getCitadelBrandLabel(row.citadel.range) }} • {{ row.citadel.category }}
+                </span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-owned]="userState.isOwned(row.citadel.id)"
+              [class.btn-ghost]="!userState.isOwned(row.citadel.id)"
+              (click)="userState.toggleInventory(row.citadel.id)"
+            >
+              {{ userState.isOwned(row.citadel.id) ? '✓ Owned' : '+ Own' }}
+            </button>
+          </div>
+
+          <div class="conv-arrow">⇄</div>
+
+          <div class="conv-equivalents">
+            @for (eq of row.matches; track eq.thirdPartyPaintId) {
+              <div class="conv-eq-pill">
+                <button
+                  type="button"
+                  class="conv-eq-main"
+                  (click)="paintModal.openPaint(eq.thirdPartyPaintId)"
+                >
+                  <span class="mini-swatch" [style.background]="eq.hex"></span>
+                  <div class="conv-eq-text">
+                    <span class="conv-eq-name">{{ eq.name }}</span>
+                    <span class="conv-eq-brand">
+                      {{ eq.brand }} • {{ eq.range }} • ΔE {{ eq.deltaE }}
+                    </span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [class.btn-owned]="userState.isOwned(eq.thirdPartyPaintId)"
+                  [class.btn-ghost]="!userState.isOwned(eq.thirdPartyPaintId)"
+                  (click)="userState.toggleInventory(eq.thirdPartyPaintId)"
+                >
+                  {{ userState.isOwned(eq.thirdPartyPaintId) ? '✓' : '+' }}
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="converter-list">
+      @for (group of filteredToneProGroups(); track group.classicId) {
+        <div class="converter-row studio-card">
+          <div class="conv-side citadel-side">
+            <button
+              type="button"
+              class="conv-paint-btn"
+              (click)="paintModal.openPaint(group.classicId)"
+            >
+              <span class="paint-swatch" [style.background]="group.classicHex"></span>
+              <div class="conv-info">
+                <span class="conv-name">{{ group.classicName }}</span>
+                <span class="conv-meta">Citadel Classic • {{ group.classicCategory }}</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-owned]="userState.isOwned(group.classicId)"
+              [class.btn-ghost]="!userState.isOwned(group.classicId)"
+              (click)="userState.toggleInventory(group.classicId)"
+            >
+              {{ userState.isOwned(group.classicId) ? '✓ Owned' : '+ Own' }}
+            </button>
+          </div>
+
+          <div class="conv-arrow">⇄</div>
+
+          <div class="conv-equivalents">
+            @for (tp of group.toneProList; track tp.tone_pro_paint_id) {
+              <div class="conv-eq-pill">
+                <button
+                  type="button"
+                  class="conv-eq-main"
+                  (click)="paintModal.openPaint(tp.tone_pro_paint_id)"
+                >
+                  <span class="mini-swatch" [style.background]="tp.tone_pro_hex"></span>
+                  <div class="conv-eq-text">
+                    <span class="conv-eq-name">{{ tp.tone_pro_paint_name }}</span>
+                    <span class="conv-eq-brand">Citadel Tone Pro</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [class.btn-owned]="userState.isOwned(tp.tone_pro_paint_id)"
+                  [class.btn-ghost]="!userState.isOwned(tp.tone_pro_paint_id)"
+                  (click)="userState.toggleInventory(tp.tone_pro_paint_id)"
+                >
+                  {{ userState.isOwned(tp.tone_pro_paint_id) ? '✓' : '+' }}
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+

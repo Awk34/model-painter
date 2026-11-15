@@ -1,21 +1,49 @@
 import { Routes } from '@angular/router';
-import { HobbyDeskComponent } from './features/hobby-desk/hobby-desk.component';
-import { ProjectDetailComponent } from './features/hobby-desk/project-detail.component';
-import { PaintModelComponent } from './features/paint-model/paint-model.component';
-import { ModelDetailComponent } from './features/paint-model/model-detail.component';
-import { PaintColorComponent } from './features/paint-color/paint-color.component';
-import { ColorDetailComponent } from './features/paint-color/color-detail.component';
-import { SearchComponent } from './features/search/search.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'hobby-desk', pathMatch: 'full' },
-  { path: 'hobby-desk', component: HobbyDeskComponent },
-  { path: 'account', component: HobbyDeskComponent, data: { page: 'account' } },
-  { path: 'projects/:id', component: ProjectDetailComponent },
-  { path: 'models', component: PaintModelComponent },
-  { path: 'models/:id', component: ModelDetailComponent },
-  { path: 'colors', component: PaintColorComponent },
-  { path: 'colors/:id', component: ColorDetailComponent },
-  { path: 'search', component: SearchComponent },
+  {
+    path: 'hobby-desk',
+    loadComponent: () =>
+      import('./features/hobby-desk/hobby-desk.component').then((m) => m.HobbyDeskComponent),
+  },
+  {
+    path: 'account',
+    data: { page: 'account' },
+    loadComponent: () =>
+      import('./features/hobby-desk/hobby-desk.component').then((m) => m.HobbyDeskComponent),
+  },
+  {
+    path: 'projects/:id',
+    loadComponent: () =>
+      import('./features/hobby-desk/project-detail.component').then(
+        (m) => m.ProjectDetailComponent
+      ),
+  },
+  {
+    path: 'models',
+    loadComponent: () =>
+      import('./features/paint-model/paint-model.component').then((m) => m.PaintModelComponent),
+  },
+  {
+    path: 'models/:id',
+    loadComponent: () =>
+      import('./features/paint-model/model-detail.component').then((m) => m.ModelDetailComponent),
+  },
+  {
+    path: 'colors',
+    loadComponent: () =>
+      import('./features/paint-color/paint-color.component').then((m) => m.PaintColorComponent),
+  },
+  {
+    path: 'colors/:id',
+    loadComponent: () =>
+      import('./features/paint-color/color-detail.component').then((m) => m.ColorDetailComponent),
+  },
+  {
+    path: 'search',
+    loadComponent: () =>
+      import('./features/search/search.component').then((m) => m.SearchComponent),
+  },
   { path: '**', redirectTo: 'hobby-desk' },
 ];

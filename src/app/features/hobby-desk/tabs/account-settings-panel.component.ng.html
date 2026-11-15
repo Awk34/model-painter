@@ -1,0 +1,288 @@
+<div class="onboarding-banner studio-card">
+  <div class="onboarding-text">
+    <h3>Start Fresh or Import a My Warhammer Account</h3>
+    <p>
+      Your local browser Hobby Desk starts with a clean slate. Sign in below to sync across devices, import your own live
+      <strong>My Warhammer</strong> account via Auth0 PKCE, or load the extracted APK account snapshot (64 owned paints, 34 wishlist paints, and 5 projects) with one click.
+    </p>
+  </div>
+  <div class="onboarding-actions">
+    <button type="button" class="btn btn-gold" (click)="loadExtractedSnapshot()">
+      ⚡ Load Extracted Account Snapshot
+    </button>
+  </div>
+</div>
+
+<section class="tab-content settings-grid">
+  <!-- Card 1: Optional Firebase Cloud Sync & Auth -->
+  <div class="settings-card studio-card">
+    <span class="badge badge-pro">Cloud Account & Sync</span>
+    <h3>Firebase Auth & Cross-Device Sync</h3>
+    <p class="settings-desc">
+      By default, all user data stays 100% private in your local browser. Sign in with Google or Email to sync <code>users/{{ '{' }}uid{{ '}' }}</code> across devices.
+    </p>
+
+    @if (userState.currentUser(); as user) {
+      <div class="signed-in-box">
+        <div class="signed-in-profile">
+          <img
+            [src]="user.photoURL || '/icons/ic_profile.svg'"
+            referrerpolicy="no-referrer"
+            alt="User avatar"
+            class="account-avatar"
+          />
+          <div>
+            <div>
+              <strong>{{ user.displayName || user.email || user.uid }}</strong>
+              <span class="badge badge-owned sync-badge">{{ userState.cloudSyncStatus() }}</span>
+            </div>
+            @if (user.displayName && user.email) {
+              <div class="account-email">{{ user.email }}</div>
+            }
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="userState.signOutCloud()">
+          Sign Out
+        </button>
+      </div>
+    } @else {
+      <div class="auth-form">
+        <div class="form-row">
+          <input
+            type="email"
+            class="input-control"
+            placeholder="Email address"
+            [(ngModel)]="authEmail"
+          />
+          <input
+            type="password"
+            class="input-control"
+            placeholder="Password"
+            [(ngModel)]="authPassword"
+          />
+        </div>
+        <div class="backup-btn-row">
+          <button type="button" class="btn btn-gold btn-sm" (click)="handleEmailAuth(false)">
+            Sign In
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="handleEmailAuth(true)">
+            Create Account
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="handleGoogleAuth()">
+            Sign In with Google
+          </button>
+        </div>
+        @if (authError()) {
+          <p class="error-msg">{{ authError() }}</p>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Card 2: Multi-User My Warhammer Account Importer -->
+  <div class="settings-card studio-card">
+    <span class="badge badge-gold">Multi-User Importer</span>
+    <h3>Import from Any "My Warhammer" Account</h3>
+    <p class="settings-desc">
+      Any user can import their live Inventory, Wishlist, and custom Projects from the official Citadel Colour app using either the self-service Auth0 PKCE flow or a file upload.
+    </p>
+
+    <div class="import-mode-selector">
+      <label class="radio-label">
+        <input type="radio" name="importMode" value="merge" [(ngModel)]="importMode" />
+        <span>Merge with current browser data (Recommended)</span>
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="importMode" value="replace" [(ngModel)]="importMode" />
+        <span>Replace current browser data</span>
+      </label>
+    </div>
+
+    <div class="wizard-steps">
+      <div class="wizard-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Quick Snapshot (Extracted APK Account)</strong>
+          <p>Load the pre-extracted account snapshot (64 owned paints, 34 wishlist paints, 5 projects).</p>
+          <button type="button" class="btn btn-gold btn-sm" (click)="loadExtractedSnapshot()">
+            ⚡ Import Extracted Account Snapshot
+          </button>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Self-Service My Warhammer Login (Auth0 PKCE)</strong>
+          <p>
+            Click below to open <code>login.mywarhammer.com</code> in a new tab. After signing in, open DevTools Network tab, copy the <code>citadel-colour://.../callback?code=...</code> redirect URL, and paste it below.
+          </p>
+          <div class="step-actions">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="startPkceLogin()">
+              🔑 Open My Warhammer Login
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="copyPkceLoginUrl()">
+              {{ pkceUrlCopied() ? '✓ Copied Login URL!' : '📋 Copy Login URL to Clipboard' }}
+            </button>
+          </div>
+          <div class="pkce-paste-row">
+            <input
+              type="text"
+              class="input-control"
+              placeholder="Paste citadel-colour://login.mywarhammer.com/.../callback?code=... here"
+              [(ngModel)]="pastedCallbackUrl"
+            />
+            <button
+              type="button"
+              class="btn btn-gold btn-sm"
+              [disabled]="!pastedCallbackUrl.trim() || pkceBusy()"
+              (click)="submitPkceCallback()"
+            >
+              {{ pkceBusy() ? 'Importing...' : 'Exchange & Import' }}
+            </button>
+          </div>
+          @if (pkceError()) {
+            <p class="error-msg">{{ pkceError() }}</p>
+          }
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Upload JSON or CSV File</strong>
+          <p>Upload any <code>user_account.json</code>, web app backup JSON, or <code>user_inventory_wishlist.csv</code>.</p>
+          <input type="file" accept=".json,.csv" class="file-input" (change)="onFileUpload($event)" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: Substitution Preferences & Local Backup -->
+  <div class="settings-card studio-card">
+    <span class="badge badge-sub">Readiness & Portability</span>
+    <h3>"Can I Paint This?" Rules & Browser Backups</h3>
+    <p class="settings-desc">
+      Configure how the app calculates model and color paint readiness across your inventory.
+    </p>
+
+    <div class="pref-toggles">
+      <label class="toggle-row">
+        <input
+          type="checkbox"
+          [ngModel]="userState.preferences().allowCompatibleSubstitutions"
+          (ngModelChange)="userState.updatePreferences({ allowCompatibleSubstitutions: $event })"
+        />
+        <div>
+          <strong>Allow Official Citadel ↔ Tone Pro Substitutions</strong>
+          <p>Count a required paint as covered if you own its official Tone Pro or Classic Citadel counterpart.</p>
+        </div>
+      </label>
+
+      <label class="toggle-row">
+        <input
+          type="checkbox"
+          [ngModel]="userState.preferences().allowThirdPartySubstitutions"
+          (ngModelChange)="userState.updatePreferences({ allowThirdPartySubstitutions: $event })"
+        />
+        <div>
+          <strong>Allow 3rd-Party Brand Paint Substitutions</strong>
+          <p>Count a required paint as covered if you own a linked equivalent from The Army Painter, Vallejo, Two Thin Coats, Pro Acryl, or AK 3G.</p>
+        </div>
+      </label>
+    </div>
+
+    <hr class="divider" />
+
+    <h4>Local Browser Backup & Reset</h4>
+    <div class="backup-btn-row">
+      <button type="button" class="btn btn-secondary" (click)="userState.exportBackupJson()">
+        ⬇ Export Full JSON Backup
+      </button>
+      <button type="button" class="btn btn-ghost danger-text" (click)="confirmResetData()">
+        🗑 Reset Local Data to Blank Slate
+      </button>
+    </div>
+  </div>
+
+  <!-- Card 4: Catalog Manifest & Cache Freshness -->
+  <div class="settings-card studio-card">
+    <span class="badge badge-owned">Smart IndexedDB Cache</span>
+    <h3>Catalog Manifest & Cache Freshness</h3>
+    <p class="settings-desc">
+      On startup, the app hydrates immediately from browser IndexedDB and checks <code>catalog_meta/manifest</code> (1 read) to diff SHA-256 bundle hashes before downloading any updates.
+    </p>
+
+    @if (catalog.manifest(); as mf) {
+      <div class="manifest-meta">
+        <div><strong>Catalog Version:</strong> {{ mf.catalogVersion ?? mf.schemaVersion ?? '1' }}</div>
+        <div><strong>Manifest Updated:</strong> {{ mf.updatedAt | date:'medium' }}</div>
+        <div><strong>Sync Status:</strong> <span class="status-tag">{{ catalog.syncStatus() }}</span></div>
+        @if (catalog.lastCheckedAt()) {
+          <div><strong>Last Checked:</strong> {{ catalog.lastCheckedAt() | date:'mediumTime' }}</div>
+        }
+      </div>
+
+      <div class="bundle-table">
+        @for (entry of manifestBundlesList(); track entry.key) {
+          <div class="bundle-row">
+            <span class="bundle-name">{{ entry.key }}</span>
+            <code class="bundle-hash">{{ (entry.hash || '').slice(0, 19) }}…</code>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="backup-btn-row cache-actions-row">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="catalog.initializeCatalog(false)">
+        ↻ Check Manifest Now (1 Read)
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="catalog.initializeCatalog(true)">
+        ⚡ Force Full Cache Rebuild
+      </button>
+    </div>
+  </div>
+
+  <!-- Card 5: Account Quotas & Photo Storage Limits -->
+  <div class="settings-card studio-card">
+    <span class="badge badge-gold">Usage & Quotas</span>
+    <h3>Account Limits & Photo Upload Quotas</h3>
+    <p class="settings-desc">
+      Fair-use limits protect local browser storage and cloud sync performance. Showcase photos and private reference photos are stored locally in IndexedDB and privately synced when signed in.
+    </p>
+
+    <div class="quota-list">
+      <div class="quota-row">
+        <span>Hobby Projects</span>
+        <strong>{{ userState.projects().length }} / {{ userState.limits.MAX_PROJECTS }}</strong>
+      </div>
+      <div class="quota-row">
+        <span>Models / Colors / Notes per Project</span>
+        <strong>{{ userState.limits.MAX_MODELS_PER_PROJECT }} / {{ userState.limits.MAX_COLORS_PER_PROJECT }} / {{ userState.limits.MAX_NOTES_PER_PROJECT }}</strong>
+      </div>
+      <div class="quota-row">
+        <span>Owned Models / Model Wishlist</span>
+        <strong>{{ userState.state().inventoryModelIds.length }}/{{ userState.limits.MAX_INVENTORY_MODELS }} • {{ userState.state().wishlistModelIds.length }}/{{ userState.limits.MAX_WISHLIST_MODELS }}★</strong>
+      </div>
+      <div class="quota-row">
+        <span>Owned Paints / Paint Wishlist</span>
+        <strong>{{ userState.state().inventoryPaintIds.length }}/{{ userState.limits.MAX_INVENTORY_PAINTS }} • {{ userState.state().wishlistPaintIds.length }}/{{ userState.limits.MAX_WISHLIST_PAINTS }}★</strong>
+      </div>
+      <div class="quota-row">
+        <span>Custom 3rd-Party Paints</span>
+        <strong>{{ userState.state().customPaints.length }} / {{ userState.limits.MAX_CUSTOM_PAINTS }}</strong>
+      </div>
+      <div class="quota-row">
+        <span>Total Uploaded Photos ({{ totalUploadedBytesLabel() }})</span>
+        <strong>{{ userState.uploadedPhotos().length }} / {{ userState.limits.MAX_TOTAL_USER_PHOTOS }}</strong>
+      </div>
+    </div>
+
+    <div class="photo-rules-note">
+      <div><strong>Showcase Photos:</strong> {{ showcasePhotoCount() }} uploaded (up to {{ userState.limits.MAX_MODEL_SHOWCASE_PHOTOS }}/model, {{ userState.limits.MAX_PROJECT_SHOWCASE_PHOTOS }}/project)</div>
+      <div><strong>🔒 Private Reference Photos:</strong> {{ referencePhotoCount() }} uploaded (up to {{ userState.limits.MAX_MODEL_REFERENCE_PHOTOS }}/model, {{ userState.limits.MAX_PROJECT_REFERENCE_PHOTOS }}/project)</div>
+      <div><strong>File Rules:</strong> JPG, PNG, or WebP • Up to {{ userState.limits.MAX_RAW_INPUT_FILE_SIZE_MB }} MB upload (auto-downscaled to ≤ {{ maxPhotoSizeLabel }})</div>
+    </div>
+  </div>
+</section>
+

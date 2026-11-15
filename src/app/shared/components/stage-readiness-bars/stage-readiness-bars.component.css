@@ -1,0 +1,121 @@
+:host {
+  display: block;
+}
+
+.readiness-box {
+  padding: 12px 14px;
+  background: var(--bg-void);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ready-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+}
+
+.ready-header span {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.stage-readiness-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage-readiness-list.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.stage-ready-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.stage-ready-row:hover {
+  border-color: var(--border-strong);
+}
+
+.stage-ready-row.active {
+  border-color: var(--gold-bright);
+  background: var(--gold-soft);
+}
+
+.stage-ready-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+}
+
+.stage-ready-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stage-tier-hint {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.stage-ready-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.stage-pct {
+  color: var(--gold-bright);
+  font-size: 0.84rem;
+}
+
+.stage-pct.complete {
+  color: var(--status-owned);
+}
+
+.stage-wish-btn {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+}
+
+.progress-track {
+  height: 8px;
+  background: #232832;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-primary), var(--gold-bright));
+  transition: width 0.25s ease;
+}
+
+.progress-fill.complete {
+  background: var(--status-owned);
+}
+

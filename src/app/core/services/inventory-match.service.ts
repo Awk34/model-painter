@@ -3,7 +3,9 @@ import {
   InventoryReadinessResult,
   PaintSubstituteMatch,
   StagedReadinessResult,
+  UserProject,
 } from '../models/catalog.models';
+import { getCitadelBrandLabel } from '../utils/catalog-filter.util';
 import { CatalogService } from './catalog.service';
 import { UserStateService } from './user-state.service';
 
@@ -18,8 +20,9 @@ export class InventoryMatchService {
    * Computes "Can I Paint This?" inventory readiness for any list of required Paint IDs.
    * Respects:
    * - Direct ownership in `inventoryPaintIds`
+   * - User custom equivalence overrides
    * - Official Citadel Classic <-> Tone Pro compatibility (when `allowCompatibleSubstitutions` is enabled)
-   * - Pre-seeded & custom 3rd-party paint equivalents (when `allowThirdPartySubstitutions` is enabled)
+   * - Pre-seeded 3rd-party paint equivalents (when `allowThirdPartySubstitutions` is enabled)
    */
   evaluateReadiness(requiredPaintIds?: string[] | null): InventoryReadinessResult {
     const deduped = Array.from(new Set((requiredPaintIds ?? []).filter(Boolean)));
@@ -38,14 +41,6 @@ export class InventoryMatchService {
 
     const invSet = this.userState.inventorySet();
     const prefs = this.userState.preferences();
-    const overrides = this.userState.customCompatibilityOverrides();
-    const paintById = this.catalog.paintById();
-    const tpById = this.catalog.thirdPartyPaintById();
-    const customById = new Map(this.userState.customPaints().map((c) => [c.id, c]));
-    const classicToPro = this.catalog.classicToToneProMap();
-    const proToClassic = this.catalog.toneProToClassicMap();
-    const citadelToTp = this.catalog.citadelToThirdPartyMap();
-
     const ownedDirectIds: string[] = [];
     const substitutedByPaintId: Record<string, PaintSubstituteMatch> = {};
     const missingPaintIds: string[] = [];
@@ -56,92 +51,12 @@ export class InventoryMatchService {
         continue;
       }
 
-      let foundSub: PaintSubstituteMatch | null = null;
-
-      // 1. Check user custom compatibility overrides first
-      const userOverrideIds = overrides[pid] ?? [];
-      for (const eqId of userOverrideIds) {
-        if (invSet.has(eqId)) {
-          const customP = customById.get(eqId) ?? tpById.get(eqId);
-          const citP = paintById.get(eqId);
-          if (customP) {
-            foundSub = {
-              requiredPaintId: pid,
-              substitutePaintId: eqId,
-              substituteName: customP.name,
-              substituteBrand: `${customP.brand} (${customP.range})`,
-              substituteHex: customP.hex,
-              matchType: 'custom_override',
-            };
-            break;
-          } else if (citP) {
-            foundSub = {
-              requiredPaintId: pid,
-              substitutePaintId: eqId,
-              substituteName: citP.name,
-              substituteBrand: citP.range === 'warhammer_pro' ? 'Citadel Tone Pro' : 'Citadel Classic',
-              substituteHex: citP.gradientStartHex,
-              matchType: 'custom_override',
-            };
-            break;
-          }
-        }
-      }
-
-      // 2. Check official Citadel Classic <-> Tone Pro compatibility
-      if (!foundSub && prefs.allowCompatibleSubstitutions) {
-        const proLinks = classicToPro.get(pid) ?? [];
-        for (const link of proLinks) {
-          if (invSet.has(link.tone_pro_paint_id)) {
-            foundSub = {
-              requiredPaintId: pid,
-              substitutePaintId: link.tone_pro_paint_id,
-              substituteName: link.tone_pro_paint_name,
-              substituteBrand: 'Citadel Tone Pro',
-              substituteHex: link.tone_pro_hex,
-              matchType: 'tone_pro',
-            };
-            break;
-          }
-        }
-
-        if (!foundSub) {
-          const classicLinks = proToClassic.get(pid) ?? [];
-          for (const link of classicLinks) {
-            if (invSet.has(link.classic_paint_id)) {
-              const cp = paintById.get(link.classic_paint_id);
-              foundSub = {
-                requiredPaintId: pid,
-                substitutePaintId: link.classic_paint_id,
-                substituteName: link.classic_paint_name,
-                substituteBrand: 'Citadel Classic',
-                substituteHex: cp?.gradientStartHex ?? '#888888',
-                matchType: 'classic_citadel',
-              };
-              break;
-            }
-          }
-        }
-      }
-
-      // 3. Check 3rd-party paint equivalents (Army Painter, Vallejo, Two Thin Coats, Pro Acryl, AK 3G)
-      if (!foundSub && prefs.allowThirdPartySubstitutions) {
-        const tpMatches = citadelToTp[pid] ?? [];
-        for (const tpm of tpMatches) {
-          if (invSet.has(tpm.thirdPartyPaintId)) {
-            foundSub = {
-              requiredPaintId: pid,
-              substitutePaintId: tpm.thirdPartyPaintId,
-              substituteName: tpm.name,
-              substituteBrand: `${tpm.brand} (${tpm.range})`,
-              substituteHex: tpm.hex,
-              matchType: 'third_party',
-              deltaE: tpm.deltaE,
-            };
-            break;
-          }
-        }
-      }
+      const foundSub =
+        this.findCustomOverrideMatch(pid, invSet) ??
+        (prefs.allowCompatibleSubstitutions
+          ? this.findOfficialCompatibilityMatch(pid, invSet)
+          : null) ??
+        (prefs.allowThirdPartySubstitutions ? this.findThirdPartyMatch(pid, invSet) : null);
 
       if (foundSub) {
         substitutedByPaintId[pid] = foundSub;
@@ -166,6 +81,106 @@ export class InventoryMatchService {
       substitutedByPaintId,
       missingPaintIds,
     };
+  }
+
+  private findCustomOverrideMatch(
+    requiredPaintId: string,
+    invSet: Set<string>
+  ): PaintSubstituteMatch | null {
+    const userOverrideIds = this.userState.customCompatibilityOverrides()[requiredPaintId] ?? [];
+    if (userOverrideIds.length === 0) {
+      return null;
+    }
+
+    const customById = this.userState.customPaintById();
+    const tpById = this.catalog.thirdPartyPaintById();
+    const paintById = this.catalog.paintById();
+
+    for (const eqId of userOverrideIds) {
+      if (!invSet.has(eqId)) {
+        continue;
+      }
+      const customOrTp = customById.get(eqId) ?? tpById.get(eqId);
+      if (customOrTp) {
+        return {
+          requiredPaintId,
+          substitutePaintId: eqId,
+          substituteName: customOrTp.name,
+          substituteBrand: `${customOrTp.brand} (${customOrTp.range})`,
+          substituteHex: customOrTp.hex,
+          matchType: 'custom_override',
+        };
+      }
+      const citP = paintById.get(eqId);
+      if (citP) {
+        return {
+          requiredPaintId,
+          substitutePaintId: eqId,
+          substituteName: citP.name,
+          substituteBrand: getCitadelBrandLabel(citP.range),
+          substituteHex: citP.gradientStartHex,
+          matchType: 'custom_override',
+        };
+      }
+    }
+    return null;
+  }
+
+  private findOfficialCompatibilityMatch(
+    requiredPaintId: string,
+    invSet: Set<string>
+  ): PaintSubstituteMatch | null {
+    const proLinks = this.catalog.classicToToneProMap().get(requiredPaintId) ?? [];
+    for (const link of proLinks) {
+      if (invSet.has(link.tone_pro_paint_id)) {
+        return {
+          requiredPaintId,
+          substitutePaintId: link.tone_pro_paint_id,
+          substituteName: link.tone_pro_paint_name,
+          substituteBrand: 'Citadel Tone Pro',
+          substituteHex: link.tone_pro_hex,
+          matchType: 'tone_pro',
+        };
+      }
+    }
+
+    const classicLinks = this.catalog.toneProToClassicMap().get(requiredPaintId) ?? [];
+    const paintById = this.catalog.paintById();
+    for (const link of classicLinks) {
+      if (invSet.has(link.classic_paint_id)) {
+        const cp = paintById.get(link.classic_paint_id);
+        return {
+          requiredPaintId,
+          substitutePaintId: link.classic_paint_id,
+          substituteName: link.classic_paint_name,
+          substituteBrand: 'Citadel Classic',
+          substituteHex: cp?.gradientStartHex ?? '#888888',
+          matchType: 'classic_citadel',
+        };
+      }
+    }
+    return null;
+  }
+
+  private findThirdPartyMatch(
+    requiredPaintId: string,
+    invSet: Set<string>
+  ): PaintSubstituteMatch | null {
+    const tpMatches = this.catalog.citadelToThirdPartyMap()[requiredPaintId] ?? [];
+    for (const tpm of tpMatches) {
+      if (invSet.has(tpm.thirdPartyPaintId)) {
+        return {
+          requiredPaintId,
+          substitutePaintId: tpm.thirdPartyPaintId,
+          substituteName: tpm.name,
+          substituteBrand: `${tpm.brand} (${tpm.range})`,
+          substituteHex: tpm.hex,
+          matchType: 'third_party',
+          deltaE: tpm.deltaE,
+        };
+      }
+    }
+    return null;
   }
 
   /**
@@ -194,5 +209,64 @@ export class InventoryMatchService {
       artificer: this.evaluateReadiness(artificerIds),
       overall: this.evaluateReadiness(allIds),
     };
+  }
+
+  /**
+   * Aggregates required paints across all attached models and colors in a project
+   * and evaluates 3-stage readiness.
+   */
+  evaluateProjectStagedReadiness(
+    project: Pick<UserProject, 'recipeIds' | 'colorIds'>
+  ): StagedReadinessResult {
+    const baseIds = new Set<string>();
+    const detailIds = new Set<string>();
+    const artificerIds = new Set<string>();
+    const allIds = new Set<string>();
+
+    const modelById = this.catalog.modelById();
+    const colorById = this.catalog.colorById();
+
+    for (const rid of project.recipeIds) {
+      const model = modelById.get(rid);
+      if (model) {
+        for (const id of model.paintsByStage?.base ?? []) {
+          baseIds.add(id);
+        }
+        for (const id of model.paintsByStage?.detail ?? []) {
+          detailIds.add(id);
+        }
+        for (const id of model.paintsByStage?.artificer ?? []) {
+          artificerIds.add(id);
+        }
+        for (const id of model.requiredPaintIds) {
+          allIds.add(id);
+        }
+      }
+    }
+
+    for (const cid of project.colorIds) {
+      const color = colorById.get(cid);
+      if (color) {
+        for (const id of color.basePaintIds) {
+          baseIds.add(id);
+        }
+        for (const id of color.detailPaintIds) {
+          detailIds.add(id);
+        }
+        for (const id of color.artificerPaintIds) {
+          artificerIds.add(id);
+        }
+        for (const id of color.requiredPaintIds) {
+          allIds.add(id);
+        }
+      }
+    }
+
+    return this.evaluateStagedReadiness({
+      base: Array.from(baseIds),
+      detail: Array.from(detailIds),
+      artificer: Array.from(artificerIds),
+      all: Array.from(allIds),
+    });
   }
 }

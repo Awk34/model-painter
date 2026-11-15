@@ -6,6 +6,7 @@ import {
 } from '../config/user-limits.config';
 import { UserUploadedPhoto } from '../models/catalog.models';
 import { getFirebaseHandles } from './firebase.config';
+import { createIdbStoreClient } from '../utils/idb.util';
 import { deleteObject, getBlob, ref, uploadBytes } from 'firebase/storage';
 
 const MEDIA_DB_NAME = 'whc_user_media_v1';
@@ -27,66 +28,8 @@ export class UserMediaService {
   /** Reactive map of photoId -> active browser ObjectURL */
   readonly photoUrls = signal<Record<string, string>>({});
 
-  private dbPromise: Promise<IDBDatabase> | null = null;
+  private readonly idb = createIdbStoreClient(MEDIA_DB_NAME, MEDIA_DB_VERSION, [STORE_PHOTO_BLOBS]);
   private readonly loadingIds = new Set<string>();
-
-  private openDb(): Promise<IDBDatabase> {
-    if (this.dbPromise) return this.dbPromise;
-    this.dbPromise = new Promise((resolve, reject) => {
-      const req = indexedDB.open(MEDIA_DB_NAME, MEDIA_DB_VERSION);
-      req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(STORE_PHOTO_BLOBS)) {
-          db.createObjectStore(STORE_PHOTO_BLOBS);
-        }
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    return this.dbPromise;
-  }
-
-  private async idbGetBlob(photoId: string): Promise<Blob | null> {
-    try {
-      const db = await this.openDb();
-      return await new Promise<Blob | null>((resolve, reject) => {
-        const tx = db.transaction(STORE_PHOTO_BLOBS, 'readonly');
-        const req = tx.objectStore(STORE_PHOTO_BLOBS).get(photoId);
-        req.onsuccess = () => resolve((req.result as Blob) ?? null);
-        req.onerror = () => reject(req.error);
-      });
-    } catch {
-      return null;
-    }
-  }
-
-  private async idbSetBlob(photoId: string, blob: Blob): Promise<void> {
-    try {
-      const db = await this.openDb();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_PHOTO_BLOBS, 'readwrite');
-        const req = tx.objectStore(STORE_PHOTO_BLOBS).put(blob, photoId);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      });
-    } catch (err) {
-      console.warn('Failed to store photo blob in IndexedDB:', err);
-    }
-  }
-
-  private async idbDeleteBlob(photoId: string): Promise<void> {
-    try {
-      const db = await this.openDb();
-      await new Promise<void>((resolve) => {
-        const tx = db.transaction(STORE_PHOTO_BLOBS, 'readwrite');
-        tx.objectStore(STORE_PHOTO_BLOBS).delete(photoId);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-      });
-    } catch {
-      // ignore
-    }
-  }
 
   /**
    * Validates MIME type, magic-byte file signature, and image dimensions.
@@ -136,7 +79,6 @@ export class UserMediaService {
     }
 
     const downscaled = await this.downscaleImageToLimit(img, width, height, detectedMime);
-    // If the original was already under 5 MB and re-encoding didn't shrink the byte size, keep the original
     if (!overByteLimit && downscaled.blob.size >= file.size) {
       return {
         blob: file,
@@ -221,7 +163,6 @@ export class UserMediaService {
   ): Promise<{ blob: Blob; mimeType: AllowedImageMimeType; width: number; height: number }> {
     const maxDimCandidates = [USER_LIMITS.MAX_PHOTO_DIMENSION_PX, 2048, 1600, 1280, 960];
     const qualityCandidates = [0.86, 0.78, 0.68];
-    // Prefer WebP for transparent PNGs that need compression, or JPEG for photos
     const targetMime: AllowedImageMimeType =
       sourceMime === 'image/png' ? 'image/webp' : sourceMime;
 
@@ -315,7 +256,7 @@ export class UserMediaService {
   }
 
   async storeLocalBlob(photoId: string, blob: Blob): Promise<string> {
-    await this.idbSetBlob(photoId, blob);
+    await this.idb.put(STORE_PHOTO_BLOBS, photoId, blob);
     return this.registerObjectUrl(photoId, blob);
   }
 
@@ -325,7 +266,9 @@ export class UserMediaService {
     uid: string
   ): Promise<string | undefined> {
     const fb = getFirebaseHandles();
-    if (!fb) return undefined;
+    if (!fb) {
+      return undefined;
+    }
     const folder = photo.kind === 'reference' ? 'private_references' : 'showcase';
     const ext =
       photo.mimeType === 'image/png'
@@ -357,9 +300,13 @@ export class UserMediaService {
    * from IndexedDB / Firebase Cloud Storage and returns a placeholder until ready.
    */
   resolvePhotoUrl(photo: UserUploadedPhoto | null | undefined): string {
-    if (!photo) return '/icons/ic_image_loading_placeholder.svg';
+    if (!photo) {
+      return '/icons/ic_image_loading_placeholder.svg';
+    }
     const cachedUrl = this.photoUrls()[photo.id];
-    if (cachedUrl) return cachedUrl;
+    if (cachedUrl) {
+      return cachedUrl;
+    }
     this.hydratePhotoUrl(photo);
     return '/icons/ic_image_loading_placeholder.svg';
   }
@@ -371,7 +318,7 @@ export class UserMediaService {
     this.loadingIds.add(photo.id);
     void (async () => {
       try {
-        const localBlob = await this.idbGetBlob(photo.id);
+        const localBlob = await this.idb.get<Blob>(STORE_PHOTO_BLOBS, photo.id);
         if (localBlob) {
           this.registerObjectUrl(photo.id, localBlob);
           return;
@@ -380,7 +327,7 @@ export class UserMediaService {
           const fb = getFirebaseHandles();
           if (fb && fb.auth.currentUser) {
             const remoteBlob = await getBlob(ref(fb.storage, photo.storagePath));
-            await this.idbSetBlob(photo.id, remoteBlob);
+            await this.idb.put(STORE_PHOTO_BLOBS, photo.id, remoteBlob);
             this.registerObjectUrl(photo.id, remoteBlob);
           }
         }
@@ -401,9 +348,13 @@ export class UserMediaService {
   ): Promise<Map<string, string>> {
     const uploadedPaths = new Map<string, string>();
     for (const photo of photos) {
-      if (photo.storagePath) continue;
-      const blob = await this.idbGetBlob(photo.id);
-      if (!blob) continue;
+      if (photo.storagePath) {
+        continue;
+      }
+      const blob = await this.idb.get<Blob>(STORE_PHOTO_BLOBS, photo.id);
+      if (!blob) {
+        continue;
+      }
       const path = await this.uploadToCloudStorage(photo, blob, uid);
       if (path) {
         uploadedPaths.set(photo.id, path);
@@ -422,7 +373,7 @@ export class UserMediaService {
         return next;
       });
     }
-    await this.idbDeleteBlob(photo.id);
+    await this.idb.delete(STORE_PHOTO_BLOBS, photo.id);
     if (photo.storagePath) {
       const fb = getFirebaseHandles();
       if (fb && fb.auth.currentUser) {
@@ -441,17 +392,6 @@ export class UserMediaService {
       URL.revokeObjectURL(u);
     }
     this.photoUrls.set({});
-    try {
-      const db = await this.openDb();
-      await new Promise<void>((resolve) => {
-        const tx = db.transaction(STORE_PHOTO_BLOBS, 'readwrite');
-        tx.objectStore(STORE_PHOTO_BLOBS).clear();
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-      });
-    } catch {
-      // ignore
-    }
+    await this.idb.clearAll();
   }
 }
-

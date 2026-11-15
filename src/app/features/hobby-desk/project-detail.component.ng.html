@@ -4,13 +4,21 @@
     <div class="top-nav-row">
       <a routerLink="/hobby-desk" class="btn btn-ghost btn-sm">← Back to Hobby Desk</a>
       <div class="top-actions">
-        <button class="btn btn-secondary btn-sm" (click)="showThumbnailModal.set(true)">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          (click)="activePickerModal.set('thumbnail')"
+        >
           🖼 Change Thumbnail
         </button>
-        <button class="btn btn-secondary btn-sm" (click)="duplicateAndOpen(proj.id)">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="duplicateAndOpen(proj.id)">
           ⧉ Duplicate Project
         </button>
-        <button class="btn btn-ghost btn-sm danger-text" (click)="deleteProject(proj.id, proj.name)">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm danger-text"
+          (click)="deleteProject(proj.id, proj.name)"
+        >
           🗑 Delete
         </button>
       </div>
@@ -18,7 +26,11 @@
 
     <!-- Project Hero Banner -->
     <header class="project-hero studio-card">
-      <div class="hero-thumb-box" (click)="showThumbnailModal.set(true)" title="Click to change thumbnail">
+      <div
+        class="hero-thumb-box"
+        title="Click to change thumbnail"
+        (click)="activePickerModal.set('thumbnail')"
+      >
         <img [src]="coverUrl()" [alt]="proj.name" />
       </div>
 
@@ -31,13 +43,19 @@
               [(ngModel)]="titleDraft"
               (keyup.enter)="saveTitle(proj.id)"
             />
-            <button class="btn btn-gold btn-sm" (click)="saveTitle(proj.id)">Save</button>
-            <button class="btn btn-ghost btn-sm" (click)="editingTitle.set(false)">Cancel</button>
+            <button type="button" class="btn btn-gold btn-sm" (click)="saveTitle(proj.id)">
+              Save
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="editingTitle.set(false)">
+              Cancel
+            </button>
           </div>
         } @else {
           <div class="title-display-row">
             <h1>{{ proj.name }}</h1>
-            <button class="btn btn-ghost btn-sm" (click)="startEditTitle(proj.name)">✎ Rename</button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="startEditTitle(proj.name)">
+              ✎ Rename
+            </button>
           </div>
         }
 
@@ -53,157 +71,19 @@
           <span>Updated {{ proj.updatedAt | date:'mediumDate' }}</span>
         </div>
 
-        <!-- Staged Readiness Progress Bars (Split into 3 Finish Levels) -->
-        @if (stagedRollupReadiness(); as staged) {
-          <div class="readiness-summary">
-            <div class="readiness-bar-header">
-              <strong>Can I Paint This Project? — Readiness by Detail Level</strong>
-              <span style="color: var(--text-secondary); font-size: 0.76rem">
-                Click a stage to filter required & missing paints below
-              </span>
-            </div>
-
-            <div class="stage-readiness-list">
-              <!-- 1. Base Finish -->
-              <div
-                class="stage-ready-row"
-                [class.active]="selectedRollupStage() === 'base'"
-                (click)="selectedRollupStage.set('base'); paintsExpanded.set(true)"
-              >
-                <div class="stage-ready-top">
-                  <div class="stage-ready-title">
-                    <strong>1. Base Finish</strong>
-                    <span class="stage-tier-hint">Battle Ready</span>
-                  </div>
-                  <div class="stage-ready-stats">
-                    @if (staged.base.totalRequired > 0) {
-                      <strong
-                        class="stage-pct"
-                        [class.complete]="staged.base.matchPercent === 100"
-                      >
-                        {{ staged.base.matchPercent }}%
-                      </strong>
-                      <span>
-                        ({{ staged.base.ownedDirectCount + staged.base.substitutedCount }}/{{ staged.base.totalRequired }} Paints)
-                      </span>
-                      @if (staged.base.missingCount > 0) {
-                        <button
-                          class="btn btn-gold btn-sm stage-wish-btn"
-                          (click)="$event.stopPropagation(); userState.addManyToWishlist(staged.base.missingPaintIds)"
-                        >
-                          ★ +{{ staged.base.missingCount }} Missing
-                        </button>
-                      }
-                    } @else {
-                      <span>No paints required</span>
-                    }
-                  </div>
-                </div>
-                <div class="progress-track">
-                  <div
-                    class="progress-fill"
-                    [style.width.%]="staged.base.matchPercent"
-                    [class.complete]="staged.base.matchPercent === 100"
-                  ></div>
-                </div>
-              </div>
-
-              <!-- 2. Detail Finish -->
-              <div
-                class="stage-ready-row"
-                [class.active]="selectedRollupStage() === 'detail'"
-                (click)="selectedRollupStage.set('detail'); paintsExpanded.set(true)"
-              >
-                <div class="stage-ready-top">
-                  <div class="stage-ready-title">
-                    <strong>2. Detail Finish</strong>
-                    <span class="stage-tier-hint">Shade & Layer</span>
-                  </div>
-                  <div class="stage-ready-stats">
-                    @if (staged.detail.totalRequired > 0) {
-                      <strong
-                        class="stage-pct"
-                        [class.complete]="staged.detail.matchPercent === 100"
-                      >
-                        {{ staged.detail.matchPercent }}%
-                      </strong>
-                      <span>
-                        ({{ staged.detail.ownedDirectCount + staged.detail.substitutedCount }}/{{ staged.detail.totalRequired }} Paints)
-                      </span>
-                      @if (staged.detail.missingCount > 0) {
-                        <button
-                          class="btn btn-secondary btn-sm stage-wish-btn"
-                          (click)="$event.stopPropagation(); userState.addManyToWishlist(staged.detail.missingPaintIds)"
-                        >
-                          ★ +{{ staged.detail.missingCount }} Missing
-                        </button>
-                      }
-                    } @else {
-                      <span>No paints required</span>
-                    }
-                  </div>
-                </div>
-                <div class="progress-track">
-                  <div
-                    class="progress-fill"
-                    [style.width.%]="staged.detail.matchPercent"
-                    [class.complete]="staged.detail.matchPercent === 100"
-                  ></div>
-                </div>
-              </div>
-
-              <!-- 3. Artificer Finish -->
-              <div
-                class="stage-ready-row"
-                [class.active]="selectedRollupStage() === 'artificer'"
-                (click)="selectedRollupStage.set('artificer'); paintsExpanded.set(true)"
-              >
-                <div class="stage-ready-top">
-                  <div class="stage-ready-title">
-                    <strong>3. Artificer Finish</strong>
-                    <span class="stage-tier-hint">Edge Highlights</span>
-                  </div>
-                  <div class="stage-ready-stats">
-                    @if (staged.artificer.totalRequired > 0) {
-                      <strong
-                        class="stage-pct"
-                        [class.complete]="staged.artificer.matchPercent === 100"
-                      >
-                        {{ staged.artificer.matchPercent }}%
-                      </strong>
-                      <span>
-                        ({{ staged.artificer.ownedDirectCount + staged.artificer.substitutedCount }}/{{ staged.artificer.totalRequired }} Paints)
-                      </span>
-                      @if (staged.artificer.missingCount > 0) {
-                        <button
-                          class="btn btn-secondary btn-sm stage-wish-btn"
-                          (click)="$event.stopPropagation(); userState.addManyToWishlist(staged.artificer.missingPaintIds)"
-                        >
-                          ★ +{{ staged.artificer.missingCount }} Missing
-                        </button>
-                      }
-                    } @else {
-                      <span>No paints required</span>
-                    }
-                  </div>
-                </div>
-                <div class="progress-track">
-                  <div
-                    class="progress-fill"
-                    [style.width.%]="staged.artificer.matchPercent"
-                    [class.complete]="staged.artificer.matchPercent === 100"
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        }
+        <app-stage-readiness-bars
+          [staged]="stagedRollupReadiness()"
+          [activeStage]="activeHeroStage()"
+          heading="Can I Paint This Project? — Readiness by Detail Level"
+          hint="Click a stage to filter required & missing paints below"
+          layout="grid"
+          (stageClick)="onHeroStageClick($event)"
+          (wishlistMissing)="userState.addManyToWishlist($event)"
+        />
       </div>
     </header>
 
-    <!-- ==================================================================
-         SECTION 1: ATTACHED MODELS (EXPANDED BY DEFAULT)
-         ================================================================== -->
+    <!-- SECTION 1: ATTACHED MODELS -->
     <section class="project-section studio-card">
       <div class="section-header-bar">
         <button
@@ -215,7 +95,11 @@
           <span class="section-chevron" [class.expanded]="modelsExpanded()">▸</span>
           <h2>🛡 Models ({{ attachedModels().length }})</h2>
         </button>
-        <button class="btn btn-gold btn-sm" (click)="showAddModelModal.set(true)">
+        <button
+          type="button"
+          class="btn btn-gold btn-sm"
+          (click)="activePickerModal.set('model')"
+        >
           + Add Model to Project
         </button>
       </div>
@@ -235,6 +119,7 @@
                   </div>
                   <div class="attached-footer" (click)="$event.stopPropagation()">
                     <button
+                      type="button"
                       class="btn btn-ghost btn-sm danger-text"
                       (click)="userState.removeRecipeFromProject(proj.id, m.id)"
                     >
@@ -247,7 +132,11 @@
           } @else {
             <div class="empty-box">
               <p>No Model Painting Guides attached to this project yet.</p>
-              <button class="btn btn-gold btn-sm" (click)="showAddModelModal.set(true)">
+              <button
+                type="button"
+                class="btn btn-gold btn-sm"
+                (click)="activePickerModal.set('model')"
+              >
                 + Add Model Guide
               </button>
             </div>
@@ -256,186 +145,16 @@
       }
     </section>
 
-    <!-- ==================================================================
-         SECTION 2: AGGREGATED REQUIRED & MISSING PAINTS ROLLUP
-         ================================================================== -->
-    <section class="project-section studio-card">
-      <div class="section-header-bar">
-        <button
-          type="button"
-          class="section-toggle-btn"
-          [attr.aria-expanded]="paintsExpanded()"
-          (click)="paintsExpanded.set(!paintsExpanded())"
-        >
-          <span class="section-chevron" [class.expanded]="paintsExpanded()">▸</span>
-          <h2>🎨 Required & Missing Paints ({{ rollupReadiness().totalRequired }})</h2>
-        </button>
-      </div>
+    <!-- SECTION 2: AGGREGATED REQUIRED & MISSING PAINTS ROLLUP -->
+    <app-project-paint-rollup
+      [staged]="stagedRollupReadiness()"
+      [(expanded)]="paintsExpanded"
+      [(selectedStage)]="selectedRollupStage"
+      (addModelClick)="activePickerModal.set('model')"
+      (addColorClick)="activePickerModal.set('color')"
+    />
 
-      @if (paintsExpanded()) {
-        <div class="section-content rollup-section">
-          <div class="chip-bar">
-            <button
-              class="chip"
-              [class.active]="selectedRollupStage() === 'base'"
-              (click)="selectedRollupStage.set('base')"
-            >
-              1. Base Finish ({{ stagedRollupReadiness().base.totalRequired }} Paints)
-            </button>
-            <button
-              class="chip"
-              [class.active]="selectedRollupStage() === 'detail'"
-              (click)="selectedRollupStage.set('detail')"
-            >
-              2. Detail Finish ({{ stagedRollupReadiness().detail.totalRequired }} Paints)
-            </button>
-            <button
-              class="chip"
-              [class.active]="selectedRollupStage() === 'artificer'"
-              (click)="selectedRollupStage.set('artificer')"
-            >
-              3. Artificer Finish ({{ stagedRollupReadiness().artificer.totalRequired }} Paints)
-            </button>
-            <button
-              class="chip"
-              [class.active]="selectedRollupStage() === 'all'"
-              (click)="selectedRollupStage.set('all')"
-            >
-              All Stages Combined ({{ stagedRollupReadiness().overall.totalRequired }} Paints)
-            </button>
-          </div>
-
-          @if (stagedRollupReadiness().overall.totalRequired === 0) {
-            <div class="empty-box">
-              <h3>No Paints Required Yet</h3>
-              <p>Add Model Painting Guides or Color Guides to this project to automatically compute all required & missing paints.</p>
-              <div style="display: flex; gap: 10px">
-                <button class="btn btn-gold" (click)="showAddModelModal.set(true)">+ Add Model Guide</button>
-                <button class="btn btn-secondary" (click)="showAddColorModal.set(true)">+ Add Color Guide</button>
-              </div>
-            </div>
-          } @else {
-            <!-- Missing Paints Group -->
-            <div class="paint-group studio-card">
-              <div class="group-header">
-                <div>
-                  <span class="badge badge-missing">Missing Paints ({{ missingPaintObjects().length }})</span>
-                  <p class="group-sub">Paints required by your project's models & colors that are not yet in your Inventory.</p>
-                </div>
-                @if (missingPaintObjects().length > 0) {
-                  <div class="group-actions">
-                    <button
-                      class="btn btn-gold btn-sm"
-                      (click)="userState.addManyToWishlist(rollupReadiness().missingPaintIds)"
-                    >
-                      ★ Add All Missing to Wishlist
-                    </button>
-                    <button
-                      class="btn btn-secondary btn-sm"
-                      (click)="userState.addManyToInventory(rollupReadiness().missingPaintIds)"
-                    >
-                      ✓ Mark All as Owned
-                    </button>
-                  </div>
-                }
-              </div>
-
-              @if (missingPaintObjects().length > 0) {
-                <div class="rollup-paint-grid">
-                  @for (p of missingPaintObjects(); track p.id) {
-                    <div class="rollup-paint-card">
-                      <button class="rp-main" (click)="paintModal.openPaint(p.id)">
-                        <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
-                        <div class="rp-info">
-                          <span class="rp-name">{{ p.name }}</span>
-                          <span class="rp-meta">{{ p.category }}</span>
-                        </div>
-                      </button>
-                      <div class="rp-btns">
-                        <button
-                          class="btn btn-sm"
-                          [class.btn-owned]="userState.isOwned(p.id)"
-                          [class.btn-ghost]="!userState.isOwned(p.id)"
-                          (click)="userState.toggleInventory(p.id)"
-                        >
-                          + Own
-                        </button>
-                        <button
-                          class="btn btn-sm"
-                          [class.btn-wishlist]="userState.isWishlisted(p.id)"
-                          [class.btn-ghost]="!userState.isWishlisted(p.id)"
-                          (click)="userState.toggleWishlist(p.id)"
-                        >
-                          {{ userState.isWishlisted(p.id) ? '★ Wishlisted' : '☆ Wishlist' }}
-                        </button>
-                      </div>
-                    </div>
-                  }
-                </div>
-              } @else {
-                <p class="all-covered-msg">🎉 You own every paint (or a valid equivalent) needed for this project!</p>
-              }
-            </div>
-
-            <!-- Covered by Equivalent (Tone Pro or 3rd-Party) -->
-            @if (substitutedList().length > 0) {
-              <div class="paint-group studio-card">
-                <div class="group-header">
-                  <div>
-                    <span class="badge badge-sub">Covered by Equivalent in Inventory ({{ substitutedList().length }})</span>
-                    <p class="group-sub">Required paints satisfied by equivalent paints you already own.</p>
-                  </div>
-                </div>
-                <div class="rollup-paint-grid">
-                  @for (item of substitutedList(); track item.paint.id) {
-                    <div class="rollup-paint-card sub-card">
-                      <button class="rp-main" (click)="paintModal.openPaint(item.paint.id)">
-                        <span class="paint-swatch" [style.background]="item.paint.gradientStartHex"></span>
-                        <div class="rp-info">
-                          <span class="rp-name">{{ item.paint.name }}</span>
-                          <span class="sub-note">
-                            ⇄ Covered by <strong>{{ item.sub.substituteName }}</strong> ({{ item.sub.substituteBrand }})
-                          </span>
-                        </div>
-                      </button>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-
-            <!-- Owned Directly -->
-            @if (ownedDirectObjects().length > 0) {
-              <div class="paint-group studio-card">
-                <div class="group-header">
-                  <div>
-                    <span class="badge badge-owned">Owned Directly in Inventory ({{ ownedDirectObjects().length }})</span>
-                  </div>
-                </div>
-                <div class="rollup-paint-grid">
-                  @for (p of ownedDirectObjects(); track p.id) {
-                    <div class="rollup-paint-card">
-                      <button class="rp-main" (click)="paintModal.openPaint(p.id)">
-                        <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
-                        <div class="rp-info">
-                          <span class="rp-name">{{ p.name }}</span>
-                          <span class="rp-meta">{{ p.category }}</span>
-                        </div>
-                      </button>
-                      <span class="badge badge-owned">✓ Owned</span>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-          }
-        </div>
-      }
-    </section>
-
-    <!-- ==================================================================
-         SECTION 3: PROJECT PHOTOS & PRIVATE REFERENCE PHOTOS
-         ================================================================== -->
+    <!-- SECTION 3: PROJECT PHOTOS & PRIVATE REFERENCE PHOTOS -->
     <section class="project-section studio-card">
       <div class="section-header-bar">
         <button
@@ -475,9 +194,7 @@
       }
     </section>
 
-    <!-- ==================================================================
-         SECTION 4: ATTACHED COLORS
-         ================================================================== -->
+    <!-- SECTION 4: ATTACHED COLORS -->
     <section class="project-section studio-card">
       <div class="section-header-bar">
         <button
@@ -489,7 +206,11 @@
           <span class="section-chevron" [class.expanded]="colorsExpanded()">▸</span>
           <h2>💧 Colors ({{ attachedColors().length }})</h2>
         </button>
-        <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
+        <button
+          type="button"
+          class="btn btn-gold btn-sm"
+          (click)="activePickerModal.set('color')"
+        >
           + Add Color to Project
         </button>
       </div>
@@ -507,6 +228,7 @@
                   </div>
                   <div class="attached-footer" (click)="$event.stopPropagation()">
                     <button
+                      type="button"
                       class="btn btn-ghost btn-sm danger-text"
                       (click)="userState.removeColorFromProject(proj.id, c.id)"
                     >
@@ -519,7 +241,11 @@
           } @else {
             <div class="empty-box">
               <p>No Color Guides attached to this project yet.</p>
-              <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
+              <button
+                type="button"
+                class="btn btn-gold btn-sm"
+                (click)="activePickerModal.set('color')"
+              >
                 + Add Color Guide
               </button>
             </div>
@@ -528,251 +254,15 @@
       }
     </section>
 
-    <!-- ==================================================================
-         SECTION 4: PROJECT NOTES & CHECKLISTS (WITH DRAG-AND-DROP)
-         ================================================================== -->
-    <section class="project-section studio-card">
-      <div class="section-header-bar">
-        <button
-          type="button"
-          class="section-toggle-btn"
-          [attr.aria-expanded]="notesExpanded()"
-          (click)="notesExpanded.set(!notesExpanded())"
-        >
-          <span class="section-chevron" [class.expanded]="notesExpanded()">▸</span>
-          <h2>📝 Notes & Checklists ({{ proj.notes.length }})</h2>
-        </button>
-        <button class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
-          + New Note / Checklist
-        </button>
-      </div>
-
-      @if (notesExpanded()) {
-        <div class="section-content">
-          @if (proj.notes.length > 0) {
-            <div class="notes-grid">
-              @for (note of proj.notes; track note.id) {
-                <div class="note-card studio-card">
-                  <div class="note-header">
-                    <h4>{{ note.title }}</h4>
-                    <div class="note-actions">
-                      <button class="btn btn-ghost btn-sm" (click)="openNoteEditor(note)">
-                        ✎ Edit
-                      </button>
-                      <button
-                        class="btn btn-ghost btn-sm danger-text"
-                        (click)="userState.deleteProjectNote(proj.id, note.id)"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="note-components">
-                    @for (comp of note.components; track $index; let idx = $index) {
-                      @if (comp.type === 'checkbox') {
-                        <label class="note-checkbox-row" [class.done]="comp.checked">
-                          <input
-                            type="checkbox"
-                            [checked]="comp.checked"
-                            (change)="userState.toggleNoteCheckbox(proj.id, note.id, idx)"
-                          />
-                          <span>{{ comp.value }}</span>
-                        </label>
-                      } @else {
-                        <p class="note-text-block">{{ comp.value }}</p>
-                      }
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="empty-box">
-              <p>Add free-form painting notes, army recipe reminders, or interactive step checklists.</p>
-              <button class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
-                + Create First Note
-              </button>
-            </div>
-          }
-        </div>
-      }
-    </section>
+    <!-- SECTION 5: PROJECT NOTES & CHECKLISTS -->
+    <app-project-notes-section [project]="proj" [(expanded)]="notesExpanded" />
   </div>
 
-  <!-- Modal: Block Note & Checklist Editor (with CDK Drag & Drop) -->
-  @if (editingNoteOpen()) {
-    <div class="modal-backdrop" (click)="editingNoteOpen.set(false)">
-      <div class="modal-panel" style="max-width: 640px" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>{{ editingNoteId() ? 'Edit Project Note' : 'New Project Note' }}</h3>
-          <button class="close-btn" (click)="editingNoteOpen.set(false)">✕</button>
-        </div>
-        <div class="modal-body">
-          <label class="field-label">Note Title</label>
-          <input
-            type="text"
-            class="input-control"
-            placeholder="e.g., Batch Painting Checklist, Basing Recipe..."
-            [(ngModel)]="noteTitleDraft"
-          />
-
-          <div class="blocks-toolbar">
-            <span class="field-label">Blocks (Drag handle ☰ to reorder):</span>
-            <div style="display: flex; gap: 8px">
-              <button class="btn btn-secondary btn-sm" (click)="addNoteBlock('text')">
-                + Text Paragraph
-              </button>
-              <button class="btn btn-secondary btn-sm" (click)="addNoteBlock('checkbox')">
-                ☑ + Checklist Item
-              </button>
-            </div>
-          </div>
-
-          <div
-            cdkDropList
-            class="blocks-list"
-            (cdkDropListDropped)="dropNoteBlock($event)"
-          >
-            @for (block of noteBlocksDraft; track $index; let idx = $index) {
-              <div class="block-item" cdkDrag>
-                <span class="drag-handle" cdkDragHandle title="Drag to reorder">☰</span>
-                @if (block.type === 'checkbox') {
-                  <input type="checkbox" [(ngModel)]="block.checked" />
-                } @else {
-                  <span class="block-tag">TXT</span>
-                }
-                <input
-                  type="text"
-                  class="input-control"
-                  [placeholder]="block.type === 'checkbox' ? 'Checklist step...' : 'Note text...'"
-                  [(ngModel)]="block.value"
-                />
-                <button class="btn btn-ghost btn-sm danger-text" (click)="removeNoteBlock(idx)">
-                  ✕
-                </button>
-              </div>
-            }
-          </div>
-
-          <div class="modal-footer-btns">
-            <button class="btn btn-ghost" (click)="editingNoteOpen.set(false)">Cancel</button>
-            <button class="btn btn-gold" (click)="saveNote(proj.id)">Save Note</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal: Add Model Picker -->
-  @if (showAddModelModal()) {
-    <div class="modal-backdrop" (click)="showAddModelModal.set(false)">
-      <div class="modal-panel" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Add Model Guide to "{{ proj.name }}"</h3>
-          <button class="close-btn" (click)="showAddModelModal.set(false)">✕</button>
-        </div>
-        <div class="modal-body">
-          <input
-            type="text"
-            class="input-control"
-            placeholder="Search 4,531 models by name or faction..."
-            [(ngModel)]="pickerSearch"
-          />
-          <div class="picker-grid">
-            @for (m of pickerModels(); track m.id) {
-              <div class="picker-item studio-card">
-                <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
-                <div class="picker-info">
-                  <strong>{{ m.name }}</strong>
-                  <span>{{ m.gameNames[0] }}</span>
-                </div>
-                <button
-                  class="btn btn-sm btn-gold"
-                  (click)="userState.addRecipeToProject(proj.id, m.id, m.localPrimaryImage)"
-                >
-                  + Add
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal: Add Color Picker -->
-  @if (showAddColorModal()) {
-    <div class="modal-backdrop" (click)="showAddColorModal.set(false)">
-      <div class="modal-panel" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Add Color Guide to "{{ proj.name }}"</h3>
-          <button class="close-btn" (click)="showAddColorModal.set(false)">✕</button>
-        </div>
-        <div class="modal-body">
-          <input
-            type="text"
-            class="input-control"
-            placeholder="Search 596 color schemes..."
-            [(ngModel)]="pickerSearch"
-          />
-          <div class="picker-grid">
-            @for (c of pickerColors(); track c.id) {
-              <div class="picker-item studio-card">
-                <span class="paint-swatch" [style.background]="c.hex"></span>
-                <div class="picker-info">
-                  <strong>{{ c.name }}</strong>
-                  <span>{{ c.colorGroups.join(', ') }}</span>
-                </div>
-                <button
-                  class="btn btn-sm btn-gold"
-                  (click)="userState.addColorToProject(proj.id, c.id)"
-                >
-                  + Add
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal: Change Project Thumbnail -->
-  @if (showThumbnailModal()) {
-    <div class="modal-backdrop" (click)="showThumbnailModal.set(false)">
-      <div class="modal-panel" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Choose Project Thumbnail</h3>
-          <button class="close-btn" (click)="showThumbnailModal.set(false)">✕</button>
-        </div>
-        <div class="modal-body">
-          <input
-            type="text"
-            class="input-control"
-            placeholder="Search any miniature artwork to use as project cover..."
-            [(ngModel)]="pickerSearch"
-          />
-          <div class="picker-grid">
-            @for (m of pickerModels(); track m.id) {
-              <div class="picker-item studio-card">
-                <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
-                <div class="picker-info">
-                  <strong>{{ m.name }}</strong>
-                </div>
-                <button
-                  class="btn btn-sm btn-gold"
-                  (click)="selectThumbnail(proj.id, m.localPrimaryImage || '', m.primaryImage)"
-                >
-                  Use Cover
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-  }
+  <app-project-picker-modal
+    [mode]="activePickerModal()"
+    [project]="proj"
+    (closed)="activePickerModal.set(null)"
+  />
 } @else {
   <div class="empty-box studio-card">
     <h3>Project Not Found</h3>

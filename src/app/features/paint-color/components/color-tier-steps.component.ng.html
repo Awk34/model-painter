@@ -1,0 +1,78 @@
+<div class="tiers-list">
+  @for (tierBlock of tierBlocks(); track tierBlock.key) {
+    <div
+      class="tier-block"
+      [class.highlighted]="activeTier() === tierBlock.key"
+      (click)="activeTier.set(tierBlock.key)"
+    >
+      <div class="tier-block-header">
+        <h3>{{ tierBlock.label }}</h3>
+        <span class="tier-sub">
+          {{ tierBlock.steps.length }} Step{{ tierBlock.steps.length === 1 ? '' : 's' }}
+        </span>
+      </div>
+
+      <div class="stage-steps">
+        @for (st of tierBlock.steps; track st.id) {
+          @if (st.paint; as sp) {
+            <div class="stage-step-row" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="step-paint-btn"
+                (click)="paintModal.openPaint(sp.id)"
+              >
+                <span class="step-order-num">{{ st.stepOrder }}</span>
+                <span
+                  class="paint-swatch"
+                  [style.background]="sp.hex || sp.gradientStartHex || '#888'"
+                ></span>
+                <div class="step-paint-info">
+                  <strong>{{ sp.name }}</strong>
+                  <span>{{ st.technique || sp.category }}</span>
+                </div>
+              </button>
+
+              <div class="step-paint-actions">
+                @let sub = readiness().substitutedByPaintId[sp.id];
+                @if (userState.isOwned(sp.id)) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-owned"
+                    (click)="userState.toggleInventory(sp.id)"
+                  >
+                    ✓ Owned
+                  </button>
+                } @else if (sub) {
+                  <button
+                    type="button"
+                    class="btn btn-sm badge-sub"
+                    (click)="paintModal.openPaint(sp.id)"
+                  >
+                    ⇄ {{ sub.substituteName }}
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-ghost"
+                    (click)="userState.toggleInventory(sp.id)"
+                  >
+                    + Own
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-wishlist]="userState.isWishlisted(sp.id)"
+                    [class.btn-ghost]="!userState.isWishlisted(sp.id)"
+                    (click)="userState.toggleWishlist(sp.id)"
+                  >
+                    {{ userState.isWishlisted(sp.id) ? '★' : '☆' }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

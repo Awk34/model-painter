@@ -1,0 +1,135 @@
+:host {
+  display: block;
+}
+
+.converter-header {
+  padding: 16px;
+}
+
+.converter-toolbar {
+  margin-top: 12px;
+}
+
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.converter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.converter-row {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) 36px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+@media (max-width: 760px) {
+  .converter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .conv-arrow {
+    display: none;
+  }
+}
+
+.conv-side {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.conv-paint-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  min-width: 0;
+}
+
+.conv-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.conv-name {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.conv-meta {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.conv-arrow {
+  font-size: 1.2rem;
+  color: var(--gold-bright);
+  text-align: center;
+}
+
+.conv-equivalents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.conv-eq-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.conv-eq-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.mini-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.conv-eq-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.conv-eq-name {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.conv-eq-brand {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+

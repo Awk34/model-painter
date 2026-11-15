@@ -1,0 +1,140 @@
+<section class="tab-content">
+  <div class="toolbar-row">
+    <div class="search-box">
+      <input
+        type="text"
+        class="input-control"
+        placeholder="Search your projects..."
+        [ngModel]="projectSearch()"
+        (ngModelChange)="projectSearch.set($event)"
+      />
+    </div>
+
+    <div class="toolbar-right">
+      <select
+        class="input-control sort-select"
+        [ngModel]="projectSort()"
+        (ngModelChange)="projectSort.set($event)"
+      >
+        <option value="updated">Recently Updated</option>
+        <option value="created">Newest Created</option>
+        <option value="alpha">Alphabetical (A–Z)</option>
+      </select>
+
+      <button
+        type="button"
+        class="btn btn-gold"
+        [disabled]="userState.projects().length >= userState.limits.MAX_PROJECTS"
+        (click)="showNewProjectModal.set(true)"
+      >
+        + New Project ({{ userState.projects().length }}/{{ userState.limits.MAX_PROJECTS }})
+      </button>
+    </div>
+  </div>
+
+  @if (filteredProjectCards().length > 0) {
+    <div class="projects-grid">
+      @for (card of filteredProjectCards(); track card.project.id) {
+        <div class="project-card studio-card interactive" (click)="openProject(card.project.id)">
+          <div class="project-thumb-wrap">
+            <img [src]="card.coverUrl" [alt]="card.project.name" class="project-thumb" />
+          </div>
+
+          <div class="project-body">
+            <h3 class="project-title">{{ card.project.name }}</h3>
+            <div class="project-counts">
+              <span>{{ card.project.recipeIds.length }} Models</span>
+              <span>•</span>
+              <span>{{ card.project.colorIds.length }} Colors</span>
+              <span>•</span>
+              <span>{{ card.project.notes.length }} Notes</span>
+              @if (card.photoCount > 0) {
+                <span>•</span>
+                <span>📷 {{ card.photoCount }}</span>
+              }
+            </div>
+
+            @if (card.staged; as staged) {
+              <app-stage-readiness-pills [staged]="staged" />
+            }
+          </div>
+
+          <div class="project-footer" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost"
+              title="Duplicate Project"
+              (click)="userState.duplicateProject(card.project.id)"
+            >
+              Duplicate
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost danger-text"
+              title="Delete Project"
+              (click)="confirmDeleteProject(card.project.id, card.project.name)"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state studio-card">
+      <img src="/icons/ic_project.svg" alt="" class="empty-ic" />
+      <h3>No Projects Yet</h3>
+      <p>
+        Create a hobby project to group model recipes, color guides, painting checklists, and see an automatic rollup of required & missing paints.
+      </p>
+      <div class="empty-btn-row">
+        <button type="button" class="btn btn-gold" (click)="showNewProjectModal.set(true)">
+          + Create First Project
+        </button>
+        <a routerLink="/account" class="btn btn-secondary">
+          Import My Warhammer Account →
+        </a>
+      </div>
+    </div>
+  }
+</section>
+
+<!-- Modal: Create New Project -->
+@if (showNewProjectModal()) {
+  <div class="modal-backdrop" (click)="showNewProjectModal.set(false)">
+    <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create New Hobby Project</h3>
+        <button
+          type="button"
+          class="close-btn"
+          aria-label="Close"
+          (click)="showNewProjectModal.set(false)"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label" for="new-hobby-project-name">Project Name</label>
+        <input
+          id="new-hobby-project-name"
+          type="text"
+          class="input-control"
+          placeholder="e.g., Ultramarines 2nd Company, Spearhead Box..."
+          [ngModel]="newProjectName()"
+          (ngModelChange)="newProjectName.set($event)"
+          (keyup.enter)="createNewProject()"
+        />
+        <div class="modal-footer-btns">
+          <button type="button" class="btn btn-ghost" (click)="showNewProjectModal.set(false)">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-gold" (click)="createNewProject()">
+            Create Project
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+

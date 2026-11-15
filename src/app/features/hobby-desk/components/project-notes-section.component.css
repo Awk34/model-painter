@@ -1,0 +1,105 @@
+:host {
+  display: block;
+}
+
+.note-editor-modal {
+  max-width: 640px;
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.note-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.note-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.note-components {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.note-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.note-checkbox-row.done span {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.note-text-block {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.blocks-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.blocks-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.block-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+.block-tag {
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: var(--gold-bright);
+}
+

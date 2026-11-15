@@ -12,7 +12,10 @@ import {
   UserUploadedPhoto,
 } from '../models/catalog.models';
 import { USER_LIMITS } from '../config/user-limits.config';
+import { createEntityId } from '../utils/catalog-filter.util';
+import { CatalogService } from './catalog.service';
 import { getFirebaseHandles } from './firebase.config';
+import { ImageService } from './image.service';
 import { UserMediaService } from './user-media.service';
 import {
   GoogleAuthProvider,
@@ -26,6 +29,7 @@ import {
 import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 
 const STORAGE_KEY = 'whc_user_state_v1';
+const DEFAULT_PROJECT_THUMBNAIL = 'assets/images/games/d8d81a80-7bf7-4fd3-8630-059a722a8bd7.png';
 
 function createDefaultState(): UserAccountState {
   return {
@@ -70,11 +74,146 @@ function stripUndefinedDeep<T>(value: T): T {
   return value;
 }
 
+function dedupeBoundedIds(raw: unknown, max: number): string[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return Array.from(new Set(raw.map((id) => String(id)).filter(Boolean))).slice(0, max);
+}
+
+function extractIdArray(
+  primaryIds: unknown,
+  legacyObjects?: unknown
+): string[] {
+  if (Array.isArray(primaryIds)) {
+    return primaryIds.map((id) => String(id));
+  }
+  if (Array.isArray(legacyObjects)) {
+    return (legacyObjects as Record<string, unknown>[]).map((item) => String(item['id'] ?? ''));
+  }
+  return [];
+}
+
+function normalizeIncomingNote(
+  rn: Record<string, unknown>,
+  projectId: string,
+  idx: number,
+  defaultTimestamp: string
+): UserProjectNote {
+  const rawComps = Array.isArray(rn['components'])
+    ? (rn['components'] as Record<string, unknown>[])
+    : [];
+  const components: UserProjectNoteComponent[] = rawComps
+    .slice(0, USER_LIMITS.MAX_NOTE_BLOCKS_PER_NOTE)
+    .map((rc) => ({
+      type: rc['type'] === 'checkbox' ? 'checkbox' : 'text',
+      value: String(rc['value'] ?? rc['text'] ?? '').slice(0, USER_LIMITS.MAX_NOTE_TEXT_LENGTH),
+      checked: Boolean(rc['checked'] ?? false),
+    }));
+
+  return {
+    id: String(rn['id'] ?? `note_${projectId}_${idx}`),
+    title: String(rn['title'] ?? rn['name'] ?? 'Project Note').slice(
+      0,
+      USER_LIMITS.MAX_TITLE_LENGTH
+    ),
+    createdAt: String(rn['createdAt'] ?? defaultTimestamp),
+    updatedAt: String(rn['updatedAt'] ?? defaultTimestamp),
+    components,
+  };
+}
+
+function normalizeIncomingProject(rp: Record<string, unknown>): UserProject {
+  const id = String(rp['id'] ?? createEntityId('proj'));
+  const name = String(rp['name'] ?? 'Imported Project').slice(0, USER_LIMITS.MAX_TITLE_LENGTH);
+  const createdAt = String(rp['createdAt'] ?? new Date().toISOString());
+  const updatedAt = String(rp['updatedAt'] ?? createdAt);
+
+  const recipeIds = extractIdArray(rp['recipeIds'], rp['recipes']);
+  const colorIds = Array.isArray(rp['colorIds'])
+    ? (rp['colorIds'] as string[])
+    : Array.isArray(rp['colourIds'])
+    ? (rp['colourIds'] as string[])
+    : extractIdArray(undefined, rp['colors'] ?? rp['colours']);
+
+  const rawNotes = Array.isArray(rp['notes']) ? (rp['notes'] as Record<string, unknown>[]) : [];
+  const notes = rawNotes
+    .slice(0, USER_LIMITS.MAX_NOTES_PER_PROJECT)
+    .map((rn, idx) => normalizeIncomingNote(rn, id, idx, updatedAt));
+
+  const firstRecipe = Array.isArray(rp['recipes'])
+    ? (rp['recipes'][0] as Record<string, unknown> | undefined)
+    : undefined;
+  const firstRecipeImg = Array.isArray(firstRecipe?.['images'])
+    ? (firstRecipe['images'][0] as string | undefined)
+    : undefined;
+  const firstRecipeLocalImg = Array.isArray(firstRecipe?.['localImagePaths'])
+    ? (firstRecipe['localImagePaths'][0] as string | undefined)
+    : undefined;
+
+  const thumbUrl = rp['thumbnailUrl'] ?? rp['imageUrl'] ?? firstRecipeImg;
+  const localThumb = rp['localThumbnailPath'] ?? rp['localImagePath'] ?? firstRecipeLocalImg;
+  const coverPhotoId = rp['coverPhotoId'] ? String(rp['coverPhotoId']) : undefined;
+
+  return {
+    id,
+    name,
+    thumbnailUrl: thumbUrl ? String(thumbUrl) : undefined,
+    localThumbnailPath: localThumb ? String(localThumb) : undefined,
+    coverPhotoId,
+    createdAt,
+    updatedAt,
+    recipeIds: dedupeBoundedIds(recipeIds, USER_LIMITS.MAX_MODELS_PER_PROJECT),
+    colorIds: dedupeBoundedIds(colorIds, USER_LIMITS.MAX_COLORS_PER_PROJECT),
+    notes,
+  };
+}
+
+function normalizeAccountState(raw: Partial<UserAccountState>): UserAccountState {
+  const def = createDefaultState();
+  const rawProjects = Array.isArray(raw.projects)
+    ? (raw.projects as unknown as Record<string, unknown>[])
+    : [];
+  const rawPhotos = Array.isArray(raw.uploadedPhotos) ? raw.uploadedPhotos : [];
+
+  return {
+    schemaVersion: 1,
+    updatedAt: raw.updatedAt ?? def.updatedAt,
+    inventoryPaintIds: dedupeBoundedIds(raw.inventoryPaintIds, USER_LIMITS.MAX_INVENTORY_PAINTS),
+    wishlistPaintIds: dedupeBoundedIds(raw.wishlistPaintIds, USER_LIMITS.MAX_WISHLIST_PAINTS),
+    inventoryModelIds: dedupeBoundedIds(raw.inventoryModelIds, USER_LIMITS.MAX_INVENTORY_MODELS),
+    wishlistModelIds: dedupeBoundedIds(raw.wishlistModelIds, USER_LIMITS.MAX_WISHLIST_MODELS),
+    customPaints: Array.isArray(raw.customPaints)
+      ? raw.customPaints.slice(0, USER_LIMITS.MAX_CUSTOM_PAINTS)
+      : [],
+    customCompatibilityOverrides:
+      raw.customCompatibilityOverrides && typeof raw.customCompatibilityOverrides === 'object'
+        ? raw.customCompatibilityOverrides
+        : {},
+    projects: rawProjects
+      .slice(0, USER_LIMITS.MAX_PROJECTS)
+      .map((p) => normalizeIncomingProject(p)),
+    uploadedPhotos: rawPhotos
+      .filter((ph): ph is UserUploadedPhoto => Boolean(ph && ph.id))
+      .slice(0, USER_LIMITS.MAX_TOTAL_USER_PHOTOS)
+      .map((ph) => ({
+        ...ph,
+        isPrivate: ph.kind === 'reference' ? true : Boolean(ph.isPrivate ?? true),
+      })),
+    preferences: {
+      ...def.preferences,
+      ...(raw.preferences ?? {}),
+    },
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class UserStateService {
   readonly media = inject(UserMediaService);
+  private readonly catalog = inject(CatalogService);
+  private readonly img = inject(ImageService);
   readonly limits = USER_LIMITS;
 
   readonly state = signal<UserAccountState>(this.loadInitialState());
@@ -82,15 +221,18 @@ export class UserStateService {
   readonly cloudSyncStatus = signal<CloudSyncStatus>(CloudSyncStatus.LocalOnly);
   readonly toastMessage = signal<string | null>(null);
 
-  /** Fast reactive sets for O(1) lookup */
+  /** Fast reactive sets and maps for O(1) lookup */
   readonly inventorySet = computed(() => new Set(this.state().inventoryPaintIds));
   readonly wishlistSet = computed(() => new Set(this.state().wishlistPaintIds));
-  readonly modelInventorySet = computed(() => new Set(this.state().inventoryModelIds ?? []));
-  readonly modelWishlistSet = computed(() => new Set(this.state().wishlistModelIds ?? []));
+  readonly modelInventorySet = computed(() => new Set(this.state().inventoryModelIds));
+  readonly modelWishlistSet = computed(() => new Set(this.state().wishlistModelIds));
   readonly projects = computed(() => this.state().projects);
-  readonly uploadedPhotos = computed(() => this.state().uploadedPhotos ?? []);
+  readonly uploadedPhotos = computed(() => this.state().uploadedPhotos);
   readonly preferences = computed(() => this.state().preferences);
   readonly customPaints = computed(() => this.state().customPaints);
+  readonly customPaintById = computed(
+    () => new Map(this.customPaints().map((paint) => [paint.id, paint]))
+  );
   readonly customCompatibilityOverrides = computed(
     () => this.state().customCompatibilityOverrides
   );
@@ -104,55 +246,11 @@ export class UserStateService {
   private loadInitialState(): UserAccountState {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return createDefaultState();
+      if (!raw) {
+        return createDefaultState();
+      }
       const parsed = JSON.parse(raw) as Partial<UserAccountState>;
-      const def = createDefaultState();
-      return {
-        schemaVersion: 1,
-        updatedAt: parsed.updatedAt ?? def.updatedAt,
-        inventoryPaintIds: Array.isArray(parsed.inventoryPaintIds)
-          ? Array.from(new Set(parsed.inventoryPaintIds)).slice(0, USER_LIMITS.MAX_INVENTORY_PAINTS)
-          : [],
-        wishlistPaintIds: Array.isArray(parsed.wishlistPaintIds)
-          ? Array.from(new Set(parsed.wishlistPaintIds)).slice(0, USER_LIMITS.MAX_WISHLIST_PAINTS)
-          : [],
-        inventoryModelIds: Array.isArray(parsed.inventoryModelIds)
-          ? Array.from(new Set(parsed.inventoryModelIds)).slice(0, USER_LIMITS.MAX_INVENTORY_MODELS)
-          : [],
-        wishlistModelIds: Array.isArray(parsed.wishlistModelIds)
-          ? Array.from(new Set(parsed.wishlistModelIds)).slice(0, USER_LIMITS.MAX_WISHLIST_MODELS)
-          : [],
-        customPaints: Array.isArray(parsed.customPaints)
-          ? parsed.customPaints.slice(0, USER_LIMITS.MAX_CUSTOM_PAINTS)
-          : [],
-        customCompatibilityOverrides:
-          parsed.customCompatibilityOverrides &&
-          typeof parsed.customCompatibilityOverrides === 'object'
-            ? parsed.customCompatibilityOverrides
-            : {},
-        projects: Array.isArray(parsed.projects)
-          ? parsed.projects.slice(0, USER_LIMITS.MAX_PROJECTS).map((p) => ({
-              ...p,
-              colorIds: (
-                p.colorIds ?? (p as { colourIds?: string[] }).colourIds ?? []
-              ).slice(0, USER_LIMITS.MAX_COLORS_PER_PROJECT),
-              recipeIds: (p.recipeIds ?? []).slice(0, USER_LIMITS.MAX_MODELS_PER_PROJECT),
-              notes: (p.notes ?? []).slice(0, USER_LIMITS.MAX_NOTES_PER_PROJECT),
-            }))
-          : [],
-        uploadedPhotos: Array.isArray(parsed.uploadedPhotos)
-          ? parsed.uploadedPhotos
-              .slice(0, USER_LIMITS.MAX_TOTAL_USER_PHOTOS)
-              .map((ph) => ({
-                ...ph,
-                isPrivate: ph.kind === 'reference' ? true : Boolean(ph.isPrivate ?? true),
-              }))
-          : [],
-        preferences: {
-          ...def.preferences,
-          ...(parsed.preferences ?? {}),
-        },
-      };
+      return normalizeAccountState(parsed);
     } catch {
       return createDefaultState();
     }
@@ -181,6 +279,59 @@ export class UserStateService {
     }
   }
 
+  private toggleBoundedSetItem(params: {
+    id: string;
+    primaryKey: 'inventoryPaintIds' | 'wishlistPaintIds' | 'inventoryModelIds' | 'wishlistModelIds';
+    clearFromKey?: 'wishlistPaintIds' | 'wishlistModelIds';
+    maxLimit: number;
+    limitLabel: string;
+  }): void {
+    const currentList = this.state()[params.primaryKey];
+    const isPresent = currentList.includes(params.id);
+    if (!isPresent && currentList.length >= params.maxLimit) {
+      this.showToast(`${params.limitLabel} limit reached (${params.maxLimit} max).`);
+      return;
+    }
+
+    this.commit((prev) => {
+      const primarySet = new Set(prev[params.primaryKey]);
+      if (primarySet.has(params.id)) {
+        primarySet.delete(params.id);
+        return {
+          ...prev,
+          [params.primaryKey]: Array.from(primarySet),
+        };
+      }
+
+      primarySet.add(params.id);
+      if (!params.clearFromKey) {
+        return {
+          ...prev,
+          [params.primaryKey]: Array.from(primarySet),
+        };
+      }
+
+      const secondarySet = new Set(prev[params.clearFromKey]);
+      secondarySet.delete(params.id);
+      return {
+        ...prev,
+        [params.primaryKey]: Array.from(primarySet),
+        [params.clearFromKey]: Array.from(secondarySet),
+      };
+    });
+  }
+
+  private updateProjectById(
+    projectId: string,
+    updater: (project: UserProject, now: string) => UserProject
+  ): void {
+    const now = new Date().toISOString();
+    this.commit((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => (p.id === projectId ? updater(p, now) : p)),
+    }));
+  }
+
   /* ========================================================================
      INVENTORY & WISHLIST ACTIONS (WITH QUOTA LIMITS)
      ======================================================================== */
@@ -194,56 +345,21 @@ export class UserStateService {
   }
 
   toggleInventory(paintId: string): void {
-    const currentlyOwned = this.inventorySet().has(paintId);
-    if (
-      !currentlyOwned &&
-      this.state().inventoryPaintIds.length >= USER_LIMITS.MAX_INVENTORY_PAINTS
-    ) {
-      this.showToast(
-        `Paint Inventory limit reached (${USER_LIMITS.MAX_INVENTORY_PAINTS} paints max).`
-      );
-      return;
-    }
-    this.commit((prev) => {
-      const inv = new Set(prev.inventoryPaintIds);
-      const wish = new Set(prev.wishlistPaintIds);
-      if (inv.has(paintId)) {
-        inv.delete(paintId);
-      } else {
-        inv.add(paintId);
-        // Moving to inventory automatically clears from wishlist
-        wish.delete(paintId);
-      }
-      return {
-        ...prev,
-        inventoryPaintIds: Array.from(inv),
-        wishlistPaintIds: Array.from(wish),
-      };
+    this.toggleBoundedSetItem({
+      id: paintId,
+      primaryKey: 'inventoryPaintIds',
+      clearFromKey: 'wishlistPaintIds',
+      maxLimit: USER_LIMITS.MAX_INVENTORY_PAINTS,
+      limitLabel: 'Paint Inventory',
     });
   }
 
   toggleWishlist(paintId: string): void {
-    const currentlyWishlisted = this.wishlistSet().has(paintId);
-    if (
-      !currentlyWishlisted &&
-      this.state().wishlistPaintIds.length >= USER_LIMITS.MAX_WISHLIST_PAINTS
-    ) {
-      this.showToast(
-        `Paint Wishlist limit reached (${USER_LIMITS.MAX_WISHLIST_PAINTS} paints max).`
-      );
-      return;
-    }
-    this.commit((prev) => {
-      const wish = new Set(prev.wishlistPaintIds);
-      if (wish.has(paintId)) {
-        wish.delete(paintId);
-      } else {
-        wish.add(paintId);
-      }
-      return {
-        ...prev,
-        wishlistPaintIds: Array.from(wish),
-      };
+    this.toggleBoundedSetItem({
+      id: paintId,
+      primaryKey: 'wishlistPaintIds',
+      maxLimit: USER_LIMITS.MAX_WISHLIST_PAINTS,
+      limitLabel: 'Paint Wishlist',
     });
   }
 
@@ -268,6 +384,7 @@ export class UserStateService {
         wishlistPaintIds: Array.from(wish),
       };
     });
+
     if (hitLimit) {
       this.showToast(
         `Added ${added} paint${added === 1 ? '' : 's'} (Wishlist limit of ${USER_LIMITS.MAX_WISHLIST_PAINTS} reached)`
@@ -303,6 +420,7 @@ export class UserStateService {
         wishlistPaintIds: Array.from(wish),
       };
     });
+
     if (hitLimit) {
       this.showToast(
         `Added ${added} paint${added === 1 ? '' : 's'} (Inventory limit of ${USER_LIMITS.MAX_INVENTORY_PAINTS} reached)`
@@ -326,62 +444,73 @@ export class UserStateService {
   }
 
   toggleModelInventory(modelId: string): void {
-    const currentlyOwned = this.modelInventorySet().has(modelId);
-    if (
-      !currentlyOwned &&
-      (this.state().inventoryModelIds ?? []).length >= USER_LIMITS.MAX_INVENTORY_MODELS
-    ) {
-      this.showToast(
-        `Model Inventory limit reached (${USER_LIMITS.MAX_INVENTORY_MODELS} models max).`
-      );
-      return;
-    }
-    this.commit((prev) => {
-      const inv = new Set(prev.inventoryModelIds ?? []);
-      const wish = new Set(prev.wishlistModelIds ?? []);
-      if (inv.has(modelId)) {
-        inv.delete(modelId);
-      } else {
-        inv.add(modelId);
-        // Moving to model inventory automatically clears from model wishlist
-        wish.delete(modelId);
-      }
-      return {
-        ...prev,
-        inventoryModelIds: Array.from(inv),
-        wishlistModelIds: Array.from(wish),
-      };
+    this.toggleBoundedSetItem({
+      id: modelId,
+      primaryKey: 'inventoryModelIds',
+      clearFromKey: 'wishlistModelIds',
+      maxLimit: USER_LIMITS.MAX_INVENTORY_MODELS,
+      limitLabel: 'Model Inventory',
     });
   }
 
   toggleModelWishlist(modelId: string): void {
-    const currentlyWishlisted = this.modelWishlistSet().has(modelId);
-    if (
-      !currentlyWishlisted &&
-      (this.state().wishlistModelIds ?? []).length >= USER_LIMITS.MAX_WISHLIST_MODELS
-    ) {
-      this.showToast(
-        `Model Wishlist limit reached (${USER_LIMITS.MAX_WISHLIST_MODELS} models max).`
-      );
-      return;
-    }
-    this.commit((prev) => {
-      const wish = new Set(prev.wishlistModelIds ?? []);
-      if (wish.has(modelId)) {
-        wish.delete(modelId);
-      } else {
-        wish.add(modelId);
-      }
-      return {
-        ...prev,
-        wishlistModelIds: Array.from(wish),
-      };
+    this.toggleBoundedSetItem({
+      id: modelId,
+      primaryKey: 'wishlistModelIds',
+      maxLimit: USER_LIMITS.MAX_WISHLIST_MODELS,
+      limitLabel: 'Model Wishlist',
     });
   }
 
   /* ========================================================================
      PROJECTS & NOTES ACTIONS (WITH QUOTA LIMITS)
      ======================================================================== */
+
+  resolveProjectCoverUrl(
+    proj: Pick<
+      UserProject,
+      'id' | 'coverPhotoId' | 'localThumbnailPath' | 'thumbnailUrl' | 'recipeIds'
+    >
+  ): string {
+    if (proj.coverPhotoId) {
+      const customCover = this.getPhotoById(proj.coverPhotoId);
+      if (customCover && customCover.kind === 'showcase') {
+        const resolved = this.media.resolvePhotoUrl(customCover);
+        if (resolved) {
+          return resolved;
+        }
+      }
+    }
+
+    const showcaseFallback = this.getPhotosForTarget('project', proj.id, 'showcase')[0];
+    if (showcaseFallback) {
+      const resolved = this.media.resolvePhotoUrl(showcaseFallback);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    if (proj.localThumbnailPath || proj.thumbnailUrl) {
+      return this.img.resolve(proj.localThumbnailPath, proj.thumbnailUrl);
+    }
+
+    const firstModelId = proj.recipeIds[0];
+    if (firstModelId) {
+      const firstModel = this.catalog.modelById().get(firstModelId);
+      if (firstModel) {
+        return this.img.resolve(firstModel.localPrimaryImage, firstModel.primaryImage);
+      }
+    }
+
+    return '/icons/ic_project.svg';
+  }
+
+  getTargetPhotoCount(targetType: UserPhotoTargetType, targetId: string): number {
+    return (
+      this.getPhotosForTarget(targetType, targetId, 'showcase').length +
+      this.getPhotosForTarget(targetType, targetId, 'reference').length
+    );
+  }
 
   createProject(
     name: string,
@@ -395,11 +524,10 @@ export class UserStateService {
     const now = new Date().toISOString();
     const safeName = (name.trim() || 'Untitled Project').slice(0, USER_LIMITS.MAX_TITLE_LENGTH);
     const project: UserProject = {
-      id: `proj_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createEntityId('proj'),
       name: safeName,
       thumbnailUrl: thumbnailUrl || '',
-      localThumbnailPath:
-        localThumbnailPath || 'assets/images/games/d8d81a80-7bf7-4fd3-8630-059a722a8bd7.png',
+      localThumbnailPath: localThumbnailPath || DEFAULT_PROJECT_THUMBNAIL,
       createdAt: now,
       updatedAt: now,
       recipeIds: [],
@@ -416,45 +544,32 @@ export class UserStateService {
 
   renameProject(projectId: string, newName: string): void {
     const trimmed = newName.trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH);
-    if (!trimmed) return;
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) =>
-        p.id === projectId ? { ...p, name: trimmed, updatedAt: new Date().toISOString() } : p
-      ),
+    if (!trimmed) {
+      return;
+    }
+    this.updateProjectById(projectId, (p, now) => ({
+      ...p,
+      name: trimmed,
+      updatedAt: now,
     }));
   }
 
   setProjectThumbnail(projectId: string, localThumbnailPath: string, thumbnailUrl?: string): void {
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              coverPhotoId: undefined,
-              localThumbnailPath,
-              thumbnailUrl: thumbnailUrl ?? p.thumbnailUrl,
-              updatedAt: new Date().toISOString(),
-            }
-          : p
-      ),
+    this.updateProjectById(projectId, (p, now) => ({
+      ...p,
+      coverPhotoId: undefined,
+      localThumbnailPath,
+      thumbnailUrl: thumbnailUrl ?? p.thumbnailUrl,
+      updatedAt: now,
     }));
     this.showToast('Updated project thumbnail');
   }
 
   setProjectCoverPhoto(projectId: string, photoId: string | undefined): void {
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              coverPhotoId: photoId,
-              updatedAt: new Date().toISOString(),
-            }
-          : p
-      ),
+    this.updateProjectById(projectId, (p, now) => ({
+      ...p,
+      coverPhotoId: photoId,
+      updatedAt: now,
     }));
     this.showToast(photoId ? 'Set photo as project cover' : 'Cleared custom cover photo');
   }
@@ -465,11 +580,13 @@ export class UserStateService {
       return null;
     }
     const orig = this.state().projects.find((p) => p.id === projectId);
-    if (!orig) return null;
+    if (!orig) {
+      return null;
+    }
     const now = new Date().toISOString();
     const copy: UserProject = {
       ...structuredClone(orig),
-      id: `proj_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createEntityId('proj'),
       name: `${orig.name} (Copy)`.slice(0, USER_LIMITS.MAX_TITLE_LENGTH),
       coverPhotoId: undefined,
       createdAt: now,
@@ -484,13 +601,13 @@ export class UserStateService {
   }
 
   deleteProject(projectId: string): void {
-    const projectPhotos = (this.state().uploadedPhotos ?? []).filter(
+    const projectPhotos = this.state().uploadedPhotos.filter(
       (ph) => ph.targetType === 'project' && ph.targetId === projectId
     );
     this.commit((prev) => ({
       ...prev,
       projects: prev.projects.filter((p) => p.id !== projectId),
-      uploadedPhotos: (prev.uploadedPhotos ?? []).filter(
+      uploadedPhotos: prev.uploadedPhotos.filter(
         (ph) => !(ph.targetType === 'project' && ph.targetId === projectId)
       ),
     }));
@@ -502,7 +619,9 @@ export class UserStateService {
 
   addRecipeToProject(projectId: string, recipeId: string, modelImageLocal?: string): void {
     const target = this.state().projects.find((p) => p.id === projectId);
-    if (!target) return;
+    if (!target) {
+      return;
+    }
     if (
       !target.recipeIds.includes(recipeId) &&
       target.recipeIds.length >= USER_LIMITS.MAX_MODELS_PER_PROJECT
@@ -512,41 +631,32 @@ export class UserStateService {
       );
       return;
     }
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) => {
-        if (p.id !== projectId) return p;
-        const set = new Set(p.recipeIds);
-        set.add(recipeId);
-        return {
-          ...p,
-          recipeIds: Array.from(set),
-          localThumbnailPath: p.localThumbnailPath || modelImageLocal || p.localThumbnailPath,
-          updatedAt: new Date().toISOString(),
-        };
-      }),
-    }));
+    this.updateProjectById(projectId, (p, now) => {
+      const set = new Set(p.recipeIds);
+      set.add(recipeId);
+      return {
+        ...p,
+        recipeIds: Array.from(set),
+        localThumbnailPath: p.localThumbnailPath || modelImageLocal,
+        updatedAt: now,
+      };
+    });
     this.showToast('Added model guide to project');
   }
 
   removeRecipeFromProject(projectId: string, recipeId: string): void {
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              recipeIds: p.recipeIds.filter((id) => id !== recipeId),
-              updatedAt: new Date().toISOString(),
-            }
-          : p
-      ),
+    this.updateProjectById(projectId, (p, now) => ({
+      ...p,
+      recipeIds: p.recipeIds.filter((id) => id !== recipeId),
+      updatedAt: now,
     }));
   }
 
   addColorToProject(projectId: string, colorId: string): void {
     const target = this.state().projects.find((p) => p.id === projectId);
-    if (!target) return;
+    if (!target) {
+      return;
+    }
     if (
       !target.colorIds.includes(colorId) &&
       target.colorIds.length >= USER_LIMITS.MAX_COLORS_PER_PROJECT
@@ -556,34 +666,23 @@ export class UserStateService {
       );
       return;
     }
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) => {
-        if (p.id !== projectId) return p;
-        const set = new Set(p.colorIds);
-        set.add(colorId);
-        return {
-          ...p,
-          colorIds: Array.from(set),
-          updatedAt: new Date().toISOString(),
-        };
-      }),
-    }));
+    this.updateProjectById(projectId, (p, now) => {
+      const set = new Set(p.colorIds);
+      set.add(colorId);
+      return {
+        ...p,
+        colorIds: Array.from(set),
+        updatedAt: now,
+      };
+    });
     this.showToast('Added color guide to project');
   }
 
   removeColorFromProject(projectId: string, colorId: string): void {
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              colorIds: p.colorIds.filter((id) => id !== colorId),
-              updatedAt: new Date().toISOString(),
-            }
-          : p
-      ),
+    this.updateProjectById(projectId, (p, now) => ({
+      ...p,
+      colorIds: p.colorIds.filter((id) => id !== colorId),
+      updatedAt: now,
     }));
   }
 
@@ -594,13 +693,16 @@ export class UserStateService {
     components: UserProjectNoteComponent[]
   ): void {
     const target = this.state().projects.find((p) => p.id === projectId);
-    if (!target) return;
+    if (!target) {
+      return;
+    }
     if (!noteId && target.notes.length >= USER_LIMITS.MAX_NOTES_PER_PROJECT) {
       this.showToast(
         `Project notes limit reached (${USER_LIMITS.MAX_NOTES_PER_PROJECT} notes per project max).`
       );
       return;
     }
+
     const safeComponents = components
       .slice(0, USER_LIMITS.MAX_NOTE_BLOCKS_PER_NOTE)
       .map((c) => ({
@@ -612,70 +714,53 @@ export class UserStateService {
       USER_LIMITS.MAX_TITLE_LENGTH
     );
 
-    const now = new Date().toISOString();
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) => {
-        if (p.id !== projectId) return p;
-        let nextNotes: UserProjectNote[];
-        if (noteId) {
-          nextNotes = p.notes.map((n) =>
-            n.id === noteId
-              ? { ...n, title: safeTitle, updatedAt: now, components: safeComponents }
-              : n
-          );
-        } else {
-          const newNote: UserProjectNote = {
-            id: `note_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            title: safeTitle,
-            createdAt: now,
-            updatedAt: now,
-            components: safeComponents,
-          };
-          nextNotes = [newNote, ...p.notes];
-        }
-        return {
-          ...p,
-          notes: nextNotes,
+    this.updateProjectById(projectId, (p, now) => {
+      let nextNotes: UserProjectNote[];
+      if (noteId) {
+        nextNotes = p.notes.map((n) =>
+          n.id === noteId
+            ? { ...n, title: safeTitle, updatedAt: now, components: safeComponents }
+            : n
+        );
+      } else {
+        const newNote: UserProjectNote = {
+          id: createEntityId('note'),
+          title: safeTitle,
+          createdAt: now,
           updatedAt: now,
+          components: safeComponents,
         };
-      }),
-    }));
+        nextNotes = [newNote, ...p.notes];
+      }
+      return {
+        ...p,
+        notes: nextNotes,
+        updatedAt: now,
+      };
+    });
   }
 
   toggleNoteCheckbox(projectId: string, noteId: string, componentIndex: number): void {
-    const now = new Date().toISOString();
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) => {
-        if (p.id !== projectId) return p;
-        return {
-          ...p,
-          updatedAt: now,
-          notes: p.notes.map((n) => {
-            if (n.id !== noteId) return n;
-            const comps = n.components.map((c, idx) =>
-              idx === componentIndex ? { ...c, checked: !c.checked } : c
-            );
-            return { ...n, updatedAt: now, components: comps };
-          }),
-        };
+    this.updateProjectById(projectId, (p, now) => ({
+      ...p,
+      updatedAt: now,
+      notes: p.notes.map((n) => {
+        if (n.id !== noteId) {
+          return n;
+        }
+        const comps = n.components.map((c, idx) =>
+          idx === componentIndex ? { ...c, checked: !c.checked } : c
+        );
+        return { ...n, updatedAt: now, components: comps };
       }),
     }));
   }
 
   deleteProjectNote(projectId: string, noteId: string): void {
-    this.commit((prev) => ({
-      ...prev,
-      projects: prev.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              notes: p.notes.filter((n) => n.id !== noteId),
-              updatedAt: new Date().toISOString(),
-            }
-          : p
-      ),
+    this.updateProjectById(projectId, (p, now) => ({
+      ...p,
+      notes: p.notes.filter((n) => n.id !== noteId),
+      updatedAt: now,
     }));
   }
 
@@ -705,7 +790,9 @@ export class UserStateService {
   }
 
   getPhotoById(photoId?: string): UserUploadedPhoto | undefined {
-    if (!photoId) return undefined;
+    if (!photoId) {
+      return undefined;
+    }
     return this.uploadedPhotos().find((ph) => ph.id === photoId);
   }
 
@@ -724,8 +811,10 @@ export class UserStateService {
     }
 
     const sectionLimit = this.getPhotoQuotaLimit(targetType, kind);
-    const existingForSection = this.getPhotosForTarget(targetType, targetId, kind).length;
-    let remainingSectionSlots = Math.max(0, sectionLimit - existingForSection);
+    let remainingSectionSlots = Math.max(
+      0,
+      sectionLimit - this.getPhotosForTarget(targetType, targetId, kind).length
+    );
     let remainingAccountSlots = Math.max(
       0,
       USER_LIMITS.MAX_TOTAL_USER_PHOTOS - this.uploadedPhotos().length
@@ -747,7 +836,6 @@ export class UserStateService {
       ? params.caption.trim().slice(0, USER_LIMITS.MAX_PHOTO_CAPTION_LENGTH)
       : undefined;
     const uid = this.currentUser()?.uid;
-
     let downscaledCount = 0;
 
     for (const file of files) {
@@ -765,39 +853,18 @@ export class UserStateService {
       }
 
       try {
-        const info = await this.media.validateImageFile(file);
-        if (info.wasDownscaled) {
-          downscaledCount++;
-        }
-        const now = new Date().toISOString();
-        const photoId = `ph_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const safeFileName = file.name.replace(/[^\w.\- ]/g, '_').slice(0, 100) || 'photo.jpg';
-
-        const meta: UserUploadedPhoto = {
-          id: photoId,
+        const result = await this.uploadSingleValidatedPhoto({
+          file,
           targetType,
           targetId,
           kind,
-          isPrivate: true,
-          fileName: safeFileName,
-          mimeType: info.mimeType,
-          sizeBytes: info.blob.size,
-          width: info.width,
-          height: info.height,
           caption: safeCaption || undefined,
-          createdAt: now,
-        };
-
-        await this.media.storeLocalBlob(photoId, info.blob);
-
-        if (uid) {
-          const storagePath = await this.media.uploadToCloudStorage(meta, info.blob, uid);
-          if (storagePath) {
-            meta.storagePath = storagePath;
-          }
+          uid,
+        });
+        if (result.wasDownscaled) {
+          downscaledCount++;
         }
-
-        uploaded.push(meta);
+        uploaded.push(result.photo);
         remainingSectionSlots--;
         remainingAccountSlots--;
       } catch (err: unknown) {
@@ -808,7 +875,7 @@ export class UserStateService {
     if (uploaded.length > 0) {
       this.commit((prev) => ({
         ...prev,
-        uploadedPhotos: [...uploaded, ...(prev.uploadedPhotos ?? [])].slice(
+        uploadedPhotos: [...uploaded, ...prev.uploadedPhotos].slice(
           0,
           USER_LIMITS.MAX_TOTAL_USER_PHOTOS
         ),
@@ -827,11 +894,50 @@ export class UserStateService {
     return { uploaded, errors };
   }
 
+  private async uploadSingleValidatedPhoto(params: {
+    file: File;
+    targetType: UserPhotoTargetType;
+    targetId: string;
+    kind: UserPhotoKind;
+    caption?: string;
+    uid?: string;
+  }): Promise<{ photo: UserUploadedPhoto; wasDownscaled: boolean }> {
+    const info = await this.media.validateImageFile(params.file);
+    const photoId = createEntityId('ph');
+    const safeFileName = params.file.name.replace(/[^\w.\- ]/g, '_').slice(0, 100) || 'photo.jpg';
+
+    const photo: UserUploadedPhoto = {
+      id: photoId,
+      targetType: params.targetType,
+      targetId: params.targetId,
+      kind: params.kind,
+      isPrivate: true,
+      fileName: safeFileName,
+      mimeType: info.mimeType,
+      sizeBytes: info.blob.size,
+      width: info.width,
+      height: info.height,
+      caption: params.caption,
+      createdAt: new Date().toISOString(),
+    };
+
+    await this.media.storeLocalBlob(photoId, info.blob);
+
+    if (params.uid) {
+      const storagePath = await this.media.uploadToCloudStorage(photo, info.blob, params.uid);
+      if (storagePath) {
+        photo.storagePath = storagePath;
+      }
+    }
+
+    return { photo, wasDownscaled: info.wasDownscaled };
+  }
+
   updatePhotoCaption(photoId: string, caption: string): void {
     const cleaned = caption.trim().slice(0, USER_LIMITS.MAX_PHOTO_CAPTION_LENGTH);
     this.commit((prev) => ({
       ...prev,
-      uploadedPhotos: (prev.uploadedPhotos ?? []).map((ph) =>
+      uploadedPhotos: prev.uploadedPhotos.map((ph) =>
         ph.id === photoId ? { ...ph, caption: cleaned || undefined } : ph
       ),
     }));
@@ -840,15 +946,16 @@ export class UserStateService {
 
   async deleteUserPhoto(photoId: string): Promise<void> {
     const target = this.getPhotoById(photoId);
-    if (!target) return;
+    if (!target) {
+      return;
+    }
 
+    const now = new Date().toISOString();
     this.commit((prev) => ({
       ...prev,
-      uploadedPhotos: (prev.uploadedPhotos ?? []).filter((ph) => ph.id !== photoId),
+      uploadedPhotos: prev.uploadedPhotos.filter((ph) => ph.id !== photoId),
       projects: prev.projects.map((p) =>
-        p.coverPhotoId === photoId
-          ? { ...p, coverPhotoId: undefined, updatedAt: new Date().toISOString() }
-          : p
+        p.coverPhotoId === photoId ? { ...p, coverPhotoId: undefined, updatedAt: now } : p
       ),
     }));
 
@@ -872,7 +979,7 @@ export class UserStateService {
       name: paint.name.trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH),
       brand: paint.brand.trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH),
       range: paint.range.trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH),
-      id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      id: createEntityId('custom'),
       isCustom: true,
     };
     this.commit((prev) => {
@@ -935,22 +1042,6 @@ export class UserStateService {
     this.showToast('Saved custom paint equivalence link');
   }
 
-  unlinkCustomEquivalent(citadelPaintId: string, equivalentPaintId: string): void {
-    this.commit((prev) => {
-      const nextOverrides = { ...prev.customCompatibilityOverrides };
-      const list = (nextOverrides[citadelPaintId] ?? []).filter((id) => id !== equivalentPaintId);
-      if (list.length === 0) {
-        delete nextOverrides[citadelPaintId];
-      } else {
-        nextOverrides[citadelPaintId] = list;
-      }
-      return {
-        ...prev,
-        customCompatibilityOverrides: nextOverrides,
-      };
-    });
-  }
-
   updatePreferences(patch: Partial<UserPreferences>): void {
     this.commit((prev) => ({
       ...prev,
@@ -971,151 +1062,41 @@ export class UserStateService {
   ): void {
     this.commit((prev) => {
       const base = mode === 'replace' ? createDefaultState() : prev;
+      const incoming = normalizeAccountState(rawPayload as Partial<UserAccountState>);
 
-      const incomingInv = Array.isArray(rawPayload['inventoryPaintIds'])
-        ? (rawPayload['inventoryPaintIds'] as string[])
-        : [];
-      const incomingWish = Array.isArray(rawPayload['wishlistPaintIds'])
-        ? (rawPayload['wishlistPaintIds'] as string[])
-        : [];
-      const incomingModelInv = Array.isArray(rawPayload['inventoryModelIds'])
-        ? (rawPayload['inventoryModelIds'] as string[])
-        : [];
-      const incomingModelWish = Array.isArray(rawPayload['wishlistModelIds'])
-        ? (rawPayload['wishlistModelIds'] as string[])
-        : [];
-
-      const invSet = new Set([...base.inventoryPaintIds, ...incomingInv]);
-      const wishSet = new Set([...base.wishlistPaintIds, ...incomingWish]);
+      const invSet = new Set([...base.inventoryPaintIds, ...incoming.inventoryPaintIds]);
+      const wishSet = new Set([...base.wishlistPaintIds, ...incoming.wishlistPaintIds]);
       for (const id of invSet) {
         wishSet.delete(id);
       }
 
-      const modelInvSet = new Set([...(base.inventoryModelIds ?? []), ...incomingModelInv]);
-      const modelWishSet = new Set([...(base.wishlistModelIds ?? []), ...incomingModelWish]);
+      const modelInvSet = new Set([...base.inventoryModelIds, ...incoming.inventoryModelIds]);
+      const modelWishSet = new Set([...base.wishlistModelIds, ...incoming.wishlistModelIds]);
       for (const id of modelInvSet) {
         modelWishSet.delete(id);
       }
-
-      const rawProjects = Array.isArray(rawPayload['projects'])
-        ? (rawPayload['projects'] as Record<string, unknown>[])
-        : [];
-
-      const normalizedIncomingProjects: UserProject[] = rawProjects.map((rp) => {
-        const id = String(
-          rp['id'] ?? `proj_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-        );
-        const name = String(rp['name'] ?? 'Imported Project').slice(0, USER_LIMITS.MAX_TITLE_LENGTH);
-        const createdAt = String(rp['createdAt'] ?? new Date().toISOString());
-        const updatedAt = String(rp['updatedAt'] ?? createdAt);
-
-        const recipeIds: string[] = Array.isArray(rp['recipeIds'])
-          ? (rp['recipeIds'] as string[])
-          : Array.isArray(rp['recipes'])
-          ? (rp['recipes'] as Record<string, unknown>[]).map((r) => String(r['id']))
-          : [];
-
-        const colorIds: string[] = Array.isArray(rp['colorIds'])
-          ? (rp['colorIds'] as string[])
-          : Array.isArray(rp['colourIds'])
-          ? (rp['colourIds'] as string[])
-          : Array.isArray(rp['colors'])
-          ? (rp['colors'] as Record<string, unknown>[]).map((c) => String(c['id']))
-          : Array.isArray(rp['colours'])
-          ? (rp['colours'] as Record<string, unknown>[]).map((c) => String(c['id']))
-          : [];
-
-        const rawNotes = Array.isArray(rp['notes'])
-          ? (rp['notes'] as Record<string, unknown>[])
-          : [];
-
-        const notes: UserProjectNote[] = rawNotes
-          .slice(0, USER_LIMITS.MAX_NOTES_PER_PROJECT)
-          .map((rn, idx) => {
-            const rawComps = Array.isArray(rn['components'])
-              ? (rn['components'] as Record<string, unknown>[])
-              : [];
-            const components: UserProjectNoteComponent[] = rawComps
-              .slice(0, USER_LIMITS.MAX_NOTE_BLOCKS_PER_NOTE)
-              .map((rc) => ({
-                type: rc['type'] === 'checkbox' ? 'checkbox' : 'text',
-                value: String(rc['value'] ?? rc['text'] ?? '').slice(
-                  0,
-                  USER_LIMITS.MAX_NOTE_TEXT_LENGTH
-                ),
-                checked: Boolean(rc['checked'] ?? false),
-              }));
-            return {
-              id: String(rn['id'] ?? `note_${id}_${idx}`),
-              title: String(rn['title'] ?? rn['name'] ?? 'Project Note').slice(
-                0,
-                USER_LIMITS.MAX_TITLE_LENGTH
-              ),
-              createdAt: String(rn['createdAt'] ?? createdAt),
-              updatedAt: String(rn['updatedAt'] ?? updatedAt),
-              components,
-            };
-          });
-
-        const firstRecipe = Array.isArray(rp['recipes'])
-          ? (rp['recipes'][0] as Record<string, unknown> | undefined)
-          : undefined;
-        const firstRecipeImg = Array.isArray(firstRecipe?.['images'])
-          ? (firstRecipe['images'][0] as string | undefined)
-          : undefined;
-        const firstRecipeLocalImg = Array.isArray(firstRecipe?.['localImagePaths'])
-          ? (firstRecipe['localImagePaths'][0] as string | undefined)
-          : undefined;
-
-        const thumbUrl = rp['thumbnailUrl'] ?? rp['imageUrl'] ?? firstRecipeImg;
-        const localThumb = rp['localThumbnailPath'] ?? rp['localImagePath'] ?? firstRecipeLocalImg;
-        const coverPhotoId = rp['coverPhotoId'] ? String(rp['coverPhotoId']) : undefined;
-
-        return {
-          id,
-          name,
-          thumbnailUrl: thumbUrl ? String(thumbUrl) : undefined,
-          localThumbnailPath: localThumb ? String(localThumb) : undefined,
-          coverPhotoId,
-          createdAt,
-          updatedAt,
-          recipeIds: Array.from(new Set(recipeIds)).slice(0, USER_LIMITS.MAX_MODELS_PER_PROJECT),
-          colorIds: Array.from(new Set(colorIds)).slice(0, USER_LIMITS.MAX_COLORS_PER_PROJECT),
-          notes,
-        };
-      });
 
       const projectMap = new Map<string, UserProject>();
       for (const p of base.projects) {
         projectMap.set(p.id, p);
       }
-      for (const incomingP of normalizedIncomingProjects) {
+      for (const incomingP of incoming.projects) {
         if (projectMap.has(incomingP.id) || projectMap.size < USER_LIMITS.MAX_PROJECTS) {
           projectMap.set(incomingP.id, incomingP);
         }
       }
 
-      const incomingCustomPaints = Array.isArray(rawPayload['customPaints'])
-        ? (rawPayload['customPaints'] as ThirdPartyPaint[])
-        : [];
       const customPaintMap = new Map<string, ThirdPartyPaint>();
-      for (const cp of [...base.customPaints, ...incomingCustomPaints]) {
+      for (const cp of [...base.customPaints, ...incoming.customPaints]) {
         if (customPaintMap.has(cp.id) || customPaintMap.size < USER_LIMITS.MAX_CUSTOM_PAINTS) {
           customPaintMap.set(cp.id, cp);
         }
       }
 
-      const incomingPhotos = Array.isArray(rawPayload['uploadedPhotos'])
-        ? (rawPayload['uploadedPhotos'] as UserUploadedPhoto[])
-        : [];
       const photoMap = new Map<string, UserUploadedPhoto>();
-      for (const ph of [...(base.uploadedPhotos ?? []), ...incomingPhotos]) {
-        if (!ph || !ph.id) continue;
+      for (const ph of [...base.uploadedPhotos, ...incoming.uploadedPhotos]) {
         if (photoMap.has(ph.id) || photoMap.size < USER_LIMITS.MAX_TOTAL_USER_PHOTOS) {
-          photoMap.set(ph.id, {
-            ...ph,
-            isPrivate: true,
-          });
+          photoMap.set(ph.id, { ...ph, isPrivate: true });
         }
       }
 
@@ -1189,16 +1170,15 @@ export class UserStateService {
           if (snap.exists()) {
             this.importAccountPayload(snap.data() as Record<string, unknown>, 'merge');
           }
-          // Upload any local-only photos to Firebase Storage and record their storagePaths
           const uploadedMap = await this.media.syncPendingBlobsToCloud(
-            this.state().uploadedPhotos ?? [],
+            this.state().uploadedPhotos,
             user.uid
           );
           if (uploadedMap.size > 0) {
             this.commit(
               (prev) => ({
                 ...prev,
-                uploadedPhotos: (prev.uploadedPhotos ?? []).map((ph) =>
+                uploadedPhotos: prev.uploadedPhotos.map((ph) =>
                   uploadedMap.has(ph.id) ? { ...ph, storagePath: uploadedMap.get(ph.id) } : ph
                 ),
               }),
@@ -1208,16 +1188,9 @@ export class UserStateService {
           await this.pushStateToFirestore(this.state());
           this.unsubscribeFirestore = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
-              const remote = docSnap.data() as UserAccountState;
+              const remote = docSnap.data() as Partial<UserAccountState>;
               if (remote.updatedAt && remote.updatedAt > this.state().updatedAt) {
-                const normalized: UserAccountState = {
-                  ...remote,
-                  inventoryPaintIds: remote.inventoryPaintIds ?? [],
-                  wishlistPaintIds: remote.wishlistPaintIds ?? [],
-                  inventoryModelIds: remote.inventoryModelIds ?? [],
-                  wishlistModelIds: remote.wishlistModelIds ?? [],
-                  uploadedPhotos: remote.uploadedPhotos ?? [],
-                };
+                const normalized = normalizeAccountState(remote);
                 this.state.set(normalized);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
               }
@@ -1237,7 +1210,9 @@ export class UserStateService {
   private async pushStateToFirestore(stateToSave: UserAccountState): Promise<void> {
     const fb = getFirebaseHandles();
     const user = this.currentUser();
-    if (!fb || !user) return;
+    if (!fb || !user) {
+      return;
+    }
     try {
       this.cloudSyncStatus.set(CloudSyncStatus.Syncing);
       const cleaned = stripUndefinedDeep(stateToSave);
@@ -1274,7 +1249,9 @@ export class UserStateService {
 
   async signOutCloud(): Promise<void> {
     const fb = getFirebaseHandles();
-    if (!fb) return;
+    if (!fb) {
+      return;
+    }
     await signOut(fb.auth);
     this.showToast('Signed out of Cloud Sync (local data preserved)');
   }

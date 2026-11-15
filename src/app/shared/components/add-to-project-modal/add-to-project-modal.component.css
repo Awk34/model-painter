@@ -1,0 +1,24 @@
+.add-project-modal {
+  max-width: 480px;
+}
+
+.proj-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.proj-pick-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+}
+
+.create-proj-row {
+  display: flex;
+  gap: 8px;
+}
+

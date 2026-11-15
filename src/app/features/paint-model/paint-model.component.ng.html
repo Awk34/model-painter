@@ -213,50 +213,10 @@
               {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Miniature' }}
             </p>
 
-            <!-- 3-Tier "Can I Paint This?" Readiness Breakdown -->
-            <div class="card-stage-grid">
-              <div
-                class="card-stage-pill"
-                [class.target-active]="targetStage() === 'base'"
-                [class.ready-full]="item.staged.base.totalRequired > 0 && item.staged.base.matchPercent === 100"
-              >
-                <span class="cs-label">1. Base</span>
-                <strong class="cs-val">
-                  {{ item.staged.base.totalRequired > 0 ? item.staged.base.matchPercent + '%' : '—' }}
-                </strong>
-                <span class="cs-sub">
-                  {{ item.staged.base.ownedDirectCount + item.staged.base.substitutedCount }}/{{ item.staged.base.totalRequired }}
-                </span>
-              </div>
-
-              <div
-                class="card-stage-pill"
-                [class.target-active]="targetStage() === 'detail'"
-                [class.ready-full]="item.staged.detail.totalRequired > 0 && item.staged.detail.matchPercent === 100"
-              >
-                <span class="cs-label">2. Detail</span>
-                <strong class="cs-val">
-                  {{ item.staged.detail.totalRequired > 0 ? item.staged.detail.matchPercent + '%' : '—' }}
-                </strong>
-                <span class="cs-sub">
-                  {{ item.staged.detail.ownedDirectCount + item.staged.detail.substitutedCount }}/{{ item.staged.detail.totalRequired }}
-                </span>
-              </div>
-
-              <div
-                class="card-stage-pill"
-                [class.target-active]="targetStage() === 'artificer'"
-                [class.ready-full]="item.staged.artificer.totalRequired > 0 && item.staged.artificer.matchPercent === 100"
-              >
-                <span class="cs-label">3. Artificer</span>
-                <strong class="cs-val">
-                  {{ item.staged.artificer.totalRequired > 0 ? item.staged.artificer.matchPercent + '%' : '—' }}
-                </strong>
-                <span class="cs-sub">
-                  {{ item.staged.artificer.ownedDirectCount + item.staged.artificer.substitutedCount }}/{{ item.staged.artificer.totalRequired }}
-                </span>
-              </div>
-            </div>
+            <app-stage-readiness-pills
+              [staged]="item.staged"
+              [activeStage]="targetStage()"
+            />
           </div>
 
           <div class="model-card-actions" (click)="$event.stopPropagation()">

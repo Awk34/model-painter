@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { FinishStageKey } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
-import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { ImageService } from '../../core/services/image.service';
+import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { applyReadinessFilter } from '../../core/utils/catalog-filter.util';
+import { StageReadinessPillsComponent } from '../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
 
 @Component({
   selector: 'app-paint-color',
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [FormsModule, RouterModule, StageReadinessPillsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-color.component.ng.html',
   styleUrl: './paint-color.component.css',
@@ -23,7 +25,7 @@ export class PaintColorComponent {
   readonly onlyBasing = signal<boolean>(false);
   readonly searchQuery = signal<string>('');
   readonly rangeFilter = signal<'all' | 'warhammer_colour' | 'warhammer_pro'>('all');
-  readonly targetStage = signal<'base' | 'detail' | 'artificer'>('base');
+  readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing1' | 'sortReady'>('all');
 
   readonly filteredColors = computed(() => {
@@ -35,14 +37,20 @@ export class PaintColorComponent {
     const rFilter = this.readinessFilter();
 
     const matches = this.catalog.colors().filter((c) => {
-      if (basing && c.guideType !== 'basing') return false;
+      if (basing && c.guideType !== 'basing') {
+        return false;
+      }
       if (grp && !c.colorGroups.some((g) => g.toLowerCase() === grp.toLowerCase())) {
         return false;
       }
-      if (range !== 'all' && c.range !== range) return false;
+      if (range !== 'all' && c.range !== range) {
+        return false;
+      }
       if (q) {
         const hay = `${c.name} ${c.colorGroups.join(' ')}`.toLowerCase();
-        if (!hay.includes(q)) return false;
+        if (!hay.includes(q)) {
+          return false;
+        }
       }
       return true;
     });
@@ -61,20 +69,7 @@ export class PaintColorComponent {
       };
     });
 
-    if (rFilter === 'ready100') {
-      return evaluated.filter(
-        (x) => x.readiness.totalRequired > 0 && x.readiness.matchPercent === 100
-      );
-    }
-    if (rFilter === 'missing1') {
-      return evaluated.filter(
-        (x) => x.readiness.totalRequired > 0 && x.readiness.missingCount <= 1
-      );
-    }
-    if (rFilter === 'sortReady') {
-      return [...evaluated].sort((a, b) => b.readiness.matchPercent - a.readiness.matchPercent);
-    }
-    return evaluated;
+    return applyReadinessFilter(evaluated, rFilter);
   });
 
   resetFilters(): void {

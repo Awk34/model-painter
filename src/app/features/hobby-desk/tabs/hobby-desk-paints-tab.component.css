@@ -1,0 +1,98 @@
+:host {
+  display: block;
+}
+
+.paints-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+  gap: 10px;
+}
+
+.paint-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.paint-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.paint-pot-thumb {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.paint-card-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.paint-card-name {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paint-card-meta {
+  display: flex;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.mini-brand.pro {
+  color: var(--pro-cyan);
+  font-weight: 700;
+}
+
+.mini-brand.tp {
+  color: var(--gold-bright);
+}
+
+.paint-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.category-swatch-row {
+  display: flex;
+  gap: 8px;
+}
+
+.equiv-field-wrap {
+  margin-top: 4px;
+}
+
+.color-picker {
+  width: 46px;
+  height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--bg-input);
+  cursor: pointer;
+}
+

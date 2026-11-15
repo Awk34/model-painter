@@ -1,0 +1,98 @@
+:host {
+  display: block;
+}
+
+.rollup-section {
+  gap: 16px;
+}
+
+.paint-group {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.group-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-sub {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rollup-paint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 10px;
+}
+
+.rollup-paint-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.rp-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+.rp-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rp-name {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+}
+
+.rp-meta {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.sub-note {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  color: var(--status-sub);
+}
+
+.rp-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.all-covered-msg {
+  font-family: var(--font-sans);
+  color: var(--status-owned);
+  font-weight: 600;
+}
+

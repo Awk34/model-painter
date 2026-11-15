@@ -211,7 +211,7 @@
                     <div class="equiv-info">
                       <span class="equiv-name">{{ cm.citadelPaintName }}</span>
                       <span class="equiv-meta">
-                        {{ cm.citadelRange === 'warhammer_pro' ? 'Tone Pro' : 'Citadel Classic' }} • {{ cm.citadelCategory }}
+                        {{ getCitadelBrandLabel(cm.citadelRange) }} • {{ cm.citadelCategory }}
                       </span>
                       <span class="delta-badge" [attr.data-quality]="cm.matchQuality">
                         ΔE {{ cm.deltaE }} ({{ cm.matchQuality }})

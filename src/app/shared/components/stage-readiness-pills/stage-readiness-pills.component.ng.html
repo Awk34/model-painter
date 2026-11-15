@@ -1,0 +1,18 @@
+<div class="card-stage-grid">
+  @for (stage of stages(); track stage.key) {
+    <div
+      class="card-stage-pill"
+      [class.target-active]="activeStage() === stage.key"
+      [class.ready-full]="stage.data.totalRequired > 0 && stage.data.matchPercent === 100"
+    >
+      <span class="cs-label">{{ stage.label }}</span>
+      <strong class="cs-val">
+        {{ stage.data.totalRequired > 0 ? stage.data.matchPercent + '%' : '—' }}
+      </strong>
+      <span class="cs-sub">
+        {{ stage.data.ownedDirectCount + stage.data.substitutedCount }}/{{ stage.data.totalRequired }}
+      </span>
+    </div>
+  }
+</div>
+

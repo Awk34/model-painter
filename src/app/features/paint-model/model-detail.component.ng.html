@@ -6,6 +6,7 @@
     @if (recipe(); as r) {
       <div class="top-actions">
         <button
+          type="button"
           class="btn btn-sm"
           [class.btn-owned]="userState.isModelOwned(r.id)"
           [class.btn-secondary]="!userState.isModelOwned(r.id)"
@@ -14,6 +15,7 @@
           {{ userState.isModelOwned(r.id) ? '✓ Model Owned' : '+ Own Model' }}
         </button>
         <button
+          type="button"
           class="btn btn-sm"
           [class.btn-wishlist]="userState.isModelWishlisted(r.id)"
           [class.btn-secondary]="!userState.isModelWishlisted(r.id)"
@@ -23,6 +25,7 @@
         </button>
         @if (stagedReadiness().base.missingCount > 0) {
           <button
+            type="button"
             class="btn btn-gold btn-sm"
             (click)="userState.addManyToWishlist(stagedReadiness().base.missingPaintIds)"
           >
@@ -31,48 +34,69 @@
         }
         @if (readiness().missingCount > 0 && readiness().missingCount !== stagedReadiness().base.missingCount) {
           <button
+            type="button"
             class="btn btn-secondary btn-sm"
             (click)="userState.addManyToWishlist(readiness().missingPaintIds)"
           >
             ★ Wishlist All {{ readiness().missingCount }} Missing Paints
           </button>
         }
-        <button class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
           + Add Model to Project
         </button>
       </div>
     }
   </div>
 
+  @let r = recipe();
   @if (loading()) {
     <div class="loading-card studio-card">
       <p>Loading model recipe & interactive color points...</p>
     </div>
-  } @else {
-    @if (recipe(); as r) {
-    <!-- Top Split Layout: Interactive Model Image + Color Points on Left, Summary & Colors on Right -->
+  } @else if (r) {
     <div class="hero-split">
       <!-- Left Column: High-Res Image Viewer with Interactive (x,y) Color Point Pins -->
       <div class="viewer-panel studio-card">
         <div class="main-img-stage">
           <div class="img-overlay-box">
-            <img
-              [src]="activeImageUrl()"
-              [alt]="r.name"
-              class="stage-img"
-            />
+            <img [src]="activeImageUrl()" [alt]="r.name" class="stage-img" />
 
-            <!-- Interactive Normalized (x,y) Color Pins on Primary Angle -->
+            <button
+              type="button"
+              class="photo-zoom-btn"
+              aria-label="Zoom into model photo"
+              title="Zoom into photo details (without color pins)"
+              (click)="openZoomModal()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.35" y2="16.35" />
+                <line x1="11" y1="8" x2="11" y2="14" />
+                <line x1="8" y1="11" x2="14" y2="11" />
+              </svg>
+            </button>
+
             @if (selectedImageIndex() === 0 && showPins() && r.colorPoints.length) {
               @for (cp of r.colorPoints; track cp.id) {
                 <button
+                  type="button"
                   class="color-pin"
                   [class.active]="selectedColorPointId() === cp.id"
                   [style.left.%]="cp.point.x * 100"
                   [style.top.%]="cp.point.y * 100"
                   [style.background]="cp.hex"
-                  (click)="selectColorPoint(cp.id)"
                   [title]="cp.name"
+                  (click)="selectColorPoint(cp.id)"
                 >
                   <span class="pin-ring"></span>
                 </button>
@@ -81,20 +105,17 @@
           </div>
         </div>
 
-        <!-- Viewer Footer: Angle Thumbnails & Pin Toggle -->
         <div class="viewer-controls">
           @if (r.images.length > 1) {
             <div class="angle-thumbs">
               @for (imgUrl of r.images; track $index; let idx = $index) {
                 <button
+                  type="button"
                   class="angle-thumb"
                   [class.active]="selectedImageIndex() === idx"
                   (click)="selectedImageIndex.set(idx)"
                 >
-                  <img
-                    [src]="img.resolve(r.localImagePaths[idx], imgUrl)"
-                    alt=""
-                  />
+                  <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
                 </button>
               }
             </div>
@@ -102,6 +123,7 @@
 
           @if (r.colorPoints.length) {
             <button
+              type="button"
               class="btn btn-sm btn-ghost"
               (click)="showPins.set(!showPins())"
             >
@@ -127,157 +149,18 @@
         <h1 class="model-title">{{ r.name }}</h1>
 
         @if (r.factions.length) {
-          <p class="factions-line">
-            {{ formatFactions(r) }}
-          </p>
+          <p class="factions-line">{{ formatFactions(r) }}</p>
         }
 
-        <!-- "Can I Paint This?" Readiness Box (Split by 3 Finish Levels) -->
-        <div class="readiness-box">
-          <div class="ready-header">
-            <strong>Can I Paint This? — Readiness by Detail Level</strong>
-            <span>Click a stage below to filter painting steps</span>
-          </div>
+        <app-stage-readiness-bars
+          [staged]="stagedReadiness()"
+          [activeStage]="activeStageKey()"
+          heading="Can I Paint This? — Readiness by Detail Level"
+          hint="Click a stage below to filter painting steps"
+          (stageClick)="onStageBarClick($event)"
+          (wishlistMissing)="userState.addManyToWishlist($event)"
+        />
 
-          <div class="stage-readiness-list">
-            <!-- 1. Base Finish -->
-            <div
-              class="stage-ready-row"
-              [class.active]="stageFilter() === 'Base Finish'"
-              (click)="stageFilter.set(stageFilter() === 'Base Finish' ? 'all' : 'Base Finish')"
-            >
-              <div class="stage-ready-top">
-                <div class="stage-ready-title">
-                  <strong>1. Base Finish</strong>
-                  <span class="stage-tier-hint">Battle Ready</span>
-                </div>
-                <div class="stage-ready-stats">
-                  @if (stagedReadiness().base.totalRequired > 0) {
-                    <strong
-                      class="stage-pct"
-                      [class.complete]="stagedReadiness().base.matchPercent === 100"
-                    >
-                      {{ stagedReadiness().base.matchPercent }}%
-                    </strong>
-                    <span>
-                      ({{ stagedReadiness().base.ownedDirectCount + stagedReadiness().base.substitutedCount }}/{{ stagedReadiness().base.totalRequired }} Paints)
-                    </span>
-                    @if (stagedReadiness().base.missingCount > 0) {
-                      <button
-                        class="btn btn-sm btn-gold stage-wish-btn"
-                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().base.missingPaintIds)"
-                        title="Add missing Base Finish paints to Paint Wishlist"
-                      >
-                        ★ +{{ stagedReadiness().base.missingCount }} Missing
-                      </button>
-                    }
-                  } @else {
-                    <span>No paints required</span>
-                  }
-                </div>
-              </div>
-              <div class="progress-track">
-                <div
-                  class="progress-fill"
-                  [style.width.%]="stagedReadiness().base.matchPercent"
-                  [class.complete]="stagedReadiness().base.matchPercent === 100"
-                ></div>
-              </div>
-            </div>
-
-            <!-- 2. Detail Finish -->
-            <div
-              class="stage-ready-row"
-              [class.active]="stageFilter() === 'Detail Finish'"
-              (click)="stageFilter.set(stageFilter() === 'Detail Finish' ? 'all' : 'Detail Finish')"
-            >
-              <div class="stage-ready-top">
-                <div class="stage-ready-title">
-                  <strong>2. Detail Finish</strong>
-                  <span class="stage-tier-hint">Shade & Layer</span>
-                </div>
-                <div class="stage-ready-stats">
-                  @if (stagedReadiness().detail.totalRequired > 0) {
-                    <strong
-                      class="stage-pct"
-                      [class.complete]="stagedReadiness().detail.matchPercent === 100"
-                    >
-                      {{ stagedReadiness().detail.matchPercent }}%
-                    </strong>
-                    <span>
-                      ({{ stagedReadiness().detail.ownedDirectCount + stagedReadiness().detail.substitutedCount }}/{{ stagedReadiness().detail.totalRequired }} Paints)
-                    </span>
-                    @if (stagedReadiness().detail.missingCount > 0) {
-                      <button
-                        class="btn btn-sm btn-secondary stage-wish-btn"
-                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().detail.missingPaintIds)"
-                        title="Add missing Detail Finish paints to Paint Wishlist"
-                      >
-                        ★ +{{ stagedReadiness().detail.missingCount }} Missing
-                      </button>
-                    }
-                  } @else {
-                    <span>No paints required</span>
-                  }
-                </div>
-              </div>
-              <div class="progress-track">
-                <div
-                  class="progress-fill"
-                  [style.width.%]="stagedReadiness().detail.matchPercent"
-                  [class.complete]="stagedReadiness().detail.matchPercent === 100"
-                ></div>
-              </div>
-            </div>
-
-            <!-- 3. Artificer Finish -->
-            <div
-              class="stage-ready-row"
-              [class.active]="stageFilter() === 'Artificer Finish'"
-              (click)="stageFilter.set(stageFilter() === 'Artificer Finish' ? 'all' : 'Artificer Finish')"
-            >
-              <div class="stage-ready-top">
-                <div class="stage-ready-title">
-                  <strong>3. Artificer Finish</strong>
-                  <span class="stage-tier-hint">Edge Highlights</span>
-                </div>
-                <div class="stage-ready-stats">
-                  @if (stagedReadiness().artificer.totalRequired > 0) {
-                    <strong
-                      class="stage-pct"
-                      [class.complete]="stagedReadiness().artificer.matchPercent === 100"
-                    >
-                      {{ stagedReadiness().artificer.matchPercent }}%
-                    </strong>
-                    <span>
-                      ({{ stagedReadiness().artificer.ownedDirectCount + stagedReadiness().artificer.substitutedCount }}/{{ stagedReadiness().artificer.totalRequired }} Paints)
-                    </span>
-                    @if (stagedReadiness().artificer.missingCount > 0) {
-                      <button
-                        class="btn btn-sm btn-secondary stage-wish-btn"
-                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().artificer.missingPaintIds)"
-                        title="Add missing Artificer Finish paints to Paint Wishlist"
-                      >
-                        ★ +{{ stagedReadiness().artificer.missingCount }} Missing
-                      </button>
-                    }
-                  } @else {
-                    <span>No paints required</span>
-                  }
-                </div>
-              </div>
-              <div class="progress-track">
-                <div
-                  class="progress-fill"
-                  [style.width.%]="stagedReadiness().artificer.matchPercent"
-                  [class.complete]="stagedReadiness().artificer.matchPercent === 100"
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Colors On This Model (Linked to interactive pins) -->
         @if (r.colorPoints.length) {
           <div class="colors-on-model">
             <h3>Colors On This Model ({{ r.colorPoints.length }})</h3>
@@ -297,6 +180,7 @@
                   </div>
                   @if (cp.colorId) {
                     <button
+                      type="button"
                       class="btn btn-sm btn-secondary"
                       (click)="$event.stopPropagation(); goToColor(cp.colorId)"
                     >
@@ -312,8 +196,8 @@
     </div>
 
     <!-- User Uploaded Painted Photos & Private Reference Photos -->
-    <section class="user-photos-section studio-card">
-      <div class="user-photos-header">
+    <section class="project-section studio-card">
+      <div class="section-header-bar">
         <button
           type="button"
           class="section-toggle-btn"
@@ -326,7 +210,7 @@
       </div>
 
       @if (userPhotosExpanded()) {
-        <div class="user-photos-content">
+        <div class="section-content user-photos-content">
           <app-user-photo-gallery
             targetType="model"
             [targetId]="r.id"
@@ -348,200 +232,155 @@
       }
     </section>
 
-    <!-- Painting Areas & Step-by-Step Instructions -->
     @if (r.paintingAreas.length) {
-      <section class="areas-section">
-        <div class="areas-header">
-          <div>
-            <h2>Step-by-Step Painting Areas ({{ r.paintingAreas.length }})</h2>
-            <p class="subtitle">
-              Filter steps by progressive finish tier or click any paint pot to inspect Tone Pro & 3rd-party equivalents.
-            </p>
+      <app-model-painting-steps
+        [paintingAreas]="r.paintingAreas"
+        [readiness]="readiness()"
+        [(stageFilter)]="stageFilter"
+      />
+    }
+
+    <app-add-to-project-modal
+      [open]="showProjectModal()"
+      itemType="model"
+      [itemId]="r.id"
+      [itemName]="r.name"
+      [thumbnailUrl]="r.images[0]"
+      [localThumbnailPath]="r.localImagePaths[0]"
+      (closed)="showProjectModal.set(false)"
+    />
+
+    @if (zoomModalOpen()) {
+      <div
+        class="modal-backdrop zoom-modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="r.name + ' photo zoom viewer'"
+        (click)="closeZoomModal()"
+      >
+        <div class="modal-panel zoom-modal-panel" (click)="$event.stopPropagation()">
+          <div class="modal-header zoom-modal-header">
+            <div class="zoom-title-group">
+              <h2>{{ r.name }}</h2>
+              <span class="zoom-hint">Scroll or use controls to zoom • Drag to pan • Double-click to toggle zoom</span>
+            </div>
+
+            <div class="zoom-toolbar">
+              @if (r.colorPoints.length) {
+                <button
+                  type="button"
+                  class="btn btn-sm zoom-pins-toggle-btn"
+                  [class.btn-gold]="showZoomPins()"
+                  [class.btn-ghost]="!showZoomPins()"
+                  [attr.aria-pressed]="showZoomPins()"
+                  (click)="toggleZoomPins()"
+                >
+                  {{ showZoomPins() ? '👁 Hide Orbs' : '👁 Show Orbs' }} ({{ r.colorPoints.length }})
+                </button>
+              }
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                aria-label="Zoom out"
+                [disabled]="zoomScale() <= 1"
+                (click)="zoomOut()"
+              >
+                −
+              </button>
+              <span class="zoom-readout-pill">{{ (zoomScale() * 100) | number:'1.0-0' }}%</span>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                aria-label="Zoom in"
+                [disabled]="zoomScale() >= 4"
+                (click)="zoomIn()"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                aria-label="Reset zoom and pan"
+                (click)="resetZoom()"
+              >
+                1× Fit
+              </button>
+              <button
+                type="button"
+                class="close-btn"
+                aria-label="Close zoom view"
+                title="Close (Esc)"
+                (click)="closeZoomModal()"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
-          <div class="chip-bar">
-            <button
-              class="chip"
-              [class.active]="stageFilter() === 'all'"
-              (click)="stageFilter.set('all')"
+          <div
+            class="zoom-stage"
+            [class.can-pan]="zoomScale() > 1"
+            [class.is-panning]="isPanning()"
+            (wheel)="onZoomWheel($event)"
+            (dblclick)="toggleQuickZoom()"
+            (pointerdown)="onPanStart($event)"
+            (pointermove)="onPanMove($event)"
+            (pointerup)="onPanEnd($event)"
+            (pointercancel)="onPanEnd($event)"
+          >
+            <div
+              class="zoom-canvas-box"
+              [style.transform]="'translate3d(' + panX() + 'px, ' + panY() + 'px, 0) scale(' + zoomScale() + ')'"
+              [style.--pin-scale]="1 / zoomScale()"
             >
-              All Stages
-            </button>
-            <button
-              class="chip"
-              [class.active]="stageFilter() === 'Base Finish'"
-              (click)="stageFilter.set('Base Finish')"
-            >
-              Base Finish (Battle Ready)
-            </button>
-            <button
-              class="chip"
-              [class.active]="stageFilter() === 'Detail Finish'"
-              (click)="stageFilter.set('Detail Finish')"
-            >
-              Detail Finish (Parade Ready)
-            </button>
-            <button
-              class="chip"
-              [class.active]="stageFilter() === 'Artificer Finish'"
-              (click)="stageFilter.set('Artificer Finish')"
-            >
-              Artificer Finish
-            </button>
+              <img
+                [src]="activeImageUrl()"
+                [alt]="r.name + ' zoomed detail view'"
+                class="zoom-stage-img"
+                draggable="false"
+              />
+
+              @if (selectedImageIndex() === 0 && showZoomPins() && r.colorPoints.length) {
+                @for (cp of r.colorPoints; track cp.id) {
+                  <button
+                    type="button"
+                    class="color-pin zoom-color-pin"
+                    [class.active]="selectedColorPointId() === cp.id"
+                    [style.left.%]="cp.point.x * 100"
+                    [style.top.%]="cp.point.y * 100"
+                    [style.background]="cp.hex"
+                    [title]="cp.name"
+                    [attr.aria-label]="cp.name"
+                    (pointerdown)="$event.stopPropagation()"
+                    (dblclick)="$event.stopPropagation()"
+                    (click)="$event.stopPropagation(); selectColorPoint(cp.id)"
+                  >
+                    <span class="pin-ring"></span>
+                  </button>
+                }
+              }
+            </div>
           </div>
-        </div>
 
-        <div class="areas-list">
-          @for (area of r.paintingAreas; track area.id) {
-            <div class="area-card studio-card">
-              <div class="area-header">
-                <div class="area-title-group">
-                  @if (area.localImagePath || area.imageUrl) {
-                    <img
-                      [src]="img.resolve(area.localImagePath, area.imageUrl)"
-                      [alt]="area.name"
-                      class="area-thumb"
-                    />
-                  }
-                  <div>
-                    <h3>{{ area.name }}</h3>
-                    @if (area.subsectionName) {
-                      <span class="area-sub">{{ area.subsectionName }}</span>
-                    }
-                  </div>
-                </div>
-              </div>
-
-              <div class="steps-grid">
-                @for (step of filterSteps(area.paintingSteps); track step.id) {
-                  <div class="step-card">
-                    <div class="step-top">
-                      <span class="step-num-badge">Step {{ step.stepNumber || step.stepOrder }}</span>
-                      <span class="stage-pill">{{ step.paintingStage }}</span>
-                      @if (step.techniqueName) {
-                        <span class="tech-pill">{{ step.techniqueName }}</span>
-                      }
-                      @if (step.brushName) {
-                        <span class="brush-pill">🖌 {{ step.brushName }}</span>
-                      }
-                    </div>
-
-                    @if (step.localImagePath || step.imageUrl) {
-                      <div class="step-img-box">
-                        <img
-                          [src]="img.resolve(step.localImagePath, step.imageUrl)"
-                          [alt]="step.title || step.techniqueName || ''"
-                          loading="lazy"
-                        />
-                      </div>
-                    }
-
-                    @if (step.text) {
-                      <p class="step-text">{{ step.text }}</p>
-                    }
-
-                    @if (step.paint; as sp) {
-                      <div class="step-paint-box">
-                        <button
-                          class="step-paint-main"
-                          (click)="paintModal.openPaint(sp.id)"
-                        >
-                          <span
-                            class="paint-swatch"
-                            [style.background]="sp.gradientStartHex || '#888'"
-                          ></span>
-                          <div class="sp-info">
-                            <strong>{{ sp.name }}</strong>
-                            <span>{{ sp.category }}</span>
-                          </div>
-                        </button>
-
-                        <div class="sp-actions">
-                          @if (userState.isOwned(sp.id)) {
-                            <button
-                              class="btn btn-sm btn-owned"
-                              (click)="userState.toggleInventory(sp.id)"
-                            >
-                              ✓ Owned
-                            </button>
-                          } @else {
-                            @if (readiness().substitutedByPaintId[sp.id]; as sub) {
-                              <button
-                                class="btn btn-sm badge-sub"
-                                (click)="paintModal.openPaint(sp.id)"
-                                title="Covered by equivalent in your Inventory"
-                              >
-                                ⇄ Covered by {{ sub.substituteName }}
-                              </button>
-                            } @else {
-                              <button
-                                class="btn btn-sm btn-ghost"
-                                (click)="userState.toggleInventory(sp.id)"
-                              >
-                                + Own
-                              </button>
-                              <button
-                                class="btn btn-sm"
-                                [class.btn-wishlist]="userState.isWishlisted(sp.id)"
-                                [class.btn-ghost]="!userState.isWishlisted(sp.id)"
-                                (click)="userState.toggleWishlist(sp.id)"
-                              >
-                                {{ userState.isWishlisted(sp.id) ? '★' : '☆' }}
-                              </button>
-                            }
-                          }
-                        </div>
-                      </div>
-                    }
-                  </div>
+          @if (r.images.length > 1) {
+            <div class="zoom-modal-footer">
+              <div class="angle-thumbs">
+                @for (imgUrl of r.images; track $index; let idx = $index) {
+                  <button
+                    type="button"
+                    class="angle-thumb"
+                    [class.active]="selectedImageIndex() === idx"
+                    [attr.aria-label]="'View angle ' + (idx + 1)"
+                    (click)="selectZoomAngle(idx)"
+                  >
+                    <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
+                  </button>
                 }
               </div>
             </div>
           }
         </div>
-      </section>
-    }
-    }
-  }
-
-  <!-- Modal: Add Model to Project -->
-  @if (showProjectModal() && recipe(); as r) {
-    <div class="modal-backdrop" (click)="showProjectModal.set(false)">
-      <div class="modal-panel" style="max-width: 480px" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Add "{{ r.name }}" to Project</h3>
-          <button class="close-btn" (click)="showProjectModal.set(false)">✕</button>
-        </div>
-        <div class="modal-body">
-          @if (userState.projects().length > 0) {
-            <div class="proj-list">
-              @for (p of userState.projects(); track p.id) {
-                <button
-                  class="proj-pick-btn studio-card"
-                  (click)="addToExistingProject(p.id, r)"
-                >
-                  <strong>{{ p.name }}</strong>
-                  <span>{{ p.recipeIds.includes(r.id) ? '✓ Already Added' : '+ Add to Project' }}</span>
-                </button>
-              }
-            </div>
-          }
-          <hr class="divider" />
-          <label class="field-label">Or Create a New Project with This Model:</label>
-          <div style="display: flex; gap: 8px">
-            <input
-              type="text"
-              class="input-control"
-              placeholder="New project name..."
-              [(ngModel)]="newProjectName"
-            />
-            <button class="btn btn-gold" (click)="createProjectWithModel(r)">
-              Create & Add
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+    }
   }
 </div>
-

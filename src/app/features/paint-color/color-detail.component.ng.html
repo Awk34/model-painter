@@ -7,6 +7,7 @@
       <div class="top-actions">
         @if (stagedReadiness().base.missingCount > 0) {
           <button
+            type="button"
             class="btn btn-gold btn-sm"
             (click)="userState.addManyToWishlist(stagedReadiness().base.missingPaintIds)"
           >
@@ -15,25 +16,26 @@
         }
         @if (readiness().missingCount > 0 && readiness().missingCount !== stagedReadiness().base.missingCount) {
           <button
+            type="button"
             class="btn btn-secondary btn-sm"
             (click)="userState.addManyToWishlist(readiness().missingPaintIds)"
           >
             ★ Wishlist All {{ readiness().missingCount }} Missing Paints
           </button>
         }
-        <button class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
           + Add Color to Project
         </button>
       </div>
     }
   </div>
 
+  @let c = color();
   @if (loading()) {
     <div class="loading-card studio-card">
       <p>Loading color guide & showcase stages...</p>
     </div>
-  } @else {
-    @if (color(); as c) {
+  } @else if (c) {
     <div class="hero-split">
       <!-- Left: Interactive Space Marine Backpack Showcase Image Switcher -->
       <div class="showcase-panel studio-card">
@@ -41,9 +43,9 @@
           <img [src]="activeShowcaseImage()" [alt]="c.name" class="backpack-img" />
         </div>
 
-        <!-- Interactive Finish Stage Switcher -->
         <div class="tier-switcher">
           <button
+            type="button"
             class="tier-btn"
             [class.active]="activeTier() === 'base'"
             (click)="activeTier.set('base')"
@@ -52,6 +54,7 @@
             <span>Battle Ready</span>
           </button>
           <button
+            type="button"
             class="tier-btn"
             [class.active]="activeTier() === 'detail'"
             (click)="activeTier.set('detail')"
@@ -60,6 +63,7 @@
             <span>Shade & Layer</span>
           </button>
           <button
+            type="button"
             class="tier-btn"
             [class.active]="activeTier() === 'artificer'"
             (click)="activeTier.set('artificer')"
@@ -92,221 +96,20 @@
           </div>
         </div>
 
-        <!-- Readiness Bar (Split by 3 Finish Levels) -->
-        <div class="readiness-box">
-          <div class="ready-header">
-            <strong>Can I Paint This Color? — Readiness by Detail Level</strong>
-            <span>Click a stage below to preview showcase</span>
-          </div>
+        <app-stage-readiness-bars
+          [staged]="stagedReadiness()"
+          [activeStage]="activeTier()"
+          heading="Can I Paint This Color? — Readiness by Detail Level"
+          hint="Click a stage below to preview showcase"
+          (stageClick)="activeTier.set($event)"
+          (wishlistMissing)="userState.addManyToWishlist($event)"
+        />
 
-          <div class="stage-readiness-list">
-            <!-- 1. Base Finish -->
-            <div
-              class="stage-ready-row"
-              [class.active]="activeTier() === 'base'"
-              (click)="activeTier.set('base')"
-            >
-              <div class="stage-ready-top">
-                <div class="stage-ready-title">
-                  <strong>1. Base Finish</strong>
-                  <span class="stage-tier-hint">Battle Ready</span>
-                </div>
-                <div class="stage-ready-stats">
-                  @if (stagedReadiness().base.totalRequired > 0) {
-                    <strong
-                      class="stage-pct"
-                      [class.complete]="stagedReadiness().base.matchPercent === 100"
-                    >
-                      {{ stagedReadiness().base.matchPercent }}%
-                    </strong>
-                    <span>
-                      ({{ stagedReadiness().base.ownedDirectCount + stagedReadiness().base.substitutedCount }}/{{ stagedReadiness().base.totalRequired }} Paints)
-                    </span>
-                    @if (stagedReadiness().base.missingCount > 0) {
-                      <button
-                        class="btn btn-sm btn-gold stage-wish-btn"
-                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().base.missingPaintIds)"
-                      >
-                        ★ +{{ stagedReadiness().base.missingCount }} Missing
-                      </button>
-                    }
-                  } @else {
-                    <span>No paints required</span>
-                  }
-                </div>
-              </div>
-              <div class="progress-track">
-                <div
-                  class="progress-fill"
-                  [style.width.%]="stagedReadiness().base.matchPercent"
-                  [class.complete]="stagedReadiness().base.matchPercent === 100"
-                ></div>
-              </div>
-            </div>
-
-            <!-- 2. Detail Finish -->
-            <div
-              class="stage-ready-row"
-              [class.active]="activeTier() === 'detail'"
-              (click)="activeTier.set('detail')"
-            >
-              <div class="stage-ready-top">
-                <div class="stage-ready-title">
-                  <strong>2. Detail Finish</strong>
-                  <span class="stage-tier-hint">Shade & Layer</span>
-                </div>
-                <div class="stage-ready-stats">
-                  @if (stagedReadiness().detail.totalRequired > 0) {
-                    <strong
-                      class="stage-pct"
-                      [class.complete]="stagedReadiness().detail.matchPercent === 100"
-                    >
-                      {{ stagedReadiness().detail.matchPercent }}%
-                    </strong>
-                    <span>
-                      ({{ stagedReadiness().detail.ownedDirectCount + stagedReadiness().detail.substitutedCount }}/{{ stagedReadiness().detail.totalRequired }} Paints)
-                    </span>
-                    @if (stagedReadiness().detail.missingCount > 0) {
-                      <button
-                        class="btn btn-sm btn-secondary stage-wish-btn"
-                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().detail.missingPaintIds)"
-                      >
-                        ★ +{{ stagedReadiness().detail.missingCount }} Missing
-                      </button>
-                    }
-                  } @else {
-                    <span>No paints required</span>
-                  }
-                </div>
-              </div>
-              <div class="progress-track">
-                <div
-                  class="progress-fill"
-                  [style.width.%]="stagedReadiness().detail.matchPercent"
-                  [class.complete]="stagedReadiness().detail.matchPercent === 100"
-                ></div>
-              </div>
-            </div>
-
-            <!-- 3. Artificer Finish -->
-            <div
-              class="stage-ready-row"
-              [class.active]="activeTier() === 'artificer'"
-              (click)="activeTier.set('artificer')"
-            >
-              <div class="stage-ready-top">
-                <div class="stage-ready-title">
-                  <strong>3. Artificer Finish</strong>
-                  <span class="stage-tier-hint">Edge Highlights</span>
-                </div>
-                <div class="stage-ready-stats">
-                  @if (stagedReadiness().artificer.totalRequired > 0) {
-                    <strong
-                      class="stage-pct"
-                      [class.complete]="stagedReadiness().artificer.matchPercent === 100"
-                    >
-                      {{ stagedReadiness().artificer.matchPercent }}%
-                    </strong>
-                    <span>
-                      ({{ stagedReadiness().artificer.ownedDirectCount + stagedReadiness().artificer.substitutedCount }}/{{ stagedReadiness().artificer.totalRequired }} Paints)
-                    </span>
-                    @if (stagedReadiness().artificer.missingCount > 0) {
-                      <button
-                        class="btn btn-sm btn-secondary stage-wish-btn"
-                        (click)="$event.stopPropagation(); userState.addManyToWishlist(stagedReadiness().artificer.missingPaintIds)"
-                      >
-                        ★ +{{ stagedReadiness().artificer.missingCount }} Missing
-                      </button>
-                    }
-                  } @else {
-                    <span>No paints required</span>
-                  }
-                </div>
-              </div>
-              <div class="progress-track">
-                <div
-                  class="progress-fill"
-                  [style.width.%]="stagedReadiness().artificer.matchPercent"
-                  [class.complete]="stagedReadiness().artificer.matchPercent === 100"
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Finish Tiers Breakdown -->
-        <div class="tiers-list">
-          @for (tierBlock of allTierBlocks(); track tierBlock.key) {
-            <div
-              class="tier-block"
-              [class.highlighted]="activeTier() === tierBlock.key"
-              (click)="activeTier.set(tierBlock.key)"
-            >
-              <div class="tier-block-header">
-                <h3>{{ tierBlock.label }}</h3>
-                <span class="tier-sub">{{ tierBlock.steps.length }} Step{{ tierBlock.steps.length === 1 ? '' : 's' }}</span>
-              </div>
-
-              <div class="stage-steps">
-                @for (st of tierBlock.steps; track st.id) {
-                  @if (st.paint; as sp) {
-                    <div class="stage-step-row" (click)="$event.stopPropagation()">
-                      <button
-                        class="step-paint-btn"
-                        (click)="paintModal.openPaint(sp.id)"
-                      >
-                        <span class="step-order-num">{{ st.stepOrder }}</span>
-                        <span
-                          class="paint-swatch"
-                          [style.background]="sp.hex || sp.gradientStartHex || '#888'"
-                        ></span>
-                        <div class="step-paint-info">
-                          <strong>{{ sp.name }}</strong>
-                          <span>{{ st.technique || sp.category }}</span>
-                        </div>
-                      </button>
-
-                      <div class="step-paint-actions">
-                        @if (userState.isOwned(sp.id)) {
-                          <button
-                            class="btn btn-sm btn-owned"
-                            (click)="userState.toggleInventory(sp.id)"
-                          >
-                            ✓ Owned
-                          </button>
-                        } @else {
-                          @if (readiness().substitutedByPaintId[sp.id]; as sub) {
-                            <button
-                              class="btn btn-sm badge-sub"
-                              (click)="paintModal.openPaint(sp.id)"
-                            >
-                              ⇄ {{ sub.substituteName }}
-                            </button>
-                          } @else {
-                            <button
-                              class="btn btn-sm btn-ghost"
-                              (click)="userState.toggleInventory(sp.id)"
-                            >
-                              + Own
-                            </button>
-                            <button
-                              class="btn btn-sm"
-                              [class.btn-wishlist]="userState.isWishlisted(sp.id)"
-                              [class.btn-ghost]="!userState.isWishlisted(sp.id)"
-                              (click)="userState.toggleWishlist(sp.id)"
-                            >
-                              {{ userState.isWishlisted(sp.id) ? '★' : '☆' }}
-                            </button>
-                          }
-                        }
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-            </div>
-          }
-        </div>
+        <app-color-tier-steps
+          [tierBlocks]="allTierBlocks()"
+          [readiness]="readiness()"
+          [(activeTier)]="activeTier"
+        />
       </div>
     </div>
 
@@ -331,46 +134,15 @@
         </div>
       </section>
     }
-    }
-  }
 
-  <!-- Modal: Add Color to Project -->
-  @if (showProjectModal() && color(); as c) {
-    <div class="modal-backdrop" (click)="showProjectModal.set(false)">
-      <div class="modal-panel" style="max-width: 480px" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Add "{{ c.name }}" to Project</h3>
-          <button class="close-btn" (click)="showProjectModal.set(false)">✕</button>
-        </div>
-        <div class="modal-body">
-          @if (userState.projects().length > 0) {
-            <div class="proj-list">
-              @for (p of userState.projects(); track p.id) {
-                <button
-                  class="proj-pick-btn studio-card"
-                  (click)="addToExistingProject(p.id, c.id)"
-                >
-                  <strong>{{ p.name }}</strong>
-                  <span>{{ p.colorIds.includes(c.id) ? '✓ Already Added' : '+ Add to Project' }}</span>
-                </button>
-              }
-            </div>
-          }
-          <hr class="divider" />
-          <label class="field-label">Or Create a New Project with This Color:</label>
-          <div style="display: flex; gap: 8px">
-            <input
-              type="text"
-              class="input-control"
-              placeholder="New project name..."
-              [(ngModel)]="newProjectName"
-            />
-            <button class="btn btn-gold" (click)="createProjectWithColor(c)">
-              Create & Add
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <app-add-to-project-modal
+      [open]="showProjectModal()"
+      itemType="color"
+      [itemId]="c.id"
+      [itemName]="c.name"
+      [thumbnailUrl]="c.imageUrl"
+      [localThumbnailPath]="c.localImagePath"
+      (closed)="showProjectModal.set(false)"
+    />
   }
 </div>

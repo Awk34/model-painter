@@ -1,16 +1,18 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { FactionNode, FinishStageKey, GameSystem } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
-import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { ImageService } from '../../core/services/image.service';
+import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { UserStateService } from '../../core/services/user-state.service';
-import { FactionNode, GameSystem, ModelSummary } from '../../core/models/catalog.models';
+import { applyReadinessFilter, matchesModelSearch } from '../../core/utils/catalog-filter.util';
+import { StageReadinessPillsComponent } from '../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
 
 @Component({
   selector: 'app-paint-model',
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [DecimalPipe, FormsModule, RouterModule, StageReadinessPillsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-model.component.ng.html',
   styleUrl: './paint-model.component.css',
@@ -28,20 +30,24 @@ export class PaintModelComponent {
   readonly searchQuery = signal<string>('');
   readonly collectionFilter = signal<'all' | 'inventory' | 'wishlist'>('all');
   readonly rangeFilter = signal<'all' | 'warhammer_colour' | 'warhammer_pro'>('all');
-  readonly targetStage = signal<'base' | 'detail' | 'artificer'>('base');
+  readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing2' | 'sortReady'>('all');
   readonly visibleLimit = signal<number>(60);
 
   readonly selectedGame = computed(() => {
     const gid = this.selectedGameId();
-    if (!gid) return null;
+    if (!gid) {
+      return null;
+    }
     return this.catalog.games().find((g) => g.id === gid) ?? null;
   });
 
   readonly selectedParentFaction = computed(() => {
     const g = this.selectedGame();
     const fid = this.selectedParentFactionId();
-    if (!g || !fid) return null;
+    if (!g || !fid) {
+      return null;
+    }
     return g.factions.find((f) => f.id === fid) ?? null;
   });
 
@@ -55,36 +61,38 @@ export class PaintModelComponent {
     const gid = this.selectedGameId();
     const pfid = this.selectedParentFactionId();
     const sfid = this.selectedSubFactionId();
+    const parentFac = this.selectedParentFaction();
+    const game = this.selectedGame();
 
-    // Allowed recipe IDs when a game or faction node is active
     let allowedRecipeSet: Set<string> | null = null;
-    if (sfid && this.selectedParentFaction()) {
-      const sub = this.selectedParentFaction()!.childFactions?.find((c) => c.id === sfid);
-      if (sub) allowedRecipeSet = new Set(sub.recipeIds);
-    } else if (pfid && this.selectedParentFaction()) {
-      allowedRecipeSet = new Set(this.selectedParentFaction()!.recipeIds);
-    } else if (gid && this.selectedGame()) {
-      allowedRecipeSet = new Set(this.selectedGame()!.recipeIds);
+    if (sfid && parentFac) {
+      const sub = parentFac.childFactions?.find((c) => c.id === sfid);
+      if (sub) {
+        allowedRecipeSet = new Set(sub.recipeIds);
+      }
+    } else if (pfid && parentFac) {
+      allowedRecipeSet = new Set(parentFac.recipeIds);
+    } else if (gid && game) {
+      allowedRecipeSet = new Set(game.recipeIds);
     }
 
     const baseList = this.catalog.models().filter((m) => {
-      if (cFilter === 'inventory' && !modelInv.has(m.id)) return false;
-      if (cFilter === 'wishlist' && !modelWish.has(m.id)) return false;
+      if (cFilter === 'inventory' && !modelInv.has(m.id)) {
+        return false;
+      }
+      if (cFilter === 'wishlist' && !modelWish.has(m.id)) {
+        return false;
+      }
       if (allowedRecipeSet && !allowedRecipeSet.has(m.id) && (!gid || !m.gameIds.includes(gid))) {
         return false;
       }
-      if (range !== 'all' && m.range !== range) return false;
-      if (q) {
-        const matchName = m.name.toLowerCase().includes(q);
-        const matchFac = m.factionNames.some((fn) => fn.toLowerCase().includes(q));
-        const matchGame = m.gameNames.some((gn) => gn.toLowerCase().includes(q));
-        if (!matchName && !matchFac && !matchGame) return false;
+      if (range !== 'all' && m.range !== range) {
+        return false;
       }
-      return true;
+      return matchesModelSearch(m, q);
     });
 
     const tStage = this.targetStage();
-
     const evaluated = baseList.map((model) => {
       const staged = this.readinessService.evaluateStagedReadiness({
         base: model.paintsByStage?.base,
@@ -99,24 +107,7 @@ export class PaintModelComponent {
       };
     });
 
-    if (rFilter === 'all') {
-      return evaluated;
-    }
-
-    if (rFilter === 'ready100') {
-      return evaluated.filter(
-        (x) => x.readiness.totalRequired > 0 && x.readiness.matchPercent === 100
-      );
-    }
-    if (rFilter === 'missing2') {
-      return evaluated.filter(
-        (x) => x.readiness.totalRequired > 0 && x.readiness.missingCount <= 2
-      );
-    }
-    if (rFilter === 'sortReady') {
-      return [...evaluated].sort((a, b) => b.readiness.matchPercent - a.readiness.matchPercent);
-    }
-    return evaluated;
+    return applyReadinessFilter(evaluated, rFilter);
   });
 
   readonly displayedModels = computed(() =>

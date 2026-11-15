@@ -1,15 +1,16 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CatalogService } from '../../core/services/catalog.service';
-import { UserStateService } from '../../core/services/user-state.service';
-import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
+import { PaintModalService } from '../../core/services/paint-modal.service';
+import { UserStateService } from '../../core/services/user-state.service';
+import { getCitadelBrandLabel, matchesModelSearch } from '../../core/utils/catalog-filter.util';
 
 @Component({
   selector: 'app-search',
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [DecimalPipe, FormsModule, RouterModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './search.component.ng.html',
   styleUrl: './search.component.css',
@@ -20,13 +21,16 @@ export class SearchComponent {
   readonly paintModal = inject(PaintModalService);
   readonly img = inject(ImageService);
   readonly router = inject(Router);
+  readonly getCitadelBrandLabel = getCitadelBrandLabel;
 
   readonly query = signal<string>('');
   readonly tab = signal<'all' | 'models' | 'colors' | 'paints'>('all');
 
   readonly matchedCitadelPaints = computed(() => {
     const q = this.query().trim().toLowerCase();
-    if (!q) return this.catalog.paints().slice(0, 12);
+    if (!q) {
+      return this.catalog.paints().slice(0, 12);
+    }
     return this.catalog
       .paints()
       .filter((p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
@@ -35,7 +39,9 @@ export class SearchComponent {
   readonly matchedThirdPartyPaints = computed(() => {
     const q = this.query().trim().toLowerCase();
     const allTp = [...this.userState.customPaints(), ...this.catalog.thirdPartyPaints()];
-    if (!q) return allTp.slice(0, 12);
+    if (!q) {
+      return allTp.slice(0, 12);
+    }
     return allTp.filter(
       (tp) =>
         tp.name.toLowerCase().includes(q) ||
@@ -46,7 +52,9 @@ export class SearchComponent {
 
   readonly matchedColors = computed(() => {
     const q = this.query().trim().toLowerCase();
-    if (!q) return this.catalog.colors().slice(0, 12);
+    if (!q) {
+      return this.catalog.colors().slice(0, 12);
+    }
     return this.catalog
       .colors()
       .filter(
@@ -58,15 +66,10 @@ export class SearchComponent {
 
   readonly matchedModels = computed(() => {
     const q = this.query().trim().toLowerCase();
-    if (!q) return this.catalog.models().slice(0, 16);
-    return this.catalog
-      .models()
-      .filter(
-        (m) =>
-          m.name.toLowerCase().includes(q) ||
-          m.factionNames.some((f) => f.toLowerCase().includes(q)) ||
-          m.gameNames.some((g) => g.toLowerCase().includes(q))
-      );
+    if (!q) {
+      return this.catalog.models().slice(0, 16);
+    }
+    return this.catalog.models().filter((m) => matchesModelSearch(m, q));
   });
 
   readonly totalCount = computed(

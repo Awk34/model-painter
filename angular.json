@@ -62,6 +62,16 @@
                 "output": "/data/catalog_meta"
               },
               {
+                "glob": "recipes/*.json",
+                "input": "public/data",
+                "output": "/data"
+              },
+              {
+                "glob": "colours/*.json",
+                "input": "public/data",
+                "output": "/data"
+              },
+              {
                 "glob": "user_account_snapshot.json",
                 "input": "public/data",
                 "output": "/data"

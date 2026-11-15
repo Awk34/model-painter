@@ -1,0 +1,244 @@
+<section class="tab-content">
+  <div class="paints-mode-row">
+    <div class="chip-bar">
+      <button
+        type="button"
+        class="chip"
+        [class.active]="subMode() === 'inventory'"
+        (click)="subMode.set('inventory')"
+      >
+        ✓ My Inventory ({{ userState.state().inventoryPaintIds.length }})
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.active]="subMode() === 'wishlist'"
+        (click)="subMode.set('wishlist')"
+      >
+        ★ My Wishlist ({{ userState.state().wishlistPaintIds.length }})
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.active]="subMode() === 'catalogue'"
+        (click)="subMode.set('catalogue')"
+      >
+        All Paints Catalogue ({{ allUnifiedPaints().length }})
+      </button>
+    </div>
+
+    <button type="button" class="btn btn-secondary" (click)="showCustomPaintModal.set(true)">
+      + Add Custom 3rd-Party Paint
+    </button>
+  </div>
+
+  <div class="toolbar-row">
+    <div class="search-box">
+      <input
+        type="text"
+        class="input-control"
+        placeholder="Search by paint name, hex code, brand, or SKU..."
+        [ngModel]="paintSearch()"
+        (ngModelChange)="paintSearch.set($event)"
+      />
+    </div>
+
+    <div class="toolbar-right">
+      <select
+        class="input-control filter-select"
+        [ngModel]="selectedBrandFilter()"
+        (ngModelChange)="selectedBrandFilter.set($event)"
+      >
+        <option value="all">All Brands</option>
+        <option value="Citadel Classic">Citadel Colour (Classic)</option>
+        <option value="Citadel Tone Pro">Citadel Tone Pro</option>
+        @for (b of catalog.thirdPartyBrands(); track b) {
+          <option [value]="b">{{ b }}</option>
+        }
+      </select>
+
+      <select
+        class="input-control filter-select"
+        [ngModel]="selectedCategoryFilter()"
+        (ngModelChange)="selectedCategoryFilter.set($event)"
+      >
+        <option value="all">All Categories</option>
+        @for (cat of availableCategories(); track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (filteredPaints().length > 0) {
+    <div class="paints-grid">
+      @for (p of filteredPaints(); track p.id) {
+        <div class="paint-card studio-card">
+          <button type="button" class="paint-card-main" (click)="paintModal.openPaint(p.id)">
+            @if (p.localImagePath) {
+              <img
+                [src]="img.resolve(p.localImagePath, p.imageUrl)"
+                [alt]="p.name"
+                class="paint-pot-thumb"
+                loading="lazy"
+              />
+            } @else {
+              <span class="paint-swatch" [style.background]="p.hex"></span>
+            }
+
+            <div class="paint-card-info">
+              <span class="paint-card-name">{{ p.name }}</span>
+              <div class="paint-card-meta">
+                <span class="mini-brand" [class.pro]="p.isTonePro" [class.tp]="!p.isCitadel">
+                  {{ p.rangeLabel }}
+                </span>
+                <span>• {{ p.category }}</span>
+              </div>
+            </div>
+          </button>
+
+          <div class="paint-card-actions">
+            <button
+              type="button"
+              class="icon-toggle"
+              [class.active-owned]="userState.isOwned(p.id)"
+              title="Toggle Inventory"
+              (click)="userState.toggleInventory(p.id)"
+            >
+              {{ userState.isOwned(p.id) ? '✓ Owned' : '+ Own' }}
+            </button>
+            <button
+              type="button"
+              class="icon-toggle"
+              [class.active-wish]="userState.isWishlisted(p.id)"
+              title="Toggle Wishlist"
+              (click)="userState.toggleWishlist(p.id)"
+            >
+              {{ userState.isWishlisted(p.id) ? '★' : '☆' }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state studio-card">
+      <h3>No Matching Paints</h3>
+      <p>
+        @if (subMode() === 'inventory') {
+          Your Inventory has no paints matching the current filters. Switch to "All Paints Catalogue" to add pots you own, or import your My Warhammer account.
+        } @else if (subMode() === 'wishlist') {
+          Your Wishlist is currently empty. Add missing paints from any Model, Color, or Project guide!
+        } @else {
+          No paints match your current search or brand/category filter.
+        }
+      </p>
+      @if (subMode() !== 'catalogue') {
+        <button type="button" class="btn btn-gold" (click)="subMode.set('catalogue')">
+          Browse Full Paint Catalogue
+        </button>
+      }
+    </div>
+  }
+</section>
+
+<!-- Modal: Add Custom 3rd-Party Paint -->
+@if (showCustomPaintModal()) {
+  <div class="modal-backdrop" (click)="showCustomPaintModal.set(false)">
+    <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Custom 3rd-Party Paint</h3>
+        <button
+          type="button"
+          class="close-btn"
+          aria-label="Close"
+          (click)="showCustomPaintModal.set(false)"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div>
+            <label class="field-label" for="custom-paint-brand">Brand</label>
+            <input
+              id="custom-paint-brand"
+              type="text"
+              class="input-control"
+              placeholder="e.g., The Army Painter, Scale75, Kimera..."
+              [(ngModel)]="customPaintForm.brand"
+            />
+          </div>
+          <div>
+            <label class="field-label" for="custom-paint-range">Range</label>
+            <input
+              id="custom-paint-range"
+              type="text"
+              class="input-control"
+              placeholder="e.g., Warpaints Fanatic, Speedpaint 2.0..."
+              [(ngModel)]="customPaintForm.range"
+            />
+          </div>
+          <div>
+            <label class="field-label" for="custom-paint-name">Paint Name</label>
+            <input
+              id="custom-paint-name"
+              type="text"
+              class="input-control"
+              placeholder="e.g., Matt Black"
+              [(ngModel)]="customPaintForm.name"
+            />
+          </div>
+          <div>
+            <label class="field-label" for="custom-paint-category">Category & Hex Swatch</label>
+            <div class="category-swatch-row">
+              <select
+                id="custom-paint-category"
+                class="input-control"
+                [(ngModel)]="customPaintForm.category"
+              >
+                <option value="Base">Base</option>
+                <option value="Layer">Layer</option>
+                <option value="Shade">Shade / Wash</option>
+                <option value="Contrast">Contrast / Speedpaint</option>
+                <option value="Metallic">Metallic</option>
+                <option value="Technical">Technical / Effect</option>
+              </select>
+              <input
+                type="color"
+                class="color-picker"
+                aria-label="Custom paint hex color"
+                [(ngModel)]="customPaintForm.hex"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="equiv-field-wrap">
+          <label class="field-label" for="custom-paint-citadel-eq">
+            Equivalent Citadel Paint (Optional)
+          </label>
+          <select
+            id="custom-paint-citadel-eq"
+            class="input-control"
+            [(ngModel)]="customPaintForm.citadelPaintId"
+          >
+            <option value="">-- None / Standalone --</option>
+            @for (cp of catalog.paints(); track cp.id) {
+              <option [value]="cp.id">{{ cp.name }} ({{ cp.category }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="modal-footer-btns">
+          <button type="button" class="btn btn-ghost" (click)="showCustomPaintModal.set(false)">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-gold" (click)="saveCustomPaint()">
+            Save & Add to Inventory
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+

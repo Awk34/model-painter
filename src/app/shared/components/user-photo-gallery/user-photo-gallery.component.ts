@@ -1,5 +1,5 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { USER_LIMITS, formatBytes } from '../../../core/config/user-limits.config';
 import {
@@ -12,7 +12,7 @@ import { UserStateService } from '../../../core/services/user-state.service';
 
 @Component({
   selector: 'app-user-photo-gallery',
-  imports: [CommonModule, FormsModule],
+  imports: [DatePipe, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './user-photo-gallery.component.ng.html',
   styleUrl: './user-photo-gallery.component.css',
@@ -24,6 +24,7 @@ export class UserPhotoGalleryComponent {
   readonly userState = inject(UserStateService);
   readonly media = inject(UserMediaService);
   readonly limits = USER_LIMITS;
+  readonly formatBytes = formatBytes;
 
   readonly targetType = input.required<UserPhotoTargetType>();
   readonly targetId = input.required<string>();
@@ -78,34 +79,18 @@ export class UserPhotoGalleryComponent {
   readonly activeLightboxPhoto = computed<UserUploadedPhoto | null>(() => {
     const idx = this.lightboxIndex();
     const list = this.photos();
-    if (idx === null || idx < 0 || idx >= list.length) return null;
+    if (idx === null || idx < 0 || idx >= list.length) {
+      return null;
+    }
     return list[idx];
   });
-
-  formatFileSize(bytes: number): string {
-    return formatBytes(bytes);
-  }
-
-  photoUrl(photo: UserUploadedPhoto): string {
-    return this.media.resolvePhotoUrl(photo);
-  }
-
-  dismissErrors(): void {
-    this.errorMessages.set([]);
-  }
-
-  onCaptionDraftChange(val: string): void {
-    this.captionDraft.set(val);
-  }
-
-  onEditingCaptionTextChange(val: string): void {
-    this.editingCaptionText.set(val);
-  }
 
   async onFileInputChange(event: Event): Promise<void> {
     const inputEl = event.target as HTMLInputElement;
     const fileList = inputEl.files;
-    if (!fileList || fileList.length === 0) return;
+    if (!fileList || fileList.length === 0) {
+      return;
+    }
     const files = Array.from(fileList);
     inputEl.value = '';
     await this.handleFiles(files);
@@ -126,7 +111,9 @@ export class UserPhotoGalleryComponent {
   async onDrop(event: DragEvent): Promise<void> {
     event.preventDefault();
     this.dragActive.set(false);
-    if (this.isAtLimit() || this.uploading()) return;
+    if (this.isAtLimit() || this.uploading()) {
+      return;
+    }
     const files = Array.from(event.dataTransfer?.files ?? []);
     if (files.length > 0) {
       await this.handleFiles(files);
@@ -200,19 +187,18 @@ export class UserPhotoGalleryComponent {
   prevPhoto(): void {
     const idx = this.lightboxIndex();
     const len = this.photos().length;
-    if (idx === null || len <= 1) return;
+    if (idx === null || len <= 1) {
+      return;
+    }
     this.lightboxIndex.set((idx - 1 + len) % len);
   }
 
   nextPhoto(): void {
     const idx = this.lightboxIndex();
     const len = this.photos().length;
-    if (idx === null || len <= 1) return;
+    if (idx === null || len <= 1) {
+      return;
+    }
     this.lightboxIndex.set((idx + 1) % len);
   }
-
-  stopPropagation(event: Event): void {
-    event.stopPropagation();
-  }
 }
-

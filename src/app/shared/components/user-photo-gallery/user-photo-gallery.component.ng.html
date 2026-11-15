@@ -42,7 +42,7 @@
             [maxlength]="limits.MAX_PHOTO_CAPTION_LENGTH"
             [placeholder]="isReference() ? 'Optional reference note (e.g., NMM gold armor lighting)...' : 'Optional caption (e.g., Finished squad leader, WIP basecoat)...'"
             [ngModel]="captionDraft()"
-            (ngModelChange)="onCaptionDraftChange($event)"
+            (ngModelChange)="captionDraft.set($event)"
           />
         </div>
 
@@ -95,7 +95,7 @@
         type="button"
         class="btn btn-ghost btn-sm"
         aria-label="Dismiss upload errors"
-        (click)="dismissErrors()"
+        (click)="errorMessages.set([])"
       >
         ✕
       </button>
@@ -114,7 +114,7 @@
             (click)="openLightbox(idx)"
           >
             <img
-              [src]="photoUrl(photo)"
+              [src]="media.resolvePhotoUrl(photo)"
               [alt]="photo.caption || photo.fileName"
               class="photo-thumb-img"
               loading="lazy"
@@ -137,7 +137,7 @@
                   [maxlength]="limits.MAX_PHOTO_CAPTION_LENGTH"
                   placeholder="Add caption..."
                   [ngModel]="editingCaptionText()"
-                  (ngModelChange)="onEditingCaptionTextChange($event)"
+                  (ngModelChange)="editingCaptionText.set($event)"
                   (keyup.enter)="saveCaption(photo.id)"
                 />
                 <div class="caption-edit-actions">
@@ -154,7 +154,7 @@
                 {{ photo.caption || photo.fileName }}
               </p>
               <div class="photo-meta-line">
-                <span>{{ formatFileSize(photo.sizeBytes) }}</span>
+                <span>{{ formatBytes(photo.sizeBytes) }}</span>
                 @if (photo.width && photo.height) {
                   <span>• {{ photo.width }}×{{ photo.height }}</span>
                 }
@@ -216,12 +216,12 @@
     [attr.aria-label]="activePhoto.caption || activePhoto.fileName"
     (click)="closeLightbox()"
   >
-    <div class="modal-panel lightbox-panel" (click)="stopPropagation($event)">
+    <div class="modal-panel lightbox-panel" (click)="$event.stopPropagation()">
       <div class="lightbox-header">
         <div class="lightbox-title-wrap">
           <strong>{{ activePhoto.caption || activePhoto.fileName }}</strong>
           <span class="lightbox-meta">
-            {{ formatFileSize(activePhoto.sizeBytes) }}
+            {{ formatBytes(activePhoto.sizeBytes) }}
             @if (activePhoto.width && activePhoto.height) {
               • {{ activePhoto.width }}×{{ activePhoto.height }}
             }
@@ -253,7 +253,7 @@
         }
 
         <img
-          [src]="photoUrl(activePhoto)"
+          [src]="media.resolvePhotoUrl(activePhoto)"
           [alt]="activePhoto.caption || activePhoto.fileName"
           class="lightbox-img"
         />
@@ -285,4 +285,3 @@
     </div>
   </div>
 }
-

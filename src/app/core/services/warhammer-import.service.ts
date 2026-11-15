@@ -17,6 +17,15 @@ const AUTH0_TOKEN_PROXY_URL = '/gw-auth-api/oauth/token';
 
 const DEFAULT_FILTERS_BODY = '{}';
 
+function saveDualStorage(key: string, value: string): void {
+  sessionStorage.setItem(key, value);
+  localStorage.setItem(key, value);
+}
+
+function readDualStorage(key: string): string | null {
+  return sessionStorage.getItem(key) ?? localStorage.getItem(key);
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -35,8 +44,7 @@ export class WarhammerImportService {
   /**
    * Generates a fresh OAuth2 PKCE authorization URL for `login.mywarhammer.com`
    * matching the official Citadel Colour Android app (`com.gamesworkshop.citadelpaint` v3.1.1)
-   * parameters, and saves `code_verifier` in `localStorage` + `sessionStorage` so the user
-   * can exchange their callback URL even after signing in via an Incognito window.
+   * parameters, and saves `code_verifier` in `localStorage` + `sessionStorage`.
    */
   async generateMyWarhammerLoginUrl(): Promise<{
     authorizeUrl: string;
@@ -55,10 +63,8 @@ export class WarhammerImportService {
     const digest = await crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier));
     const codeChallenge = this.base64UrlEncode(new Uint8Array(digest));
 
-    sessionStorage.setItem(PKCE_VERIFIER_KEY, codeVerifier);
-    sessionStorage.setItem(PKCE_STATE_KEY, state);
-    localStorage.setItem(PKCE_VERIFIER_KEY, codeVerifier);
-    localStorage.setItem(PKCE_STATE_KEY, state);
+    saveDualStorage(PKCE_VERIFIER_KEY, codeVerifier);
+    saveDualStorage(PKCE_STATE_KEY, state);
 
     const params = new URLSearchParams({
       client_id: AUTH0_CLIENT_ID,
@@ -87,30 +93,14 @@ export class WarhammerImportService {
     callbackUrlInput: string,
     mode: 'merge' | 'replace' = 'merge'
   ): Promise<void> {
-    const trimmed = callbackUrlInput.trim();
-    let code: string | null = null;
-    try {
-      const normalizedUrl = trimmed.replace(/^citadel-colour:\/\//, 'https://');
-      const parsed = new URL(normalizedUrl);
-      code = parsed.searchParams.get('code');
-    } catch {
-      // Allow pasting raw authorization code directly
-      if (trimmed.length > 10 && !trimmed.includes(' ')) {
-        code = trimmed;
-      }
-    }
-
+    const code = this.extractAuthorizationCode(callbackUrlInput);
     if (!code) {
       throw new Error(
         'Could not find a valid ?code=... parameter in the pasted URL. Make sure you copied the full citadel-colour://.../callback?code=... link.'
       );
     }
 
-    const codeVerifier =
-      sessionStorage.getItem(PKCE_VERIFIER_KEY) ??
-      localStorage.getItem(PKCE_VERIFIER_KEY) ??
-      '';
-
+    const codeVerifier = readDualStorage(PKCE_VERIFIER_KEY) ?? '';
     if (!codeVerifier) {
       throw new Error(
         'Missing PKCE code_verifier. Click "Open My Warhammer Login" or "Copy Login URL to Clipboard" in this browser first, sign in, and then paste the callback URL here.'
@@ -127,90 +117,96 @@ export class WarhammerImportService {
 
         const result = await callable({ code, codeVerifier });
         this.userState.importAccountPayload(result.data, mode);
+        await this.catalog.clearEntityCaches();
         return;
       } catch {
         // Fall through to direct browser / dev-proxy token exchange
       }
     }
 
-    const payload = await this.exchangeDirectlyInBrowser(code, codeVerifier);
+    const bearer = await this.resolveAuth0BearerToken(code, codeVerifier);
+    const payload = await this.fetchWarhammerAccountPayload(bearer);
     this.userState.importAccountPayload(payload, mode);
+    await this.catalog.clearEntityCaches();
   }
 
-  /**
-   * Exchanges the Auth0 authorization code via the same-origin dev proxy (`/gw-auth-api/oauth/token`)
-   * and fetches the user's Inventory, Wishlist, and Projects from `/gw-paint-api`.
-   */
-  private async exchangeDirectlyInBrowser(
-    code: string,
-    codeVerifier: string
-  ): Promise<Record<string, unknown>> {
-    let bearer = '';
-    let fallbackBearer = '';
-
+  private extractAuthorizationCode(callbackUrlInput: string): string | null {
+    const trimmed = callbackUrlInput.trim();
     try {
-      const cachedRaw =
-        sessionStorage.getItem(PKCE_TOKEN_CACHE_KEY) ??
-        localStorage.getItem(PKCE_TOKEN_CACHE_KEY);
+      const normalizedUrl = trimmed.replace(/^citadel-colour:\/\//, 'https://');
+      const parsed = new URL(normalizedUrl);
+      return parsed.searchParams.get('code');
+    } catch {
+      if (trimmed.length > 10 && !trimmed.includes(' ')) {
+        return trimmed;
+      }
+      return null;
+    }
+  }
+
+  private async resolveAuth0BearerToken(code: string, codeVerifier: string): Promise<string> {
+    let fallbackBearer = '';
+    try {
+      const cachedRaw = readDualStorage(PKCE_TOKEN_CACHE_KEY);
       if (cachedRaw) {
         const cached = JSON.parse(cachedRaw) as { code?: string; bearer?: string };
         if (cached.bearer) {
-          fallbackBearer = cached.bearer;
           if (cached.code === code) {
-            bearer = cached.bearer;
+            return cached.bearer;
           }
+          fallbackBearer = cached.bearer;
         }
       }
     } catch {
       // Ignore cache parse errors
     }
 
-    if (!bearer) {
-      const tokenResp = await fetch(AUTH0_TOKEN_PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          grant_type: 'authorization_code',
-          client_id: AUTH0_CLIENT_ID,
-          code,
-          code_verifier: codeVerifier,
-          redirect_uri: AUTH0_REDIRECT_URI,
-        }),
-      });
+    const tokenResp = await fetch(AUTH0_TOKEN_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'authorization_code',
+        client_id: AUTH0_CLIENT_ID,
+        code,
+        code_verifier: codeVerifier,
+        redirect_uri: AUTH0_REDIRECT_URI,
+      }),
+    });
 
-      const tokenContentType = tokenResp.headers.get('content-type') ?? '';
-      if (tokenResp.status === 404 || tokenContentType.includes('text/html')) {
-        throw new Error(
-          'Local proxy (/gw-auth-api) is not active yet. Please stop and restart `npm run start` (or `pnpm run start`) in your terminal so Angular loads proxy.conf.json, then click Exchange & Import again.'
-        );
-      }
-
-      if (!tokenResp.ok) {
-        if (fallbackBearer) {
-          bearer = fallbackBearer;
-        } else {
-          const errBody = await tokenResp.text();
-          throw new Error(
-            `My Warhammer token exchange failed (${tokenResp.status}): ${errBody}`
-          );
-        }
-      } else {
-        const tokenJson = (await tokenResp.json()) as {
-          access_token?: string;
-          id_token?: string;
-        };
-        bearer = tokenJson.access_token || tokenJson.id_token || '';
-        if (!bearer) {
-          throw new Error('No access_token returned from login.mywarhammer.com.');
-        }
-
-        const cachePayload = JSON.stringify({ code, bearer });
-        sessionStorage.setItem(PKCE_TOKEN_CACHE_KEY, cachePayload);
-        localStorage.setItem(PKCE_TOKEN_CACHE_KEY, cachePayload);
-      }
+    const tokenContentType = tokenResp.headers.get('content-type') ?? '';
+    if (tokenResp.status === 404 || tokenContentType.includes('text/html')) {
+      throw new Error(
+        'Local proxy (/gw-auth-api) is not active yet. Please stop and restart `npm run start` (or `pnpm run start`) in your terminal so Angular loads proxy.conf.json, then click Exchange & Import again.'
+      );
     }
 
-    const fetchApi = async <T>(path: string, method: 'GET' | 'POST' = 'GET', body?: string): Promise<T> => {
+    if (!tokenResp.ok) {
+      if (fallbackBearer) {
+        return fallbackBearer;
+      }
+      const errBody = await tokenResp.text();
+      throw new Error(`My Warhammer token exchange failed (${tokenResp.status}): ${errBody}`);
+    }
+
+    const tokenJson = (await tokenResp.json()) as {
+      access_token?: string;
+      id_token?: string;
+    };
+    const bearer = tokenJson.access_token || tokenJson.id_token || '';
+    if (!bearer) {
+      throw new Error('No access_token returned from login.mywarhammer.com.');
+    }
+
+    saveDualStorage(PKCE_TOKEN_CACHE_KEY, JSON.stringify({ code, bearer }));
+    return bearer;
+  }
+
+  private async fetchWarhammerAccountPayload(bearer: string): Promise<Record<string, unknown>> {
+    const fetchApi = async <T>(
+      path: string,
+      method: 'GET' | 'POST' = 'GET',
+      body?: string
+    ): Promise<T> => {
       const headers: Record<string, string> = {
         Accept: 'application/json',
         Authorization: `Bearer ${bearer}`,
@@ -279,7 +275,9 @@ export class WarhammerImportService {
     const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, '').toLowerCase());
     const idIdx = headers.findIndex((h) => h === 'paint_id' || h === 'id');
     const nameIdx = headers.findIndex((h) => h === 'paint_name' || h === 'name');
-    const listTypeIdx = headers.findIndex((h) => h === 'list_type' || h === 'status' || h === 'type');
+    const listTypeIdx = headers.findIndex(
+      (h) => h === 'list_type' || h === 'status' || h === 'type'
+    );
 
     const paintByName = new Map<string, string>();
     for (const p of this.catalog.paints()) {
@@ -298,7 +296,9 @@ export class WarhammerImportService {
       if (!pid && nameIdx >= 0) {
         pid = paintByName.get((cols[nameIdx] ?? '').toLowerCase()) ?? '';
       }
-      if (!pid) continue;
+      if (!pid) {
+        continue;
+      }
       const listType = listTypeIdx >= 0 ? (cols[listTypeIdx] ?? '').toLowerCase() : 'inventory';
       if (listType.includes('wish')) {
         wishlistPaintIds.push(pid);

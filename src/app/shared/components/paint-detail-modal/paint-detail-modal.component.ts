@@ -1,15 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CatalogService } from '../../../core/services/catalog.service';
-import { UserStateService } from '../../../core/services/user-state.service';
-import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { ImageService } from '../../../core/services/image.service';
+import { PaintModalService } from '../../../core/services/paint-modal.service';
+import { UserStateService } from '../../../core/services/user-state.service';
+import { getCitadelBrandLabel } from '../../../core/utils/catalog-filter.util';
 
 @Component({
   selector: 'app-paint-detail-modal',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-detail-modal.component.ng.html',
   styleUrl: './paint-detail-modal.component.css',
@@ -19,6 +19,7 @@ export class PaintDetailModalComponent {
   readonly userState = inject(UserStateService);
   readonly modalService = inject(PaintModalService);
   readonly img = inject(ImageService);
+  readonly getCitadelBrandLabel = getCitadelBrandLabel;
   private readonly router = inject(Router);
 
   selectedOverridePaintId = '';
@@ -27,16 +28,20 @@ export class PaintDetailModalComponent {
 
   readonly citadelPaint = computed(() => {
     const id = this.activePaintId();
-    if (!id) return null;
+    if (!id) {
+      return null;
+    }
     return this.catalog.paintById().get(id) ?? null;
   });
 
   readonly thirdPartyPaint = computed(() => {
     const id = this.activePaintId();
-    if (!id) return null;
+    if (!id) {
+      return null;
+    }
     return (
       this.catalog.thirdPartyPaintById().get(id) ??
-      this.userState.customPaints().find((c) => c.id === id) ??
+      this.userState.customPaintById().get(id) ??
       null
     );
   });
@@ -48,7 +53,9 @@ export class PaintDetailModalComponent {
 
   readonly officialCitadelEquivalents = computed(() => {
     const cp = this.citadelPaint();
-    if (!cp) return [];
+    if (!cp) {
+      return [];
+    }
     const results: { id: string; name: string; hex: string; label: string }[] = [];
 
     const proLinks = this.catalog.classicToToneProMap().get(cp.id) ?? [];
@@ -76,11 +83,16 @@ export class PaintDetailModalComponent {
 
   readonly crossBrandMatches = computed(() => {
     const cp = this.citadelPaint();
-    if (!cp) return [];
+    if (!cp) {
+      return [];
+    }
     const preseeded = this.catalog.citadelToThirdPartyMap()[cp.id] ?? [];
     const userOverrideIds = this.userState.customCompatibilityOverrides()[cp.id] ?? [];
+    const tpById = this.catalog.thirdPartyPaintById();
+    const customById = this.userState.customPaintById();
+
     const customList = userOverrideIds
-      .map((id) => this.allThirdPartyAndCustomPaints().find((p) => p.id === id))
+      .map((id) => customById.get(id) ?? tpById.get(id))
       .filter((p): p is NonNullable<typeof p> => Boolean(p))
       .map((p) => ({
         thirdPartyPaintId: p.id,
@@ -107,13 +119,17 @@ export class PaintDetailModalComponent {
 
   readonly colorsUsingPaint = computed(() => {
     const id = this.activePaintId();
-    if (!id) return [];
+    if (!id) {
+      return [];
+    }
     return this.catalog.colorsUsingPaintMap().get(id) ?? [];
   });
 
   readonly modelsUsingPaint = computed(() => {
     const id = this.activePaintId();
-    if (!id) return [];
+    if (!id) {
+      return [];
+    }
     return this.catalog.modelsUsingPaintMap().get(id) ?? [];
   });
 
@@ -122,7 +138,9 @@ export class PaintDetailModalComponent {
   }
 
   addCustomLink(citadelPaintId: string): void {
-    if (!this.selectedOverridePaintId) return;
+    if (!this.selectedOverridePaintId) {
+      return;
+    }
     this.userState.linkCustomEquivalent(citadelPaintId, this.selectedOverridePaintId);
     this.selectedOverridePaintId = '';
   }

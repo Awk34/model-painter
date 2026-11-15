@@ -1,0 +1,62 @@
+<div class="readiness-box">
+  <div class="ready-header">
+    <strong>{{ heading() }}</strong>
+    @if (hint()) {
+      <span>{{ hint() }}</span>
+    }
+  </div>
+
+  <div class="stage-readiness-list" [class.grid-layout]="layout() === 'grid'">
+    @for (stage of stages(); track stage.key) {
+      <div
+        class="stage-ready-row"
+        [class.active]="activeStage() === stage.key"
+        (click)="stageClick.emit(stage.key)"
+      >
+        <div class="stage-ready-top">
+          <div class="stage-ready-title">
+            <strong>{{ stage.title }}</strong>
+            <span class="stage-tier-hint">{{ stage.tierHint }}</span>
+          </div>
+
+          <div class="stage-ready-stats">
+            @if (stage.data.totalRequired > 0) {
+              <strong
+                class="stage-pct"
+                [class.complete]="stage.data.matchPercent === 100"
+              >
+                {{ stage.data.matchPercent }}%
+              </strong>
+              <span>
+                ({{ stage.data.ownedDirectCount + stage.data.substitutedCount }}/{{ stage.data.totalRequired }} Paints)
+              </span>
+              @if (stage.data.missingCount > 0) {
+                <button
+                  type="button"
+                  class="btn btn-sm stage-wish-btn"
+                  [class.btn-gold]="stage.primaryWishlistButton"
+                  [class.btn-secondary]="!stage.primaryWishlistButton"
+                  [title]="'Add missing ' + stage.title + ' paints to Paint Wishlist'"
+                  (click)="onWishlistClick($event, stage.data.missingPaintIds)"
+                >
+                  ★ +{{ stage.data.missingCount }} Missing
+                </button>
+              }
+            } @else {
+              <span>No paints required</span>
+            }
+          </div>
+        </div>
+
+        <div class="progress-track">
+          <div
+            class="progress-fill"
+            [style.width.%]="stage.data.matchPercent"
+            [class.complete]="stage.data.matchPercent === 100"
+          ></div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+

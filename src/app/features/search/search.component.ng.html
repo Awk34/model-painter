@@ -71,7 +71,7 @@
               <span class="paint-swatch" [style.background]="cp.gradientStartHex"></span>
               <div class="p-info">
                 <strong>{{ cp.name }}</strong>
-                <span>{{ cp.range === 'warhammer_pro' ? 'Citadel Tone Pro' : 'Citadel Colour' }} • {{ cp.category }}</span>
+                <span>{{ getCitadelBrandLabel(cp.range, 'Citadel Colour') }} • {{ cp.category }}</span>
               </div>
             </button>
             <button
