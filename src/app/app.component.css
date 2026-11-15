@@ -25,15 +25,16 @@
   cursor: pointer;
 }
 .brand-crest {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
   background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 3px;
   border: 1px solid var(--gold-border);
+  flex-shrink: 0;
 }
 .crest-img {
   width: 100%;

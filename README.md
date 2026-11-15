@@ -1,4 +1,8 @@
-# Paint Warhammer — Citadel Colour Web App & Data Extractor (`model-painter`)
+<p align="center">
+  <img src="public/logo.svg" alt="Model Painter Logo" width="160" />
+</p>
+
+# Model Painter — Citadel Colour Web App & Data Extractor (`model-painter`)
 
 A full-featured **Angular 19** + **Firebase** web companion for **Paint Warhammer / Citadel Colour** (`com.gamesworkshop.citadelpaint` v3.1.1), complete with local-first browser storage, multi-user **My Warhammer** account import, **"Can I Paint This?"** inventory readiness calculation, and **Cross-Brand 3rd-Party Paint Compatibility** (**The Army Painter**, **Vallejo**, **Two Thin Coats**, **Monument Hobbies Pro Acryl**, and **AK Interactive 3rd Gen**).
 
