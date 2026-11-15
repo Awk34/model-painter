@@ -1,0 +1,288 @@
+<div class="photo-gallery-block" [class.private-ref-block]="isReference()">
+  <div class="gallery-header">
+    <div class="gallery-title-group">
+      @if (heading()) {
+        <div class="gallery-heading-row">
+          <h3>{{ heading() }}</h3>
+          <span class="badge" [class.badge-gold]="!isReference()" [class.badge-private]="isReference()">
+            {{ photos().length }} / {{ sectionMax() }} Photos
+          </span>
+          @if (isReference()) {
+            <span class="badge badge-private-lock">🔒 Private Reference</span>
+          }
+        </div>
+      }
+      @if (description()) {
+        <p class="gallery-desc">{{ description() }}</p>
+      }
+      <p class="gallery-limits-hint">
+        Allowed: <strong>{{ limits.ALLOWED_IMAGE_EXTENSIONS_LABEL }}</strong> • Up to
+        <strong>{{ limits.MAX_RAW_INPUT_FILE_SIZE_MB }} MB</strong> upload (auto-downscaled to ≤ {{ limits.MAX_PHOTO_FILE_SIZE_MB }} MB) • Up to
+        <strong>{{ sectionMax() }}</strong> in this section ({{ userState.uploadedPhotos().length }}/{{ limits.MAX_TOTAL_USER_PHOTOS }} total account photos)
+      </p>
+    </div>
+  </div>
+
+  <!-- Upload Dropzone & Controls -->
+  @if (!isAtLimit()) {
+    <div
+      class="upload-dropzone"
+      [class.drag-active]="dragActive()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <div class="upload-controls-row">
+        <div class="caption-field-wrap">
+          <label [for]="captionInputId()" class="sr-only">Optional photo caption</label>
+          <input
+            [id]="captionInputId()"
+            type="text"
+            class="input-control caption-input"
+            [maxlength]="limits.MAX_PHOTO_CAPTION_LENGTH"
+            [placeholder]="isReference() ? 'Optional reference note (e.g., NMM gold armor lighting)...' : 'Optional caption (e.g., Finished squad leader, WIP basecoat)...'"
+            [ngModel]="captionDraft()"
+            (ngModelChange)="onCaptionDraftChange($event)"
+          />
+        </div>
+
+        <label
+          [for]="inputId()"
+          class="btn"
+          [class.btn-gold]="!isReference()"
+          [class.btn-secondary]="isReference()"
+          [class.disabled-btn]="uploading()"
+        >
+          @if (uploading()) {
+            <span>Uploading...</span>
+          } @else {
+            <span>{{ isReference() ? '+ Upload Reference Photo' : '+ Upload Photo' }}</span>
+          }
+        </label>
+        <input
+          [id]="inputId()"
+          type="file"
+          class="sr-only"
+          multiple
+          [accept]="acceptAttr"
+          [disabled]="uploading()"
+          (change)="onFileInputChange($event)"
+        />
+      </div>
+      <span class="drop-hint">
+        Or drag & drop {{ limits.ALLOWED_IMAGE_EXTENSIONS_LABEL }} files here ({{ remainingInSection() }} slot{{ remainingInSection() === 1 ? '' : 's' }} remaining)
+      </span>
+    </div>
+  } @else {
+    <div class="limit-reached-banner">
+      @if (remainingInAccount() <= 0) {
+        <span>Account photo limit reached ({{ limits.MAX_TOTAL_USER_PHOTOS }} / {{ limits.MAX_TOTAL_USER_PHOTOS }}). Delete an existing photo to upload more.</span>
+      } @else {
+        <span>Section limit reached ({{ photos().length }} / {{ sectionMax() }} photos). Remove a photo to upload another.</span>
+      }
+    </div>
+  }
+
+  <!-- Validation Error Alert -->
+  @if (errorMessages().length > 0) {
+    <div class="upload-error-alert" role="alert">
+      <div class="error-list">
+        @for (msg of errorMessages(); track $index) {
+          <p>{{ msg }}</p>
+        }
+      </div>
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        aria-label="Dismiss upload errors"
+        (click)="dismissErrors()"
+      >
+        ✕
+      </button>
+    </div>
+  }
+
+  <!-- Uploaded Photos Grid -->
+  @if (photos().length > 0) {
+    <div class="photo-cards-grid">
+      @for (photo of photos(); track photo.id; let idx = $index) {
+        <div class="photo-card studio-card">
+          <button
+            type="button"
+            class="photo-thumb-btn"
+            [attr.aria-label]="'Inspect photo: ' + (photo.caption || photo.fileName)"
+            (click)="openLightbox(idx)"
+          >
+            <img
+              [src]="photoUrl(photo)"
+              [alt]="photo.caption || photo.fileName"
+              class="photo-thumb-img"
+              loading="lazy"
+            />
+            @if (isReference()) {
+              <span class="corner-pill private-pill">🔒 Private</span>
+            } @else if (allowSetCover() && activeCoverPhotoId() === photo.id) {
+              <span class="corner-pill cover-pill">★ Cover</span>
+            }
+          </button>
+
+          <div class="photo-card-body">
+            @if (editingCaptionId() === photo.id) {
+              <div class="caption-edit-box">
+                <label [for]="'edit-cap-' + photo.id" class="sr-only">Edit photo caption</label>
+                <input
+                  [id]="'edit-cap-' + photo.id"
+                  type="text"
+                  class="input-control input-sm"
+                  [maxlength]="limits.MAX_PHOTO_CAPTION_LENGTH"
+                  placeholder="Add caption..."
+                  [ngModel]="editingCaptionText()"
+                  (ngModelChange)="onEditingCaptionTextChange($event)"
+                  (keyup.enter)="saveCaption(photo.id)"
+                />
+                <div class="caption-edit-actions">
+                  <button type="button" class="btn btn-gold btn-sm" (click)="saveCaption(photo.id)">
+                    Save
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEditCaption()">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <p class="photo-caption" [class.muted-caption]="!photo.caption">
+                {{ photo.caption || photo.fileName }}
+              </p>
+              <div class="photo-meta-line">
+                <span>{{ formatFileSize(photo.sizeBytes) }}</span>
+                @if (photo.width && photo.height) {
+                  <span>• {{ photo.width }}×{{ photo.height }}</span>
+                }
+                <span>• {{ photo.createdAt | date:'shortDate' }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="photo-card-footer">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              (click)="startEditCaption(photo)"
+            >
+              ✎ Caption
+            </button>
+
+            @if (allowSetCover() && !isReference()) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-gold]="activeCoverPhotoId() === photo.id"
+                [class.btn-ghost]="activeCoverPhotoId() !== photo.id"
+                (click)="toggleCover(photo.id)"
+              >
+                {{ activeCoverPhotoId() === photo.id ? '★ Cover' : 'Set Cover' }}
+              </button>
+            }
+
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm danger-text"
+              [attr.aria-label]="'Delete photo ' + (photo.caption || photo.fileName)"
+              (click)="confirmDelete(photo)"
+            >
+              🗑
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-gallery-msg">
+      @if (isReference()) {
+        <p>No private reference photos uploaded yet. Save inspiration shots, color tests, or box-art closeups for your eyes only.</p>
+      } @else {
+        <p>No photos uploaded yet. Share progress or finished shots of your painted miniatures!</p>
+      }
+    </div>
+  }
+</div>
+
+<!-- Lightbox Modal -->
+@if (activeLightboxPhoto(); as activePhoto) {
+  <div
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="activePhoto.caption || activePhoto.fileName"
+    (click)="closeLightbox()"
+  >
+    <div class="modal-panel lightbox-panel" (click)="stopPropagation($event)">
+      <div class="lightbox-header">
+        <div class="lightbox-title-wrap">
+          <strong>{{ activePhoto.caption || activePhoto.fileName }}</strong>
+          <span class="lightbox-meta">
+            {{ formatFileSize(activePhoto.sizeBytes) }}
+            @if (activePhoto.width && activePhoto.height) {
+              • {{ activePhoto.width }}×{{ activePhoto.height }}
+            }
+            @if (isReference()) {
+              • 🔒 Private Reference
+            }
+          </span>
+        </div>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          aria-label="Close photo preview"
+          (click)="closeLightbox()"
+        >
+          ✕ Close
+        </button>
+      </div>
+
+      <div class="lightbox-stage">
+        @if (photos().length > 1) {
+          <button
+            type="button"
+            class="lightbox-nav-btn prev"
+            aria-label="Previous photo"
+            (click)="prevPhoto()"
+          >
+            ‹
+          </button>
+        }
+
+        <img
+          [src]="photoUrl(activePhoto)"
+          [alt]="activePhoto.caption || activePhoto.fileName"
+          class="lightbox-img"
+        />
+
+        @if (photos().length > 1) {
+          <button
+            type="button"
+            class="lightbox-nav-btn next"
+            aria-label="Next photo"
+            (click)="nextPhoto()"
+          >
+            ›
+          </button>
+        }
+      </div>
+
+      <div class="lightbox-footer">
+        <span class="lightbox-counter">
+          Photo {{ (lightboxIndex() ?? 0) + 1 }} of {{ photos().length }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm danger-text"
+          (click)="confirmDelete(activePhoto)"
+        >
+          🗑 Delete Photo
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

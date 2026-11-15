@@ -134,6 +134,7 @@ export class ColorDetailComponent {
       c.imageUrl,
       c.localImagePath
     );
+    if (!created) return;
     this.userState.addColorToProject(created.id, c.id);
     this.newProjectName = '';
     this.showProjectModal.set(false);

@@ -9,10 +9,11 @@ import { InventoryMatchService } from '../../core/services/inventory-match.servi
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
 import { UserProjectNote, UserProjectNoteComponent } from '../../core/models/catalog.models';
+import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
 
 @Component({
   selector: 'app-project-detail',
-  imports: [CommonModule, FormsModule, RouterModule, DragDropModule],
+  imports: [CommonModule, FormsModule, RouterModule, DragDropModule, UserPhotoGalleryComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-detail.component.ng.html',
   styleUrl: './project-detail.component.css',
@@ -29,6 +30,7 @@ export class ProjectDetailComponent {
   readonly projectId = signal<string>('');
   readonly modelsExpanded = signal(true);
   readonly paintsExpanded = signal(true);
+  readonly photosExpanded = signal(true);
   readonly colorsExpanded = signal(true);
   readonly notesExpanded = signal(true);
   readonly selectedRollupStage = signal<'base' | 'detail' | 'artificer' | 'all'>('base');
@@ -53,6 +55,7 @@ export class ProjectDetailComponent {
       this.projectId.set(params.get('id') ?? '');
       this.modelsExpanded.set(true);
       this.paintsExpanded.set(true);
+      this.photosExpanded.set(true);
       this.colorsExpanded.set(true);
       this.notesExpanded.set(true);
     });
@@ -60,6 +63,22 @@ export class ProjectDetailComponent {
 
   readonly project = computed(() =>
     this.userState.projects().find((p) => p.id === this.projectId()) ?? null
+  );
+
+  readonly projectShowcasePhotos = computed(() => {
+    const p = this.project();
+    if (!p) return [];
+    return this.userState.getPhotosForTarget('project', p.id, 'showcase');
+  });
+
+  readonly projectReferencePhotos = computed(() => {
+    const p = this.project();
+    if (!p) return [];
+    return this.userState.getPhotosForTarget('project', p.id, 'reference');
+  });
+
+  readonly projectPhotoCount = computed(
+    () => this.projectShowcasePhotos().length + this.projectReferencePhotos().length
   );
 
   readonly attachedModels = computed(() => {
@@ -79,6 +98,12 @@ export class ProjectDetailComponent {
   readonly coverUrl = computed(() => {
     const p = this.project();
     if (!p) return '/icons/ic_project.svg';
+    if (p.coverPhotoId) {
+      const coverPhoto = this.userState.getPhotoById(p.coverPhotoId);
+      if (coverPhoto && coverPhoto.kind === 'showcase') {
+        return this.userState.media.resolvePhotoUrl(coverPhoto);
+      }
+    }
     if (p.localThumbnailPath || p.thumbnailUrl) {
       return this.img.resolve(p.localThumbnailPath, p.thumbnailUrl);
     }
@@ -181,6 +206,10 @@ export class ProjectDetailComponent {
   selectThumbnail(projectId: string, localPath: string, remoteUrl?: string): void {
     this.userState.setProjectThumbnail(projectId, localPath, remoteUrl);
     this.showThumbnailModal.set(false);
+  }
+
+  onSelectCoverPhoto(projectId: string, photoId: string | undefined): void {
+    this.userState.setProjectCoverPhoto(projectId, photoId);
   }
 
   duplicateAndOpen(projectId: string): void {

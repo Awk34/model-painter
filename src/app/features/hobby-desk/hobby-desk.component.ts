@@ -8,6 +8,7 @@ import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
 import { WarhammerImportService } from '../../core/services/warhammer-import.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { formatBytes, USER_LIMITS } from '../../core/config/user-limits.config';
 
 interface UnifiedPaintRow {
   id: string;
@@ -45,6 +46,20 @@ export class HobbyDeskComponent {
   readonly modelSubMode = signal<'inventory' | 'wishlist' | 'catalogue'>('inventory');
   readonly paintSubMode = signal<'inventory' | 'wishlist' | 'catalogue'>('inventory');
   readonly converterMode = signal<'cross-brand' | 'tone-pro'>('cross-brand');
+  readonly maxPhotoSizeLabel = `${USER_LIMITS.MAX_PHOTO_FILE_SIZE_MB} MB`;
+
+  readonly showcasePhotoCount = computed(
+    () => this.userState.uploadedPhotos().filter((p) => p.kind === 'showcase').length
+  );
+
+  readonly referencePhotoCount = computed(
+    () => this.userState.uploadedPhotos().filter((p) => p.kind === 'reference').length
+  );
+
+  readonly totalUploadedBytesLabel = computed(() => {
+    const total = this.userState.uploadedPhotos().reduce((acc, p) => acc + p.sizeBytes, 0);
+    return formatBytes(total);
+  });
 
   constructor() {
     this.route.data.subscribe((data) => {
@@ -346,7 +361,25 @@ export class HobbyDeskComponent {
     this.paintSubMode.set(sub);
   }
 
-  getProjectCover(proj: { localThumbnailPath?: string; thumbnailUrl?: string; recipeIds: string[] }): string {
+  getProjectCover(proj: {
+    id: string;
+    coverPhotoId?: string;
+    localThumbnailPath?: string;
+    thumbnailUrl?: string;
+    recipeIds: string[];
+  }): string {
+    if (proj.coverPhotoId) {
+      const customCover = this.userState.getPhotoById(proj.coverPhotoId);
+      if (customCover && customCover.kind === 'showcase') {
+        const resolved = this.userState.media.resolvePhotoUrl(customCover);
+        if (resolved) return resolved;
+      }
+    }
+    const showcaseFallback = this.userState.getPhotosForTarget('project', proj.id, 'showcase')[0];
+    if (showcaseFallback) {
+      const resolved = this.userState.media.resolvePhotoUrl(showcaseFallback);
+      if (resolved) return resolved;
+    }
     if (proj.localThumbnailPath || proj.thumbnailUrl) {
       return this.img.resolve(proj.localThumbnailPath, proj.thumbnailUrl);
     }
@@ -358,6 +391,13 @@ export class HobbyDeskComponent {
       }
     }
     return '/icons/ic_project.svg';
+  }
+
+  getProjectPhotoCount(projectId: string): number {
+    return (
+      this.userState.getPhotosForTarget('project', projectId, 'showcase').length +
+      this.userState.getPhotosForTarget('project', projectId, 'reference').length
+    );
   }
 
   getProjectReadiness(proj: { recipeIds: string[]; colorIds: string[] }) {
@@ -399,6 +439,7 @@ export class HobbyDeskComponent {
 
   createNewProject(): void {
     const created = this.userState.createProject(this.newProjectName);
+    if (!created) return;
     this.newProjectName = '';
     this.showNewProjectModal.set(false);
     this.router.navigate(['/projects', created.id]);
@@ -435,6 +476,7 @@ export class HobbyDeskComponent {
       hex: this.customPaintForm.hex,
       citadelMatches,
     });
+    if (!created) return;
     this.userState.toggleInventory(created.id);
     this.customPaintForm.name = '';
     this.showCustomPaintModal.set(false);

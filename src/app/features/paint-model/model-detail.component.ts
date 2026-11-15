@@ -8,10 +8,11 @@ import { InventoryMatchService } from '../../core/services/inventory-match.servi
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
 import { ModelRecipe } from '../../core/models/catalog.models';
+import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
 
 @Component({
   selector: 'app-model-detail',
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, UserPhotoGalleryComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './model-detail.component.ng.html',
   styleUrl: './model-detail.component.css',
@@ -33,7 +34,17 @@ export class ModelDetailComponent {
   readonly stageFilter = signal<'all' | 'Base Finish' | 'Detail Finish' | 'Artificer Finish'>('all');
 
   readonly showProjectModal = signal(false);
+  readonly userPhotosExpanded = signal(true);
   newProjectName = '';
+
+  readonly modelPhotoCount = computed(() => {
+    const r = this.recipe();
+    if (!r) return 0;
+    return (
+      this.userState.getPhotosForTarget('model', r.id, 'showcase').length +
+      this.userState.getPhotosForTarget('model', r.id, 'reference').length
+    );
+  });
 
   constructor() {
     this.route.paramMap.subscribe(async (params) => {
@@ -134,6 +145,7 @@ export class ModelDetailComponent {
       r.images?.[0],
       r.localImagePaths?.[0]
     );
+    if (!created) return;
     this.userState.addRecipeToProject(created.id, r.id, r.localImagePaths?.[0]);
     this.newProjectName = '';
     this.showProjectModal.set(false);

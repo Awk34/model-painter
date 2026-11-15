@@ -42,11 +42,13 @@
         }
 
         <div class="hero-meta">
-          <span>{{ proj.recipeIds.length }} Model Guides</span>
+          <span>{{ proj.recipeIds.length }} / {{ userState.limits.MAX_MODELS_PER_PROJECT }} Model Guides</span>
           <span>•</span>
-          <span>{{ proj.colorIds.length }} Color Guides</span>
+          <span>{{ proj.colorIds.length }} / {{ userState.limits.MAX_COLORS_PER_PROJECT }} Color Guides</span>
           <span>•</span>
-          <span>{{ proj.notes.length }} Notes</span>
+          <span>{{ projectPhotoCount() }} Photos</span>
+          <span>•</span>
+          <span>{{ proj.notes.length }} / {{ userState.limits.MAX_NOTES_PER_PROJECT }} Notes</span>
           <span>•</span>
           <span>Updated {{ proj.updatedAt | date:'mediumDate' }}</span>
         </div>
@@ -432,7 +434,49 @@
     </section>
 
     <!-- ==================================================================
-         SECTION 3: ATTACHED COLORS
+         SECTION 3: PROJECT PHOTOS & PRIVATE REFERENCE PHOTOS
+         ================================================================== -->
+    <section class="project-section studio-card">
+      <div class="section-header-bar">
+        <button
+          type="button"
+          class="section-toggle-btn"
+          [attr.aria-expanded]="photosExpanded()"
+          (click)="photosExpanded.set(!photosExpanded())"
+        >
+          <span class="section-chevron" [class.expanded]="photosExpanded()">▸</span>
+          <h2>📷 Project Photos & Private References ({{ projectPhotoCount() }})</h2>
+        </button>
+      </div>
+
+      @if (photosExpanded()) {
+        <div class="section-content project-photos-stack">
+          <app-user-photo-gallery
+            targetType="project"
+            [targetId]="proj.id"
+            kind="showcase"
+            heading="My Painted Project Photos"
+            description="Upload photos of your finished squad, army display, or work-in-progress miniatures. Click 'Set Cover' on any photo to use it as this project's cover."
+            [allowSetCover]="true"
+            [activeCoverPhotoId]="proj.coverPhotoId"
+            (selectCover)="onSelectCoverPhoto(proj.id, $event)"
+          />
+
+          <hr class="section-divider" />
+
+          <app-user-photo-gallery
+            targetType="project"
+            [targetId]="proj.id"
+            kind="reference"
+            heading="Private Project Reference Photos"
+            description="Private inspiration, color scheme tests, or artwork for your own painting reference."
+          />
+        </div>
+      }
+    </section>
+
+    <!-- ==================================================================
+         SECTION 4: ATTACHED COLORS
          ================================================================== -->
     <section class="project-section studio-card">
       <div class="section-header-bar">

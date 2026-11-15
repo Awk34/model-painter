@@ -1,9 +1,57 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isSignedInOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidTargetType(targetType) {
+      return targetType in ['model', 'project'];
+    }
+
+    function isValidPathSegments(targetId, fileName) {
+      return targetId.size() > 0
+        && targetId.size() <= 120
+        && fileName.size() > 0
+        && fileName.size() <= 120;
+    }
+
+    function isValidImagePayload() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // Public read-only catalog images
     match /assets/images/{allPaths=**} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // User-uploaded painted model & project showcase photos
+    match /users/{userId}/showcase/{targetType}/{targetId}/{fileName} {
+      allow read: if isSignedInOwner(userId);
+      allow create, update: if isSignedInOwner(userId)
+        && isValidTargetType(targetType)
+        && isValidPathSegments(targetId, fileName)
+        && isValidImagePayload();
+      allow delete: if isSignedInOwner(userId);
+    }
+
+    // Strictly private user reference/inspiration photos for models & projects
+    match /users/{userId}/private_references/{targetType}/{targetId}/{fileName} {
+      allow read: if isSignedInOwner(userId);
+      allow create, update: if isSignedInOwner(userId)
+        && isValidTargetType(targetType)
+        && isValidPathSegments(targetId, fileName)
+        && isValidImagePayload();
+      allow delete: if isSignedInOwner(userId);
+    }
+
+    // Deny all other paths by default
+    match /{allOtherPaths=**} {
+      allow read, write: if false;
     }
   }
 }

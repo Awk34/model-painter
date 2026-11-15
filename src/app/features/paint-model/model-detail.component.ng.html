@@ -311,6 +311,43 @@
       </div>
     </div>
 
+    <!-- User Uploaded Painted Photos & Private Reference Photos -->
+    <section class="user-photos-section studio-card">
+      <div class="user-photos-header">
+        <button
+          type="button"
+          class="section-toggle-btn"
+          [attr.aria-expanded]="userPhotosExpanded()"
+          (click)="userPhotosExpanded.set(!userPhotosExpanded())"
+        >
+          <span class="section-chevron" [class.expanded]="userPhotosExpanded()">▸</span>
+          <h2>📷 My Painted Photos & Private References ({{ modelPhotoCount() }})</h2>
+        </button>
+      </div>
+
+      @if (userPhotosExpanded()) {
+        <div class="user-photos-content">
+          <app-user-photo-gallery
+            targetType="model"
+            [targetId]="r.id"
+            kind="showcase"
+            heading="My Painted Model Photos"
+            description="Upload photos of your own painted version or work-in-progress stages of this miniature."
+          />
+
+          <hr class="section-divider" />
+
+          <app-user-photo-gallery
+            targetType="model"
+            [targetId]="r.id"
+            kind="reference"
+            heading="Private Model Reference Photos"
+            description="Private inspiration, alternative color schemes, or reference closeups for painting this model."
+          />
+        </div>
+      }
+    </section>
+
     <!-- Painting Areas & Step-by-Step Instructions -->
     @if (r.paintingAreas.length) {
       <section class="areas-section">

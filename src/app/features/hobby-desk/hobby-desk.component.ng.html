@@ -22,26 +22,53 @@
     </div>
 
     <div class="desk-kpi-strip">
-      <button class="kpi-pill" (click)="openProjectsTab()">
-        <span class="kpi-num">{{ userState.projects().length }}</span>
+      <button
+        class="kpi-pill"
+        [title]="userState.projects().length + ' / ' + userState.limits.MAX_PROJECTS + ' projects'"
+        (click)="openProjectsTab()"
+      >
+        <span class="kpi-num">{{ userState.projects().length }}<small class="kpi-cap">/{{ userState.limits.MAX_PROJECTS }}</small></span>
         <span class="kpi-label">Projects</span>
       </button>
-      <button class="kpi-pill owned" (click)="openModelsTab('inventory')">
+      <button
+        class="kpi-pill owned"
+        [title]="userState.state().inventoryModelIds.length + ' / ' + userState.limits.MAX_INVENTORY_MODELS + ' owned models'"
+        (click)="openModelsTab('inventory')"
+      >
         <span class="kpi-num">{{ userState.state().inventoryModelIds.length }}</span>
         <span class="kpi-label">Owned Models</span>
       </button>
-      <button class="kpi-pill wishlist" (click)="openModelsTab('wishlist')">
+      <button
+        class="kpi-pill wishlist"
+        [title]="userState.state().wishlistModelIds.length + ' / ' + userState.limits.MAX_WISHLIST_MODELS + ' wishlist models'"
+        (click)="openModelsTab('wishlist')"
+      >
         <span class="kpi-num">{{ userState.state().wishlistModelIds.length }}</span>
         <span class="kpi-label">Model Wishlist</span>
       </button>
-      <button class="kpi-pill owned" (click)="openPaintsTab('inventory')">
+      <button
+        class="kpi-pill owned"
+        [title]="userState.state().inventoryPaintIds.length + ' / ' + userState.limits.MAX_INVENTORY_PAINTS + ' owned paints'"
+        (click)="openPaintsTab('inventory')"
+      >
         <span class="kpi-num">{{ userState.state().inventoryPaintIds.length }}</span>
         <span class="kpi-label">Owned Paints</span>
       </button>
-      <button class="kpi-pill wishlist" (click)="openPaintsTab('wishlist')">
+      <button
+        class="kpi-pill wishlist"
+        [title]="userState.state().wishlistPaintIds.length + ' / ' + userState.limits.MAX_WISHLIST_PAINTS + ' wishlist paints'"
+        (click)="openPaintsTab('wishlist')"
+      >
         <span class="kpi-num">{{ userState.state().wishlistPaintIds.length }}</span>
         <span class="kpi-label">Paint Wishlist</span>
       </button>
+      <div
+        class="kpi-pill"
+        [title]="userState.uploadedPhotos().length + ' / ' + userState.limits.MAX_TOTAL_USER_PHOTOS + ' uploaded photos (' + totalUploadedBytesLabel() + ')'"
+      >
+        <span class="kpi-num">{{ userState.uploadedPhotos().length }}<small class="kpi-cap">/{{ userState.limits.MAX_TOTAL_USER_PHOTOS }}</small></span>
+        <span class="kpi-label">Photos</span>
+      </div>
     </div>
   </header>
 
@@ -108,8 +135,12 @@
             <option value="alpha">Alphabetical (A–Z)</option>
           </select>
 
-          <button class="btn btn-gold" (click)="showNewProjectModal.set(true)">
-            + New Project
+          <button
+            class="btn btn-gold"
+            [disabled]="userState.projects().length >= userState.limits.MAX_PROJECTS"
+            (click)="showNewProjectModal.set(true)"
+          >
+            + New Project ({{ userState.projects().length }}/{{ userState.limits.MAX_PROJECTS }})
           </button>
         </div>
       </div>
@@ -134,6 +165,10 @@
                   <span>{{ proj.colorIds.length }} Colors</span>
                   <span>•</span>
                   <span>{{ proj.notes.length }} Notes</span>
+                  @if (getProjectPhotoCount(proj.id) > 0) {
+                    <span>•</span>
+                    <span>📷 {{ getProjectPhotoCount(proj.id) }}</span>
+                  }
                 </div>
 
                 @if (getProjectReadiness(proj); as staged) {
@@ -951,6 +986,54 @@
           </button>
         </div>
       </div>
+
+      <!-- Card 5: Account Quotas & Photo Storage Limits -->
+      <div class="settings-card studio-card">
+        <span class="badge badge-gold">Usage & Quotas</span>
+        <h3>Account Limits & Photo Upload Quotas</h3>
+        <p class="settings-desc">
+          Fair-use limits protect local browser storage and cloud sync performance. Showcase photos and private reference photos are stored locally in IndexedDB and privately synced when signed in.
+        </p>
+
+        <div class="quota-list">
+          <div class="quota-row">
+            <span>Hobby Projects</span>
+            <strong>{{ userState.projects().length }} / {{ userState.limits.MAX_PROJECTS }}</strong>
+          </div>
+          <div class="quota-row">
+            <span>Models / Colors / Notes per Project</span>
+            <strong>{{ userState.limits.MAX_MODELS_PER_PROJECT }} / {{ userState.limits.MAX_COLORS_PER_PROJECT }} / {{ userState.limits.MAX_NOTES_PER_PROJECT }}</strong>
+          </div>
+          <div class="quota-row">
+            <span>Owned Models / Model Wishlist</span>
+            <strong>{{ userState.state().inventoryModelIds.length }}/{{ userState.limits.MAX_INVENTORY_MODELS }} • {{ userState.state().wishlistModelIds.length }}/{{ userState.limits.MAX_WISHLIST_MODELS }}★</strong>
+          </div>
+          <div class="quota-row">
+            <span>Owned Paints / Paint Wishlist</span>
+            <strong>{{ userState.state().inventoryPaintIds.length }}/{{ userState.limits.MAX_INVENTORY_PAINTS }} • {{ userState.state().wishlistPaintIds.length }}/{{ userState.limits.MAX_WISHLIST_PAINTS }}★</strong>
+          </div>
+          <div class="quota-row">
+            <span>Custom 3rd-Party Paints</span>
+            <strong>{{ userState.state().customPaints.length }} / {{ userState.limits.MAX_CUSTOM_PAINTS }}</strong>
+          </div>
+          <div class="quota-row">
+            <span>Total Uploaded Photos ({{ totalUploadedBytesLabel() }})</span>
+            <strong>{{ userState.uploadedPhotos().length }} / {{ userState.limits.MAX_TOTAL_USER_PHOTOS }}</strong>
+          </div>
+        </div>
+
+        <div class="photo-rules-note">
+          <div>
+            <strong>Showcase Photos:</strong> {{ showcasePhotoCount() }} uploaded (up to {{ userState.limits.MAX_MODEL_SHOWCASE_PHOTOS }}/model, {{ userState.limits.MAX_PROJECT_SHOWCASE_PHOTOS }}/project)
+          </div>
+          <div>
+            <strong>🔒 Private Reference Photos:</strong> {{ referencePhotoCount() }} uploaded (up to {{ userState.limits.MAX_MODEL_REFERENCE_PHOTOS }}/model, {{ userState.limits.MAX_PROJECT_REFERENCE_PHOTOS }}/project)
+          </div>
+          <div>
+            <strong>File Rules:</strong> JPG, PNG, or WebP • Up to {{ userState.limits.MAX_RAW_INPUT_FILE_SIZE_MB }} MB upload (auto-downscaled to ≤ {{ maxPhotoSizeLabel }})
+          </div>
+        </div>
+      </div>
     </section>
   }
 </div>
@@ -1056,4 +1139,3 @@
     </div>
   </div>
 }
-

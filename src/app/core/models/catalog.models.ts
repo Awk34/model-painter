@@ -301,11 +301,35 @@ export interface UserProjectNote {
   components: UserProjectNoteComponent[];
 }
 
+export type UserPhotoTargetType = 'model' | 'project';
+export type UserPhotoKind = 'showcase' | 'reference';
+
+export interface UserUploadedPhoto {
+  id: string;
+  targetType: UserPhotoTargetType;
+  targetId: string;
+  /** 'showcase' = user's painted model / project photo; 'reference' = private inspiration/reference photo */
+  kind: UserPhotoKind;
+  /** Always true for 'reference' photos */
+  isPrivate: boolean;
+  fileName: string;
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+  sizeBytes: number;
+  width?: number;
+  height?: number;
+  caption?: string;
+  createdAt: string;
+  /** Firebase Cloud Storage object path when uploaded by an authenticated user */
+  storagePath?: string;
+}
+
 export interface UserProject {
   id: string;
   name: string;
   thumbnailUrl?: string;
   localThumbnailPath?: string;
+  /** Optional ID of a user-uploaded project showcase photo used as cover */
+  coverPhotoId?: string;
   createdAt: string;
   updatedAt: string;
   recipeIds: string[];
@@ -331,6 +355,7 @@ export interface UserAccountState {
   /** Maps Citadel Paint ID -> Array of user-linked Equivalent Paint IDs */
   customCompatibilityOverrides: Record<string, string[]>;
   projects: UserProject[];
+  uploadedPhotos: UserUploadedPhoto[];
   preferences: UserPreferences;
 }
 
