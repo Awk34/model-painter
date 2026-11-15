@@ -24,3 +24,6 @@ serviceAccountKey.json
 public/firebase-config.local.json
 .env
 .env.*
+
+# Other
+.dccache
