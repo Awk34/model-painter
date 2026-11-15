@@ -155,26 +155,48 @@
 .progress-fill.complete {
   background: var(--status-owned);
 }
-.subtab-bar {
+.project-section {
   display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  gap: 16px;
+}
+.section-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 10px;
+  gap: 12px;
 }
-.subtab-btn {
-  padding: 9px 15px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: 0.86rem;
-  color: var(--text-secondary);
-  background: var(--bg-elevated);
+.section-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 4px 0;
+  color: var(--text-primary);
+  cursor: pointer;
 }
-.subtab-btn.active {
-  background: var(--gold-soft);
+.section-toggle-btn h2 {
+  font-size: 1.35rem;
   color: var(--gold-bright);
-  border: 1px solid var(--gold-border);
+  margin: 0;
+}
+.section-chevron {
+  display: inline-block;
+  font-size: 1.1rem;
+  color: var(--gold-bright);
+  transition: transform 0.15s ease;
+}
+.section-chevron.expanded {
+  transform: rotate(90deg);
+}
+.section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
 }
 .rollup-section {
   display: flex;

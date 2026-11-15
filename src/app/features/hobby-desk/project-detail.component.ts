@@ -27,7 +27,10 @@ export class ProjectDetailComponent {
   readonly img = inject(ImageService);
 
   readonly projectId = signal<string>('');
-  readonly activeTab = signal<'paints' | 'models' | 'colors' | 'notes'>('paints');
+  readonly modelsExpanded = signal(true);
+  readonly paintsExpanded = signal(true);
+  readonly colorsExpanded = signal(true);
+  readonly notesExpanded = signal(true);
   readonly selectedRollupStage = signal<'base' | 'detail' | 'artificer' | 'all'>('base');
 
   readonly editingTitle = signal(false);
@@ -48,6 +51,10 @@ export class ProjectDetailComponent {
   constructor() {
     this.route.paramMap.subscribe((params) => {
       this.projectId.set(params.get('id') ?? '');
+      this.modelsExpanded.set(true);
+      this.paintsExpanded.set(true);
+      this.colorsExpanded.set(true);
+      this.notesExpanded.set(true);
     });
   }
 

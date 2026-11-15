@@ -66,7 +66,7 @@
               <div
                 class="stage-ready-row"
                 [class.active]="selectedRollupStage() === 'base'"
-                (click)="selectedRollupStage.set('base'); activeTab.set('paints')"
+                (click)="selectedRollupStage.set('base'); paintsExpanded.set(true)"
               >
                 <div class="stage-ready-top">
                   <div class="stage-ready-title">
@@ -110,7 +110,7 @@
               <div
                 class="stage-ready-row"
                 [class.active]="selectedRollupStage() === 'detail'"
-                (click)="selectedRollupStage.set('detail'); activeTab.set('paints')"
+                (click)="selectedRollupStage.set('detail'); paintsExpanded.set(true)"
               >
                 <div class="stage-ready-top">
                   <div class="stage-ready-title">
@@ -154,7 +154,7 @@
               <div
                 class="stage-ready-row"
                 [class.active]="selectedRollupStage() === 'artificer'"
-                (click)="selectedRollupStage.set('artificer'); activeTab.set('paints')"
+                (click)="selectedRollupStage.set('artificer'); paintsExpanded.set(true)"
               >
                 <div class="stage-ready-top">
                   <div class="stage-ready-title">
@@ -199,349 +199,361 @@
       </div>
     </header>
 
-    <!-- Sub-Tabs -->
-    <nav class="subtab-bar">
-      <button
-        class="subtab-btn"
-        [class.active]="activeTab() === 'paints'"
-        (click)="activeTab.set('paints')"
-      >
-        🎨 Required & Missing Paints ({{ rollupReadiness().totalRequired }})
-      </button>
-      <button
-        class="subtab-btn"
-        [class.active]="activeTab() === 'models'"
-        (click)="activeTab.set('models')"
-      >
-        🛡 Models ({{ attachedModels().length }})
-      </button>
-      <button
-        class="subtab-btn"
-        [class.active]="activeTab() === 'colors'"
-        (click)="activeTab.set('colors')"
-      >
-        💧 Colors ({{ attachedColors().length }})
-      </button>
-      <button
-        class="subtab-btn"
-        [class.active]="activeTab() === 'notes'"
-        (click)="activeTab.set('notes')"
-      >
-        📝 Notes & Checklists ({{ proj.notes.length }})
-      </button>
-    </nav>
-
     <!-- ==================================================================
-         TAB 1: AGGREGATED REQUIRED & MISSING PAINTS ROLLUP
+         SECTION 1: ATTACHED MODELS (EXPANDED BY DEFAULT)
          ================================================================== -->
-    @if (activeTab() === 'paints') {
-      <section class="rollup-section">
-        <div class="chip-bar">
-          <button
-            class="chip"
-            [class.active]="selectedRollupStage() === 'base'"
-            (click)="selectedRollupStage.set('base')"
-          >
-            1. Base Finish ({{ stagedRollupReadiness().base.totalRequired }} Paints)
-          </button>
-          <button
-            class="chip"
-            [class.active]="selectedRollupStage() === 'detail'"
-            (click)="selectedRollupStage.set('detail')"
-          >
-            2. Detail Finish ({{ stagedRollupReadiness().detail.totalRequired }} Paints)
-          </button>
-          <button
-            class="chip"
-            [class.active]="selectedRollupStage() === 'artificer'"
-            (click)="selectedRollupStage.set('artificer')"
-          >
-            3. Artificer Finish ({{ stagedRollupReadiness().artificer.totalRequired }} Paints)
-          </button>
-          <button
-            class="chip"
-            [class.active]="selectedRollupStage() === 'all'"
-            (click)="selectedRollupStage.set('all')"
-          >
-            All Stages Combined ({{ stagedRollupReadiness().overall.totalRequired }} Paints)
-          </button>
-        </div>
+    <section class="project-section studio-card">
+      <div class="section-header-bar">
+        <button
+          type="button"
+          class="section-toggle-btn"
+          [attr.aria-expanded]="modelsExpanded()"
+          (click)="modelsExpanded.set(!modelsExpanded())"
+        >
+          <span class="section-chevron" [class.expanded]="modelsExpanded()">▸</span>
+          <h2>🛡 Models ({{ attachedModels().length }})</h2>
+        </button>
+        <button class="btn btn-gold btn-sm" (click)="showAddModelModal.set(true)">
+          + Add Model to Project
+        </button>
+      </div>
 
-        @if (stagedRollupReadiness().overall.totalRequired === 0) {
-          <div class="empty-box studio-card">
-            <h3>No Paints Required Yet</h3>
-            <p>Add Model Painting Guides or Color Guides to this project to automatically compute all required & missing paints.</p>
-            <div style="display: flex; gap: 10px">
-              <button class="btn btn-gold" (click)="showAddModelModal.set(true)">+ Add Model Guide</button>
-              <button class="btn btn-secondary" (click)="showAddColorModal.set(true)">+ Add Color Guide</button>
-            </div>
-          </div>
-        } @else {
-          <!-- Missing Paints Group -->
-          <div class="paint-group studio-card">
-            <div class="group-header">
-              <div>
-                <span class="badge badge-missing">Missing Paints ({{ missingPaintObjects().length }})</span>
-                <p class="group-sub">Paints required by your project's models & colors that are not yet in your Inventory.</p>
-              </div>
-              @if (missingPaintObjects().length > 0) {
-                <div class="group-actions">
-                  <button
-                    class="btn btn-gold btn-sm"
-                    (click)="userState.addManyToWishlist(rollupReadiness().missingPaintIds)"
-                  >
-                    ★ Add All Missing to Wishlist
-                  </button>
-                  <button
-                    class="btn btn-secondary btn-sm"
-                    (click)="userState.addManyToInventory(rollupReadiness().missingPaintIds)"
-                  >
-                    ✓ Mark All as Owned
-                  </button>
+      @if (modelsExpanded()) {
+        <div class="section-content">
+          @if (attachedModels().length > 0) {
+            <div class="cards-grid">
+              @for (m of attachedModels(); track m.id) {
+                <div class="attached-card studio-card interactive" (click)="goToModel(m.id)">
+                  <div class="attached-img-wrap">
+                    <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
+                  </div>
+                  <div class="attached-body">
+                    <h4>{{ m.name }}</h4>
+                    <p>{{ m.gameNames.join(', ') }}</p>
+                  </div>
+                  <div class="attached-footer" (click)="$event.stopPropagation()">
+                    <button
+                      class="btn btn-ghost btn-sm danger-text"
+                      (click)="userState.removeRecipeFromProject(proj.id, m.id)"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               }
             </div>
+          } @else {
+            <div class="empty-box">
+              <p>No Model Painting Guides attached to this project yet.</p>
+              <button class="btn btn-gold btn-sm" (click)="showAddModelModal.set(true)">
+                + Add Model Guide
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
 
-            @if (missingPaintObjects().length > 0) {
-              <div class="rollup-paint-grid">
-                @for (p of missingPaintObjects(); track p.id) {
-                  <div class="rollup-paint-card">
-                    <button class="rp-main" (click)="paintModal.openPaint(p.id)">
-                      <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
-                      <div class="rp-info">
-                        <span class="rp-name">{{ p.name }}</span>
-                        <span class="rp-meta">{{ p.category }}</span>
-                      </div>
-                    </button>
-                    <div class="rp-btns">
-                      <button
-                        class="btn btn-sm"
-                        [class.btn-owned]="userState.isOwned(p.id)"
-                        [class.btn-ghost]="!userState.isOwned(p.id)"
-                        (click)="userState.toggleInventory(p.id)"
-                      >
-                        + Own
-                      </button>
-                      <button
-                        class="btn btn-sm"
-                        [class.btn-wishlist]="userState.isWishlisted(p.id)"
-                        [class.btn-ghost]="!userState.isWishlisted(p.id)"
-                        (click)="userState.toggleWishlist(p.id)"
-                      >
-                        {{ userState.isWishlisted(p.id) ? '★ Wishlisted' : '☆ Wishlist' }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <p class="all-covered-msg">🎉 You own every paint (or a valid equivalent) needed for this project!</p>
-            }
+    <!-- ==================================================================
+         SECTION 2: AGGREGATED REQUIRED & MISSING PAINTS ROLLUP
+         ================================================================== -->
+    <section class="project-section studio-card">
+      <div class="section-header-bar">
+        <button
+          type="button"
+          class="section-toggle-btn"
+          [attr.aria-expanded]="paintsExpanded()"
+          (click)="paintsExpanded.set(!paintsExpanded())"
+        >
+          <span class="section-chevron" [class.expanded]="paintsExpanded()">▸</span>
+          <h2>🎨 Required & Missing Paints ({{ rollupReadiness().totalRequired }})</h2>
+        </button>
+      </div>
+
+      @if (paintsExpanded()) {
+        <div class="section-content rollup-section">
+          <div class="chip-bar">
+            <button
+              class="chip"
+              [class.active]="selectedRollupStage() === 'base'"
+              (click)="selectedRollupStage.set('base')"
+            >
+              1. Base Finish ({{ stagedRollupReadiness().base.totalRequired }} Paints)
+            </button>
+            <button
+              class="chip"
+              [class.active]="selectedRollupStage() === 'detail'"
+              (click)="selectedRollupStage.set('detail')"
+            >
+              2. Detail Finish ({{ stagedRollupReadiness().detail.totalRequired }} Paints)
+            </button>
+            <button
+              class="chip"
+              [class.active]="selectedRollupStage() === 'artificer'"
+              (click)="selectedRollupStage.set('artificer')"
+            >
+              3. Artificer Finish ({{ stagedRollupReadiness().artificer.totalRequired }} Paints)
+            </button>
+            <button
+              class="chip"
+              [class.active]="selectedRollupStage() === 'all'"
+              (click)="selectedRollupStage.set('all')"
+            >
+              All Stages Combined ({{ stagedRollupReadiness().overall.totalRequired }} Paints)
+            </button>
           </div>
 
-          <!-- Covered by Equivalent (Tone Pro or 3rd-Party) -->
-          @if (substitutedList().length > 0) {
+          @if (stagedRollupReadiness().overall.totalRequired === 0) {
+            <div class="empty-box">
+              <h3>No Paints Required Yet</h3>
+              <p>Add Model Painting Guides or Color Guides to this project to automatically compute all required & missing paints.</p>
+              <div style="display: flex; gap: 10px">
+                <button class="btn btn-gold" (click)="showAddModelModal.set(true)">+ Add Model Guide</button>
+                <button class="btn btn-secondary" (click)="showAddColorModal.set(true)">+ Add Color Guide</button>
+              </div>
+            </div>
+          } @else {
+            <!-- Missing Paints Group -->
             <div class="paint-group studio-card">
               <div class="group-header">
                 <div>
-                  <span class="badge badge-sub">Covered by Equivalent in Inventory ({{ substitutedList().length }})</span>
-                  <p class="group-sub">Required paints satisfied by equivalent paints you already own.</p>
+                  <span class="badge badge-missing">Missing Paints ({{ missingPaintObjects().length }})</span>
+                  <p class="group-sub">Paints required by your project's models & colors that are not yet in your Inventory.</p>
                 </div>
-              </div>
-              <div class="rollup-paint-grid">
-                @for (item of substitutedList(); track item.paint.id) {
-                  <div class="rollup-paint-card sub-card">
-                    <button class="rp-main" (click)="paintModal.openPaint(item.paint.id)">
-                      <span class="paint-swatch" [style.background]="item.paint.gradientStartHex"></span>
-                      <div class="rp-info">
-                        <span class="rp-name">{{ item.paint.name }}</span>
-                        <span class="sub-note">
-                          ⇄ Covered by <strong>{{ item.sub.substituteName }}</strong> ({{ item.sub.substituteBrand }})
-                        </span>
-                      </div>
-                    </button>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Owned Directly -->
-          @if (ownedDirectObjects().length > 0) {
-            <div class="paint-group studio-card">
-              <div class="group-header">
-                <div>
-                  <span class="badge badge-owned">Owned Directly in Inventory ({{ ownedDirectObjects().length }})</span>
-                </div>
-              </div>
-              <div class="rollup-paint-grid">
-                @for (p of ownedDirectObjects(); track p.id) {
-                  <div class="rollup-paint-card">
-                    <button class="rp-main" (click)="paintModal.openPaint(p.id)">
-                      <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
-                      <div class="rp-info">
-                        <span class="rp-name">{{ p.name }}</span>
-                        <span class="rp-meta">{{ p.category }}</span>
-                      </div>
-                    </button>
-                    <span class="badge badge-owned">✓ Owned</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        }
-      </section>
-    }
-
-    <!-- ==================================================================
-         TAB 2: ATTACHED MODELS
-         ================================================================== -->
-    @if (activeTab() === 'models') {
-      <section class="tab-section">
-        <div class="section-bar">
-          <h3>Attached Model Painting Guides ({{ attachedModels().length }})</h3>
-          <button class="btn btn-gold btn-sm" (click)="showAddModelModal.set(true)">
-            + Add Model to Project
-          </button>
-        </div>
-
-        @if (attachedModels().length > 0) {
-          <div class="cards-grid">
-            @for (m of attachedModels(); track m.id) {
-              <div class="attached-card studio-card interactive" (click)="goToModel(m.id)">
-                <div class="attached-img-wrap">
-                  <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
-                </div>
-                <div class="attached-body">
-                  <h4>{{ m.name }}</h4>
-                  <p>{{ m.gameNames.join(', ') }}</p>
-                </div>
-                <div class="attached-footer" (click)="$event.stopPropagation()">
-                  <button
-                    class="btn btn-ghost btn-sm danger-text"
-                    (click)="userState.removeRecipeFromProject(proj.id, m.id)"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="empty-box studio-card">
-            <p>No Model Painting Guides attached to this project yet.</p>
-            <button class="btn btn-gold btn-sm" (click)="showAddModelModal.set(true)">
-              + Add Model Guide
-            </button>
-          </div>
-        }
-      </section>
-    }
-
-    <!-- ==================================================================
-         TAB 3: ATTACHED COLORS
-         ================================================================== -->
-    @if (activeTab() === 'colors') {
-      <section class="tab-section">
-        <div class="section-bar">
-          <h3>Attached Color Guides ({{ attachedColors().length }})</h3>
-          <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
-            + Add Color to Project
-          </button>
-        </div>
-
-        @if (attachedColors().length > 0) {
-          <div class="cards-grid">
-            @for (c of attachedColors(); track c.id) {
-              <div class="attached-card studio-card interactive" (click)="goToColor(c.id)">
-                <div class="color-banner" [style.background]="c.hex"></div>
-                <div class="attached-body">
-                  <h4>{{ c.name }}</h4>
-                  <p>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</p>
-                </div>
-                <div class="attached-footer" (click)="$event.stopPropagation()">
-                  <button
-                    class="btn btn-ghost btn-sm danger-text"
-                    (click)="userState.removeColorFromProject(proj.id, c.id)"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="empty-box studio-card">
-            <p>No Color Guides attached to this project yet.</p>
-            <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
-              + Add Color Guide
-            </button>
-          </div>
-        }
-      </section>
-    }
-
-    <!-- ==================================================================
-         TAB 4: PROJECT NOTES & CHECKLISTS (WITH DRAG-AND-DROP)
-         ================================================================== -->
-    @if (activeTab() === 'notes') {
-      <section class="tab-section">
-        <div class="section-bar">
-          <h3>Hobby Notes & Painting Checklists ({{ proj.notes.length }})</h3>
-          <button class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
-            + New Note / Checklist
-          </button>
-        </div>
-
-        @if (proj.notes.length > 0) {
-          <div class="notes-grid">
-            @for (note of proj.notes; track note.id) {
-              <div class="note-card studio-card">
-                <div class="note-header">
-                  <h4>{{ note.title }}</h4>
-                  <div class="note-actions">
-                    <button class="btn btn-ghost btn-sm" (click)="openNoteEditor(note)">
-                      ✎ Edit
+                @if (missingPaintObjects().length > 0) {
+                  <div class="group-actions">
+                    <button
+                      class="btn btn-gold btn-sm"
+                      (click)="userState.addManyToWishlist(rollupReadiness().missingPaintIds)"
+                    >
+                      ★ Add All Missing to Wishlist
                     </button>
                     <button
-                      class="btn btn-ghost btn-sm danger-text"
-                      (click)="userState.deleteProjectNote(proj.id, note.id)"
+                      class="btn btn-secondary btn-sm"
+                      (click)="userState.addManyToInventory(rollupReadiness().missingPaintIds)"
                     >
-                      ✕
+                      ✓ Mark All as Owned
                     </button>
                   </div>
-                </div>
+                }
+              </div>
 
-                <div class="note-components">
-                  @for (comp of note.components; track $index; let idx = $index) {
-                    @if (comp.type === 'checkbox') {
-                      <label class="note-checkbox-row" [class.done]="comp.checked">
-                        <input
-                          type="checkbox"
-                          [checked]="comp.checked"
-                          (change)="userState.toggleNoteCheckbox(proj.id, note.id, idx)"
-                        />
-                        <span>{{ comp.value }}</span>
-                      </label>
-                    } @else {
-                      <p class="note-text-block">{{ comp.value }}</p>
-                    }
+              @if (missingPaintObjects().length > 0) {
+                <div class="rollup-paint-grid">
+                  @for (p of missingPaintObjects(); track p.id) {
+                    <div class="rollup-paint-card">
+                      <button class="rp-main" (click)="paintModal.openPaint(p.id)">
+                        <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
+                        <div class="rp-info">
+                          <span class="rp-name">{{ p.name }}</span>
+                          <span class="rp-meta">{{ p.category }}</span>
+                        </div>
+                      </button>
+                      <div class="rp-btns">
+                        <button
+                          class="btn btn-sm"
+                          [class.btn-owned]="userState.isOwned(p.id)"
+                          [class.btn-ghost]="!userState.isOwned(p.id)"
+                          (click)="userState.toggleInventory(p.id)"
+                        >
+                          + Own
+                        </button>
+                        <button
+                          class="btn btn-sm"
+                          [class.btn-wishlist]="userState.isWishlisted(p.id)"
+                          [class.btn-ghost]="!userState.isWishlisted(p.id)"
+                          (click)="userState.toggleWishlist(p.id)"
+                        >
+                          {{ userState.isWishlisted(p.id) ? '★ Wishlisted' : '☆ Wishlist' }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="all-covered-msg">🎉 You own every paint (or a valid equivalent) needed for this project!</p>
+              }
+            </div>
+
+            <!-- Covered by Equivalent (Tone Pro or 3rd-Party) -->
+            @if (substitutedList().length > 0) {
+              <div class="paint-group studio-card">
+                <div class="group-header">
+                  <div>
+                    <span class="badge badge-sub">Covered by Equivalent in Inventory ({{ substitutedList().length }})</span>
+                    <p class="group-sub">Required paints satisfied by equivalent paints you already own.</p>
+                  </div>
+                </div>
+                <div class="rollup-paint-grid">
+                  @for (item of substitutedList(); track item.paint.id) {
+                    <div class="rollup-paint-card sub-card">
+                      <button class="rp-main" (click)="paintModal.openPaint(item.paint.id)">
+                        <span class="paint-swatch" [style.background]="item.paint.gradientStartHex"></span>
+                        <div class="rp-info">
+                          <span class="rp-name">{{ item.paint.name }}</span>
+                          <span class="sub-note">
+                            ⇄ Covered by <strong>{{ item.sub.substituteName }}</strong> ({{ item.sub.substituteBrand }})
+                          </span>
+                        </div>
+                      </button>
+                    </div>
                   }
                 </div>
               </div>
             }
-          </div>
-        } @else {
-          <div class="empty-box studio-card">
-            <p>Add free-form painting notes, army recipe reminders, or interactive step checklists.</p>
-            <button class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
-              + Create First Note
-            </button>
-          </div>
-        }
-      </section>
-    }
+
+            <!-- Owned Directly -->
+            @if (ownedDirectObjects().length > 0) {
+              <div class="paint-group studio-card">
+                <div class="group-header">
+                  <div>
+                    <span class="badge badge-owned">Owned Directly in Inventory ({{ ownedDirectObjects().length }})</span>
+                  </div>
+                </div>
+                <div class="rollup-paint-grid">
+                  @for (p of ownedDirectObjects(); track p.id) {
+                    <div class="rollup-paint-card">
+                      <button class="rp-main" (click)="paintModal.openPaint(p.id)">
+                        <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
+                        <div class="rp-info">
+                          <span class="rp-name">{{ p.name }}</span>
+                          <span class="rp-meta">{{ p.category }}</span>
+                        </div>
+                      </button>
+                      <span class="badge badge-owned">✓ Owned</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+    </section>
+
+    <!-- ==================================================================
+         SECTION 3: ATTACHED COLORS
+         ================================================================== -->
+    <section class="project-section studio-card">
+      <div class="section-header-bar">
+        <button
+          type="button"
+          class="section-toggle-btn"
+          [attr.aria-expanded]="colorsExpanded()"
+          (click)="colorsExpanded.set(!colorsExpanded())"
+        >
+          <span class="section-chevron" [class.expanded]="colorsExpanded()">▸</span>
+          <h2>💧 Colors ({{ attachedColors().length }})</h2>
+        </button>
+        <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
+          + Add Color to Project
+        </button>
+      </div>
+
+      @if (colorsExpanded()) {
+        <div class="section-content">
+          @if (attachedColors().length > 0) {
+            <div class="cards-grid">
+              @for (c of attachedColors(); track c.id) {
+                <div class="attached-card studio-card interactive" (click)="goToColor(c.id)">
+                  <div class="color-banner" [style.background]="c.hex"></div>
+                  <div class="attached-body">
+                    <h4>{{ c.name }}</h4>
+                    <p>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</p>
+                  </div>
+                  <div class="attached-footer" (click)="$event.stopPropagation()">
+                    <button
+                      class="btn btn-ghost btn-sm danger-text"
+                      (click)="userState.removeColorFromProject(proj.id, c.id)"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-box">
+              <p>No Color Guides attached to this project yet.</p>
+              <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
+                + Add Color Guide
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- ==================================================================
+         SECTION 4: PROJECT NOTES & CHECKLISTS (WITH DRAG-AND-DROP)
+         ================================================================== -->
+    <section class="project-section studio-card">
+      <div class="section-header-bar">
+        <button
+          type="button"
+          class="section-toggle-btn"
+          [attr.aria-expanded]="notesExpanded()"
+          (click)="notesExpanded.set(!notesExpanded())"
+        >
+          <span class="section-chevron" [class.expanded]="notesExpanded()">▸</span>
+          <h2>📝 Notes & Checklists ({{ proj.notes.length }})</h2>
+        </button>
+        <button class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
+          + New Note / Checklist
+        </button>
+      </div>
+
+      @if (notesExpanded()) {
+        <div class="section-content">
+          @if (proj.notes.length > 0) {
+            <div class="notes-grid">
+              @for (note of proj.notes; track note.id) {
+                <div class="note-card studio-card">
+                  <div class="note-header">
+                    <h4>{{ note.title }}</h4>
+                    <div class="note-actions">
+                      <button class="btn btn-ghost btn-sm" (click)="openNoteEditor(note)">
+                        ✎ Edit
+                      </button>
+                      <button
+                        class="btn btn-ghost btn-sm danger-text"
+                        (click)="userState.deleteProjectNote(proj.id, note.id)"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="note-components">
+                    @for (comp of note.components; track $index; let idx = $index) {
+                      @if (comp.type === 'checkbox') {
+                        <label class="note-checkbox-row" [class.done]="comp.checked">
+                          <input
+                            type="checkbox"
+                            [checked]="comp.checked"
+                            (change)="userState.toggleNoteCheckbox(proj.id, note.id, idx)"
+                          />
+                          <span>{{ comp.value }}</span>
+                        </label>
+                      } @else {
+                        <p class="note-text-block">{{ comp.value }}</p>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-box">
+              <p>Add free-form painting notes, army recipe reminders, or interactive step checklists.</p>
+              <button class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
+                + Create First Note
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
   </div>
 
   <!-- Modal: Block Note & Checklist Editor (with CDK Drag & Drop) -->
