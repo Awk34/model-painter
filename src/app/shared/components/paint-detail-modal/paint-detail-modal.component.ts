@@ -5,7 +5,12 @@ import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
-import { getCitadelBrandLabel } from '../../../core/utils/catalog-filter.util';
+import {
+  getCitadelBrandLabel,
+  getPaintRepresentativeHex,
+  getPaintSwatchBackground,
+  isMetallicPaint,
+} from '../../../core/utils/catalog-filter.util';
 
 @Component({
   selector: 'app-paint-detail-modal',
@@ -20,6 +25,9 @@ export class PaintDetailModalComponent {
   readonly modalService = inject(PaintModalService);
   readonly img = inject(ImageService);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
+  readonly getPaintRepresentativeHex = getPaintRepresentativeHex;
+  readonly getPaintSwatchBackground = getPaintSwatchBackground;
+  readonly isMetallicPaint = isMetallicPaint;
   private readonly router = inject(Router);
 
   selectedOverridePaintId = '';
@@ -56,25 +64,38 @@ export class PaintDetailModalComponent {
     if (!cp) {
       return [];
     }
-    const results: { id: string; name: string; hex: string; label: string }[] = [];
+    const paintById = this.catalog.paintById();
+    const results: {
+      id: string;
+      name: string;
+      hex: string;
+      swatchBg: string;
+      isMetallic: boolean;
+      label: string;
+    }[] = [];
 
     const proLinks = this.catalog.classicToToneProMap().get(cp.id) ?? [];
     for (const l of proLinks) {
+      const proP = paintById.get(l.tone_pro_paint_id);
       results.push({
         id: l.tone_pro_paint_id,
         name: l.tone_pro_paint_name,
-        hex: l.tone_pro_hex,
+        hex: proP ? getPaintRepresentativeHex(proP) : l.tone_pro_hex,
+        swatchBg: proP ? getPaintSwatchBackground(proP) : l.tone_pro_hex,
+        isMetallic: isMetallicPaint(proP),
         label: 'Citadel Tone Pro Equivalent',
       });
     }
 
     const classicLinks = this.catalog.toneProToClassicMap().get(cp.id) ?? [];
     for (const l of classicLinks) {
-      const classicP = this.catalog.paintById().get(l.classic_paint_id);
+      const classicP = paintById.get(l.classic_paint_id);
       results.push({
         id: l.classic_paint_id,
         name: l.classic_paint_name,
-        hex: classicP?.gradientStartHex ?? '#888888',
+        hex: getPaintRepresentativeHex(classicP),
+        swatchBg: getPaintSwatchBackground(classicP),
+        isMetallic: isMetallicPaint(classicP),
         label: `Citadel Classic (${l.classic_category})`,
       });
     }
@@ -132,6 +153,28 @@ export class PaintDetailModalComponent {
     }
     return this.catalog.modelsUsingPaintMap().get(id) ?? [];
   });
+
+  getThirdPartySwatchBg(id: string, fallbackHex: string): string {
+    const tp =
+      this.catalog.thirdPartyPaintById().get(id) ?? this.userState.customPaintById().get(id);
+    return tp ? getPaintSwatchBackground(tp, fallbackHex) : fallbackHex;
+  }
+
+  isThirdPartyMetallic(id: string, category?: string): boolean {
+    const tp =
+      this.catalog.thirdPartyPaintById().get(id) ?? this.userState.customPaintById().get(id);
+    return tp ? isMetallicPaint(tp) : isMetallicPaint({ category });
+  }
+
+  getCitadelMatchSwatchBg(id: string, fallbackHex: string): string {
+    const cp = this.catalog.paintById().get(id);
+    return cp ? getPaintSwatchBackground(cp, fallbackHex) : fallbackHex;
+  }
+
+  isCitadelMatchMetallic(id: string, category?: string): boolean {
+    const cp = this.catalog.paintById().get(id);
+    return cp ? isMetallicPaint(cp) : isMetallicPaint({ category });
+  }
 
   selectPaint(id: string): void {
     this.modalService.openPaint(id);

@@ -5,7 +5,7 @@ import {
   StagedReadinessResult,
   UserProject,
 } from '../models/catalog.models';
-import { getCitadelBrandLabel } from '../utils/catalog-filter.util';
+import { getCitadelBrandLabel, getPaintRepresentativeHex } from '../utils/catalog-filter.util';
 import { CatalogService } from './catalog.service';
 import { UserStateService } from './user-state.service';
 
@@ -118,7 +118,7 @@ export class InventoryMatchService {
           substitutePaintId: eqId,
           substituteName: citP.name,
           substituteBrand: getCitadelBrandLabel(citP.range),
-          substituteHex: citP.gradientStartHex,
+          substituteHex: getPaintRepresentativeHex(citP),
           matchType: 'custom_override',
         };
       }
@@ -154,7 +154,7 @@ export class InventoryMatchService {
           substitutePaintId: link.classic_paint_id,
           substituteName: link.classic_paint_name,
           substituteBrand: 'Citadel Classic',
-          substituteHex: cp?.gradientStartHex ?? '#888888',
+          substituteHex: getPaintRepresentativeHex(cp),
           matchType: 'classic_citadel',
         };
       }

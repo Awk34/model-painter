@@ -24,7 +24,8 @@
                 <span class="step-order-num">{{ st.stepOrder }}</span>
                 <span
                   class="paint-swatch"
-                  [style.background]="sp.hex || sp.gradientStartHex || '#888'"
+                  [class.metallic]="isMetallicPaint(sp)"
+                  [style.background]="getPaintSwatchBackground(sp)"
                 ></span>
                 <div class="step-paint-info">
                   <strong>{{ sp.name }}</strong>

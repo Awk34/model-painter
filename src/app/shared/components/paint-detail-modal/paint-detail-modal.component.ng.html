@@ -15,7 +15,8 @@
               } @else {
                 <div
                   class="paint-swatch large"
-                  [style.background]="cp.gradientStartHex"
+                  [class.metallic]="isMetallicPaint(cp)"
+                  [style.background]="getPaintSwatchBackground(cp)"
                 ></div>
               }
             </div>
@@ -27,14 +28,18 @@
                   <span class="badge badge-gold">Citadel Colour</span>
                 }
                 <span class="badge category-badge">{{ cp.category }}</span>
-                <span class="hex-pill">{{ cp.gradientStartHex }}</span>
+                <span class="hex-pill">{{ getPaintRepresentativeHex(cp) }}</span>
               </div>
               <h2 class="paint-title">{{ cp.name }}</h2>
             </div>
           } @else {
             @if (thirdPartyPaint(); as tp) {
               <div class="pot-preview">
-                <div class="paint-swatch large" [style.background]="tp.hex"></div>
+                <div
+                  class="paint-swatch large"
+                  [class.metallic]="isMetallicPaint(tp)"
+                  [style.background]="getPaintSwatchBackground(tp)"
+                ></div>
               </div>
               <div>
                 <div class="badge-row">
@@ -113,7 +118,11 @@
               @for (eq of officialCitadelEquivalents(); track eq.id) {
                 <div class="equiv-card studio-card">
                   <button class="equiv-main" (click)="selectPaint(eq.id)">
-                    <span class="paint-swatch" [style.background]="eq.hex"></span>
+                    <span
+                      class="paint-swatch"
+                      [class.metallic]="eq.isMetallic"
+                      [style.background]="eq.swatchBg"
+                    ></span>
                     <div class="equiv-info">
                       <span class="equiv-name">{{ eq.name }}</span>
                       <span class="equiv-meta">{{ eq.label }}</span>
@@ -150,7 +159,11 @@
                 @for (m of crossBrandMatches(); track m.thirdPartyPaintId) {
                   <div class="equiv-card studio-card">
                     <button class="equiv-main" (click)="selectPaint(m.thirdPartyPaintId)">
-                      <span class="paint-swatch" [style.background]="m.hex"></span>
+                      <span
+                        class="paint-swatch"
+                        [class.metallic]="isThirdPartyMetallic(m.thirdPartyPaintId, m.category)"
+                        [style.background]="getThirdPartySwatchBg(m.thirdPartyPaintId, m.hex)"
+                      ></span>
                       <div class="equiv-info">
                         <span class="equiv-name">{{ m.name }}</span>
                         <span class="equiv-meta">
@@ -207,7 +220,11 @@
               @for (cm of tp.citadelMatches; track cm.citadelPaintId) {
                 <div class="equiv-card studio-card">
                   <button class="equiv-main" (click)="selectPaint(cm.citadelPaintId)">
-                    <span class="paint-swatch" [style.background]="cm.citadelHex"></span>
+                    <span
+                      class="paint-swatch"
+                      [class.metallic]="isCitadelMatchMetallic(cm.citadelPaintId, cm.citadelCategory)"
+                      [style.background]="getCitadelMatchSwatchBg(cm.citadelPaintId, cm.citadelHex)"
+                    ></span>
                     <div class="equiv-info">
                       <span class="equiv-name">{{ cm.citadelPaintName }}</span>
                       <span class="equiv-meta">

@@ -234,7 +234,17 @@ def enrich_step_paint(raw_paint: dict | None, paints_by_id: dict[str, dict]) -> 
     pid = raw_paint.get("id")
     catalog_paint = paints_by_id.get(pid, {}) if pid else {}
     out = dict(raw_paint)
-    for field in ("name", "category", "range", "potStyle", "gradientStartHex", "imageUrl", "localImagePath"):
+    for field in (
+        "name",
+        "category",
+        "range",
+        "potStyle",
+        "gradientStartHex",
+        "gradientMiddleHex",
+        "gradientEndHex",
+        "imageUrl",
+        "localImagePath",
+    ):
         if not out.get(field) and catalog_paint.get(field):
             out[field] = catalog_paint[field]
     return out

@@ -67,6 +67,7 @@ export interface ThirdPartyPaint {
   code?: string;
   name: string;
   category: string;
+  potStyle?: string;
   hex: string;
   citadelMatches: ThirdPartyCitadelMatch[];
   isCustom?: boolean;
@@ -79,6 +80,7 @@ export interface CitadelThirdPartyMatchRef {
   code?: string;
   name: string;
   category: string;
+  potStyle?: string;
   hex: string;
   deltaE: number;
   matchQuality: 'exact' | 'close' | 'similar';
@@ -117,8 +119,11 @@ export interface ColorStageStep {
     name: string;
     category?: string;
     range?: string;
+    potStyle?: string;
     hex?: string;
     gradientStartHex?: string;
+    gradientMiddleHex?: string;
+    gradientEndHex?: string;
     imageUrl?: string;
     localImagePath?: string;
   };
@@ -228,7 +233,9 @@ export interface ModelPaintingStep {
     name: string;
     range?: string;
     category?: string;
+    potStyle?: string;
     gradientStartHex?: string;
+    gradientMiddleHex?: string;
     gradientEndHex?: string;
     imageUrl?: string;
     localImagePath?: string;

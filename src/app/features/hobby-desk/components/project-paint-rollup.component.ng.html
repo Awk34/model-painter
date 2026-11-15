@@ -98,7 +98,11 @@
               @for (p of missingPaintObjects(); track p.id) {
                 <div class="rollup-paint-card">
                   <button type="button" class="rp-main" (click)="paintModal.openPaint(p.id)">
-                    <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
+                    <span
+                      class="paint-swatch"
+                      [class.metallic]="isMetallicPaint(p)"
+                      [style.background]="getPaintSwatchBackground(p)"
+                    ></span>
                     <div class="rp-info">
                       <span class="rp-name">{{ p.name }}</span>
                       <span class="rp-meta">{{ p.category }}</span>
@@ -147,7 +151,11 @@
               @for (item of substitutedList(); track item.paint.id) {
                 <div class="rollup-paint-card">
                   <button type="button" class="rp-main" (click)="paintModal.openPaint(item.paint.id)">
-                    <span class="paint-swatch" [style.background]="item.paint.gradientStartHex"></span>
+                    <span
+                      class="paint-swatch"
+                      [class.metallic]="isMetallicPaint(item.paint)"
+                      [style.background]="getPaintSwatchBackground(item.paint)"
+                    ></span>
                     <div class="rp-info">
                       <span class="rp-name">{{ item.paint.name }}</span>
                       <span class="sub-note">
@@ -173,7 +181,11 @@
               @for (p of ownedDirectObjects(); track p.id) {
                 <div class="rollup-paint-card">
                   <button type="button" class="rp-main" (click)="paintModal.openPaint(p.id)">
-                    <span class="paint-swatch" [style.background]="p.gradientStartHex"></span>
+                    <span
+                      class="paint-swatch"
+                      [class.metallic]="isMetallicPaint(p)"
+                      [style.background]="getPaintSwatchBackground(p)"
+                    ></span>
                     <div class="rp-info">
                       <span class="rp-name">{{ p.name }}</span>
                       <span class="rp-meta">{{ p.category }}</span>

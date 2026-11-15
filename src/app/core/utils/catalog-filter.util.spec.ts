@@ -3,6 +3,9 @@ import {
   applyReadinessFilter,
   createEntityId,
   getCitadelBrandLabel,
+  getPaintRepresentativeHex,
+  getPaintSwatchBackground,
+  isMetallicPaint,
   matchesModelSearch,
 } from './catalog-filter.util';
 
@@ -97,6 +100,131 @@ describe('catalog-filter.util', () => {
       const idB = createEntityId('proj');
       expect(idA).toMatch(/^proj_\d+_[0-9a-f]{8}$/);
       expect(idA).not.toBe(idB);
+    });
+  });
+
+  describe('paint color & metallic swatch helpers', () => {
+    const retributorArmour = {
+      potStyle: 'metallic',
+      category: 'base',
+      gradientStartHex: '#FFFFFF',
+      gradientMiddleHex: '#EBB854',
+      gradientEndHex: '#89571D',
+    };
+
+    const leadbelcher = {
+      potStyle: 'metallic',
+      category: 'base',
+      gradientStartHex: '#F0F0F0',
+      gradientMiddleHex: '#8A8A8A',
+      gradientEndHex: '#151E24',
+    };
+
+    const canoptekAlloy = {
+      potStyle: 'metallic',
+      category: 'layer',
+      gradientStartHex: '#F5EDE3',
+      gradientMiddleHex: '#FBF8F8',
+      gradientEndHex: '#B09791',
+    };
+
+    const thirdPartyMetallic = {
+      potStyle: 'metallic',
+      category: 'base',
+      hex: '#C4902C',
+    };
+
+    const customMetallicByCategory = {
+      category: 'Metallic',
+      hex: '#6D7378',
+    };
+
+    const nulnOil = {
+      potStyle: 'shade',
+      category: 'shade',
+      gradientStartHex: '#DFD9D6',
+      gradientMiddleHex: '#5D5A58',
+      gradientEndHex: '#101010',
+    };
+
+    const reiklandFleshshade = {
+      potStyle: 'shade',
+      category: 'shade',
+      gradientStartHex: '#FFD5B7',
+      gradientMiddleHex: '#AC491D',
+      gradientEndHex: '#311908',
+    };
+
+    const baalRed = {
+      potStyle: 'contrast',
+      category: 'contrast',
+      gradientStartHex: '#C01823',
+      gradientEndHex: '#D51C29',
+    };
+
+    const abaddonBlack = {
+      potStyle: 'flat',
+      category: 'base',
+      gradientStartHex: '#000000',
+    };
+
+    const mephistonRed = {
+      potStyle: 'flat',
+      category: 'base',
+      gradientStartHex: '#960C09',
+    };
+
+    it('detects metallic paints by potStyle or category', () => {
+      expect(isMetallicPaint(retributorArmour)).toBeTrue();
+      expect(isMetallicPaint(thirdPartyMetallic)).toBeTrue();
+      expect(isMetallicPaint(customMetallicByCategory)).toBeTrue();
+      expect(isMetallicPaint(nulnOil)).toBeFalse();
+      expect(isMetallicPaint(abaddonBlack)).toBeFalse();
+      expect(isMetallicPaint(null)).toBeFalse();
+    });
+
+    it('returns representative body hexes rather than white highlights for metallics and shades', () => {
+      expect(getPaintRepresentativeHex(retributorArmour)).toBe('#EBB854');
+      expect(getPaintRepresentativeHex(leadbelcher)).toBe('#8A8A8A');
+      expect(getPaintRepresentativeHex(canoptekAlloy)).toBe('#B09791');
+      expect(getPaintRepresentativeHex(thirdPartyMetallic)).toBe('#C4902C');
+      expect(getPaintRepresentativeHex(nulnOil)).toBe('#5D5A58');
+      expect(getPaintRepresentativeHex(reiklandFleshshade)).toBe('#AC491D');
+      expect(getPaintRepresentativeHex(baalRed)).toBe('#C01823');
+      expect(getPaintRepresentativeHex(abaddonBlack)).toBe('#000000');
+      expect(getPaintRepresentativeHex(mephistonRed)).toBe('#960C09');
+    });
+
+    it('builds metallic sheen gradients for Citadel and 3rd-party metallic paints', () => {
+      expect(getPaintSwatchBackground(retributorArmour)).toBe(
+        'linear-gradient(135deg, #EBB854 0%, #FFFFFF 26%, #EBB854 50%, #89571D 86%, #EBB854 100%)'
+      );
+      expect(getPaintSwatchBackground(leadbelcher)).toBe(
+        'linear-gradient(135deg, #8A8A8A 0%, #F0F0F0 26%, #8A8A8A 50%, #151E24 86%, #8A8A8A 100%)'
+      );
+      expect(getPaintSwatchBackground(canoptekAlloy)).toContain('#B09791 0%, #FBF8F8 26%, #B09791 50%');
+
+      const tpBg = getPaintSwatchBackground(thirdPartyMetallic);
+      expect(tpBg).toContain('linear-gradient(135deg, #C4902C 0%');
+      expect(tpBg).toContain('#C4902C 50%');
+      expect(tpBg).not.toBe('#C4902C');
+
+      const customBg = getPaintSwatchBackground(customMetallicByCategory);
+      expect(customBg).toContain('linear-gradient(135deg, #6D7378 0%');
+    });
+
+    it('builds multi-stop gradients for shade/contrast paints and solid hexes for flat paints', () => {
+      expect(getPaintSwatchBackground(nulnOil)).toBe(
+        'linear-gradient(135deg, #DFD9D6 0%, #5D5A58 48%, #101010 100%)'
+      );
+      expect(getPaintSwatchBackground(reiklandFleshshade)).toBe(
+        'linear-gradient(135deg, #FFD5B7 0%, #AC491D 48%, #311908 100%)'
+      );
+      expect(getPaintSwatchBackground(baalRed)).toBe(
+        'linear-gradient(135deg, #C01823 0%, #D51C29 100%)'
+      );
+      expect(getPaintSwatchBackground(abaddonBlack)).toBe('#000000');
+      expect(getPaintSwatchBackground(mephistonRed)).toBe('#960C09');
     });
   });
 });

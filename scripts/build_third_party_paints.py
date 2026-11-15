@@ -216,10 +216,31 @@ def is_finish_compatible(citadel_paint: dict, tp_paint: dict) -> bool:
     return True
 
 
+def _hex_luminance(hex_str: str | None) -> float:
+    if not hex_str:
+        return -1.0
+    h = hex_str.lstrip("#")
+    if len(h) != 6:
+        return -1.0
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def get_representative_hex(cp: dict) -> str:
+    start = cp.get("gradientStartHex")
+    mid = cp.get("gradientMiddleHex")
+    end = cp.get("gradientEndHex")
+    if cp.get("potStyle") == "metallic" and mid:
+        if start and _hex_luminance(mid) > _hex_luminance(start):
+            return end or start or "#808080"
+        return mid
+    return start or cp.get("hex") or "#808080"
+
+
 def main():
     citadel_paints = json.loads(RAW_PAINTS_JSON.read_text(encoding="utf-8"))
     for cp in citadel_paints:
-        c_hex = cp.get("gradientStartHex") or cp.get("hex") or "#808080"
+        c_hex = get_representative_hex(cp)
         cp["_hex"] = c_hex
         cp["_lab"] = hex_to_lab(c_hex)
 

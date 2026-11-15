@@ -83,7 +83,11 @@
                 loading="lazy"
               />
             } @else {
-              <span class="paint-swatch" [style.background]="p.hex"></span>
+              <span
+                class="paint-swatch"
+                [class.metallic]="p.isMetallic"
+                [style.background]="p.swatchBg"
+              ></span>
             }
 
             <div class="paint-card-info">

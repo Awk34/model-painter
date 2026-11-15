@@ -50,6 +50,16 @@ describe('CatalogService', () => {
                 imageUrl: 'https://example.com/gold.png',
                 localImagePath: 'assets/images/paints/gold.png',
               },
+              {
+                id: 'paint-leadbelcher',
+                name: 'Leadbelcher',
+                range: 'warhammer_colour',
+                category: 'base',
+                potStyle: 'metallic',
+                gradientStartHex: '#F0F0F0',
+                gradientMiddleHex: '#8A8A8A',
+                gradientEndHex: '#151E24',
+              },
             ],
             compatibility: [],
           }),
@@ -304,10 +314,69 @@ describe('CatalogService', () => {
     const headers = apiCall?.[1]?.headers as Record<string, string> | undefined;
     expect(headers?.['Authorization']).toBe('Bearer test-bearer-token');
   });
+
+  it('preserves metallic potStyle, gradientMiddleHex, and gradientEndHex on enriched recipe and color steps', async () => {
+    routeResponses.set('/data/recipes/model-dante.json', () =>
+      jsonResponse({
+        id: 'model-dante',
+        name: 'Commander Dante',
+        range: 'warhammer_colour',
+        colourPoints: [],
+        paintingAreas: [
+          {
+            id: 'area-gunmetal',
+            name: 'Gunmetal',
+            paintingSteps: [
+              {
+                id: 'step-leadbelcher',
+                stepNumber: 1,
+                paintingStage: 'base',
+                paint: { id: 'paint-leadbelcher', name: 'Leadbelcher' },
+              },
+            ],
+          },
+        ],
+      })
+    );
+    routeResponses.set('/data/colours/color-gold.json', () =>
+      jsonResponse({
+        id: 'color-gold',
+        name: 'Gunmetal',
+        hex: '#455051',
+        baseFinish: {
+          stages: [
+            {
+              id: 'cs-leadbelcher',
+              technique: 'Base',
+              paint: { id: 'paint-leadbelcher', name: 'Leadbelcher' },
+            },
+          ],
+        },
+      })
+    );
+
+    const service = TestBed.inject(CatalogService);
+    await service.initializeCatalog(true);
+    await service.clearEntityCaches();
+
+    const recipe = await service.getModelRecipe('model-dante');
+    const stepPaint = recipe!.paintingAreas[0].paintingSteps[0].paint;
+    expect(stepPaint?.potStyle).toBe('metallic');
+    expect(stepPaint?.gradientStartHex).toBe('#F0F0F0');
+    expect(stepPaint?.gradientMiddleHex).toBe('#8A8A8A');
+    expect(stepPaint?.gradientEndHex).toBe('#151E24');
+
+    const color = await service.getColorDetails('color-gold');
+    const colorPaint = color!.baseFinish?.stages[0].paint;
+    expect(colorPaint?.potStyle).toBe('metallic');
+    expect(colorPaint?.hex).toBe('#8A8A8A');
+    expect(colorPaint?.gradientMiddleHex).toBe('#8A8A8A');
+    expect(colorPaint?.gradientEndHex).toBe('#151E24');
+  });
 });
 
 describe('ModelPaintingStepsComponent stage filtering', () => {
-  it('filters both normalized and raw paintingStage values', () => {
+  function configureStepsTestingModule() {
     TestBed.configureTestingModule({
       imports: [ModelPaintingStepsComponent],
       providers: [
@@ -333,6 +402,10 @@ describe('ModelPaintingStepsComponent stage filtering', () => {
         },
       ],
     });
+  }
+
+  it('filters both normalized and raw paintingStage values', () => {
+    configureStepsTestingModule();
 
     const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
     const comp = fixture.componentInstance;
@@ -353,5 +426,78 @@ describe('ModelPaintingStepsComponent stage filtering', () => {
 
     comp.stageFilter.set('all');
     expect(comp.filterSteps(steps).map((s) => s.id)).toEqual(['s1', 's2', 's3']);
+  });
+
+  it('renders metallic gradient background and .metallic class on metallic step swatches', () => {
+    configureStepsTestingModule();
+
+    const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
+    fixture.componentRef.setInput('paintingAreas', [
+      {
+        id: 'area-base',
+        areaOrder: 1,
+        name: 'Base Finish',
+        paintingSteps: [
+          {
+            id: 'step-gold',
+            stepOrder: 1,
+            stepNumber: 6,
+            paintingStage: 'Base Finish',
+            techniqueName: 'Basecoat',
+            text: '• Gold areas',
+            paint: {
+              id: 'paint-retributor',
+              name: 'Retributor Armour',
+              category: 'base',
+              potStyle: 'metallic',
+              gradientStartHex: '#FFFFFF',
+              gradientMiddleHex: '#EBB854',
+              gradientEndHex: '#89571D',
+            },
+          },
+          {
+            id: 'step-black',
+            stepOrder: 2,
+            stepNumber: 7,
+            paintingStage: 'Base Finish',
+            techniqueName: 'Basecoat',
+            text: '• Black areas',
+            paint: {
+              id: 'paint-abaddon',
+              name: 'Abaddon Black',
+              category: 'base',
+              potStyle: 'flat',
+              gradientStartHex: '#000000',
+            },
+          },
+        ],
+      },
+    ]);
+    fixture.componentRef.setInput('readiness', {
+      totalRequired: 2,
+      ownedDirectCount: 0,
+      substitutedCount: 0,
+      missingCount: 2,
+      matchPercent: 0,
+      ownedDirectIds: [],
+      substitutedByPaintId: {},
+      missingPaintIds: ['paint-retributor', 'paint-abaddon'],
+    });
+    fixture.detectChanges();
+
+    const swatches = Array.from(
+      fixture.nativeElement.querySelectorAll('.paint-swatch')
+    ) as HTMLElement[];
+    expect(swatches.length).toBe(2);
+
+    const goldSwatch = swatches[0];
+    expect(goldSwatch.classList.contains('metallic')).toBeTrue();
+    const goldBg = goldSwatch.style.background || goldSwatch.style.backgroundImage;
+    expect(goldBg).toContain('linear-gradient');
+    expect(goldBg).toContain('235, 184, 84'); // #EBB854 in rgb
+
+    const blackSwatch = swatches[1];
+    expect(blackSwatch.classList.contains('metallic')).toBeFalse();
+    expect(blackSwatch.style.background).toContain('rgb(0, 0, 0)');
   });
 });

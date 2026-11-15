@@ -101,7 +101,8 @@
                   >
                     <span
                       class="paint-swatch"
-                      [style.background]="sp.gradientStartHex || '#888'"
+                      [class.metallic]="isMetallicPaint(sp)"
+                      [style.background]="getPaintSwatchBackground(sp)"
                     ></span>
                     <div class="sp-info">
                       <strong>{{ sp.name }}</strong>

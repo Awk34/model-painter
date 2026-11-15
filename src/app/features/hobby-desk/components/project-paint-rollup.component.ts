@@ -3,6 +3,10 @@ import { FinishStageKey, StagedReadinessResult } from '../../../core/models/cata
 import { CatalogService } from '../../../core/services/catalog.service';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
+import {
+  getPaintSwatchBackground,
+  isMetallicPaint,
+} from '../../../core/utils/catalog-filter.util';
 
 export type ProjectRollupStage = FinishStageKey | 'all';
 
@@ -16,6 +20,8 @@ export class ProjectPaintRollupComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
   readonly paintModal = inject(PaintModalService);
+  readonly getPaintSwatchBackground = getPaintSwatchBackground;
+  readonly isMetallicPaint = isMetallicPaint;
 
   readonly staged = input.required<StagedReadinessResult>();
   readonly expanded = model<boolean>(true);

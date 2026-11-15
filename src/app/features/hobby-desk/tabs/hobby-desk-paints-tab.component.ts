@@ -4,7 +4,12 @@ import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
-import { getCitadelBrandLabel } from '../../../core/utils/catalog-filter.util';
+import {
+  getCitadelBrandLabel,
+  getPaintRepresentativeHex,
+  getPaintSwatchBackground,
+  isMetallicPaint,
+} from '../../../core/utils/catalog-filter.util';
 import { CollectionSubMode } from './hobby-desk-models-tab.component';
 
 interface UnifiedPaintRow {
@@ -14,6 +19,8 @@ interface UnifiedPaintRow {
   rangeLabel: string;
   category: string;
   hex: string;
+  swatchBg: string;
+  isMetallic: boolean;
   localImagePath?: string;
   imageUrl?: string;
   isCitadel: boolean;
@@ -59,7 +66,9 @@ export class HobbyDeskPaintsTabComponent {
         brand: getCitadelBrandLabel(cp.range),
         rangeLabel: getCitadelBrandLabel(cp.range, 'Citadel Colour'),
         category: cp.category,
-        hex: cp.gradientStartHex,
+        hex: getPaintRepresentativeHex(cp),
+        swatchBg: getPaintSwatchBackground(cp),
+        isMetallic: isMetallicPaint(cp),
         localImagePath: cp.localImagePath,
         imageUrl: cp.imageUrl,
         isCitadel: true,
@@ -74,6 +83,8 @@ export class HobbyDeskPaintsTabComponent {
         rangeLabel: `${tp.brand} • ${tp.range}`,
         category: tp.category,
         hex: tp.hex,
+        swatchBg: getPaintSwatchBackground(tp),
+        isMetallic: isMetallicPaint(tp),
         isCitadel: false,
         isTonePro: false,
         code: tp.code,
@@ -136,7 +147,7 @@ export class HobbyDeskPaintsTabComponent {
           citadelPaintName: cp.name,
           citadelRange: cp.range,
           citadelCategory: cp.category,
-          citadelHex: cp.gradientStartHex,
+          citadelHex: getPaintRepresentativeHex(cp),
           deltaE: 0,
           matchQuality: 'exact' as const,
         });

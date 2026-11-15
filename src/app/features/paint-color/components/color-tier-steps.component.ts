@@ -6,6 +6,10 @@ import {
 } from '../../../core/models/catalog.models';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
+import {
+  getPaintSwatchBackground,
+  isMetallicPaint,
+} from '../../../core/utils/catalog-filter.util';
 
 export interface ColorTierBlock {
   key: FinishStageKey;
@@ -22,6 +26,8 @@ export interface ColorTierBlock {
 export class ColorTierStepsComponent {
   readonly userState = inject(UserStateService);
   readonly paintModal = inject(PaintModalService);
+  readonly getPaintSwatchBackground = getPaintSwatchBackground;
+  readonly isMetallicPaint = isMetallicPaint;
 
   readonly tierBlocks = input.required<ColorTierBlock[]>();
   readonly readiness = input.required<InventoryReadinessResult>();

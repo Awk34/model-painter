@@ -3,7 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
-import { getCitadelBrandLabel } from '../../../core/utils/catalog-filter.util';
+import {
+  getCitadelBrandLabel,
+  getPaintRepresentativeHex,
+  getPaintSwatchBackground,
+  isMetallicPaint,
+} from '../../../core/utils/catalog-filter.util';
 
 @Component({
   selector: 'app-hobby-desk-converter-tab',
@@ -17,6 +22,8 @@ export class HobbyDeskConverterTabComponent {
   readonly userState = inject(UserStateService);
   readonly paintModal = inject(PaintModalService);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
+  readonly getPaintSwatchBackground = getPaintSwatchBackground;
+  readonly isMetallicPaint = isMetallicPaint;
 
   readonly converterMode = signal<'cross-brand' | 'tone-pro'>('cross-brand');
   readonly converterSearch = signal('');
@@ -79,7 +86,9 @@ export class HobbyDeskConverterTabComponent {
       const classicPaint = paintById.get(classicId);
       const classicName = links[0]?.classic_paint_name ?? classicPaint?.name ?? classicId;
       const classicCategory = links[0]?.classic_category ?? classicPaint?.category ?? '';
-      const classicHex = classicPaint?.gradientStartHex ?? '#888888';
+      const classicHex = getPaintRepresentativeHex(classicPaint);
+      const classicSwatchBg = getPaintSwatchBackground(classicPaint);
+      const classicIsMetallic = isMetallicPaint(classicPaint);
 
       if (q) {
         const matchClassic = classicName.toLowerCase().includes(q);
@@ -94,10 +103,31 @@ export class HobbyDeskConverterTabComponent {
         classicName,
         classicCategory,
         classicHex,
+        classicSwatchBg,
+        classicIsMetallic,
         toneProList: links,
       });
     }
     return groups;
   });
+
+  getThirdPartySwatchBg(id: string, fallbackHex: string): string {
+    const tp = this.catalog.thirdPartyPaintById().get(id);
+    return tp ? getPaintSwatchBackground(tp, fallbackHex) : fallbackHex;
+  }
+
+  isThirdPartyMetallic(id: string, category?: string): boolean {
+    const tp = this.catalog.thirdPartyPaintById().get(id);
+    return tp ? isMetallicPaint(tp) : isMetallicPaint({ category });
+  }
+
+  getToneProSwatchBg(id: string, fallbackHex: string): string {
+    const p = this.catalog.paintById().get(id);
+    return p ? getPaintSwatchBackground(p, fallbackHex) : fallbackHex;
+  }
+
+  isToneProMetallic(id: string): boolean {
+    return isMetallicPaint(this.catalog.paintById().get(id));
+  }
 }
 

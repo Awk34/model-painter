@@ -6,7 +6,12 @@ import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { UserStateService } from '../../core/services/user-state.service';
-import { getCitadelBrandLabel, matchesModelSearch } from '../../core/utils/catalog-filter.util';
+import {
+  getCitadelBrandLabel,
+  getPaintSwatchBackground,
+  isMetallicPaint,
+  matchesModelSearch,
+} from '../../core/utils/catalog-filter.util';
 
 @Component({
   selector: 'app-search',
@@ -22,6 +27,8 @@ export class SearchComponent {
   readonly img = inject(ImageService);
   readonly router = inject(Router);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
+  readonly getPaintSwatchBackground = getPaintSwatchBackground;
+  readonly isMetallicPaint = isMetallicPaint;
 
   readonly query = signal<string>('');
   readonly tab = signal<'all' | 'models' | 'colors' | 'paints'>('all');

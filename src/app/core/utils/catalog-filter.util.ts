@@ -61,3 +61,158 @@ export function createEntityId(prefix: string): string {
   const randomSuffix = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
   return `${prefix}_${Date.now()}_${randomSuffix}`;
 }
+
+export interface PaintSwatchLike {
+  potStyle?: string | null;
+  category?: string | null;
+  hex?: string | null;
+  gradientStartHex?: string | null;
+  gradientMiddleHex?: string | null;
+  gradientEndHex?: string | null;
+}
+
+function parseHexRgb(hex: string | null | undefined): [number, number, number] | null {
+  if (!hex) {
+    return null;
+  }
+  const clean = hex.trim().replace(/^#/, '');
+  if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+    return [
+      parseInt(clean[0] + clean[0], 16),
+      parseInt(clean[1] + clean[1], 16),
+      parseInt(clean[2] + clean[2], 16),
+    ];
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+    return [
+      parseInt(clean.slice(0, 2), 16),
+      parseInt(clean.slice(2, 4), 16),
+      parseInt(clean.slice(4, 6), 16),
+    ];
+  }
+  return null;
+}
+
+function formatHexRgb(r: number, g: number, b: number): string {
+  const clampByte = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  const toHex = (v: number) => clampByte(v).toString(16).padStart(2, '0').toUpperCase();
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function getHexLuminance(hex: string | null | undefined): number {
+  const rgb = parseHexRgb(hex);
+  if (!rgb) {
+    return -1;
+  }
+  return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+}
+
+function mixHex(hexA: string, hexB: string, weightB: number): string {
+  const rgbA = parseHexRgb(hexA);
+  const rgbB = parseHexRgb(hexB);
+  if (!rgbA || !rgbB) {
+    return hexA;
+  }
+  const t = Math.max(0, Math.min(1, weightB));
+  return formatHexRgb(
+    rgbA[0] * (1 - t) + rgbB[0] * t,
+    rgbA[1] * (1 - t) + rgbB[1] * t,
+    rgbA[2] * (1 - t) + rgbB[2] * t
+  );
+}
+
+/**
+ * Returns true when a paint uses a metallic finish.
+ */
+export function isMetallicPaint(paint: PaintSwatchLike | null | undefined): boolean {
+  if (!paint) {
+    return false;
+  }
+  return (
+    paint.potStyle?.toLowerCase() === 'metallic' ||
+    paint.category?.toLowerCase() === 'metallic'
+  );
+}
+
+/**
+ * Returns the single best representative hex color for a paint.
+ * For Citadel metallic and shade paints, `gradientStartHex` stores the specular highlight
+ * or pale edge while `gradientMiddleHex` holds the true body tone.
+ */
+export function getPaintRepresentativeHex(
+  paint: PaintSwatchLike | null | undefined,
+  fallback = '#888888'
+): string {
+  if (!paint) {
+    return fallback;
+  }
+  const start = paint.gradientStartHex || undefined;
+  const mid = paint.gradientMiddleHex || undefined;
+  const end = paint.gradientEndHex || undefined;
+
+  if (isMetallicPaint(paint)) {
+    if (mid) {
+      if (start && getHexLuminance(mid) > getHexLuminance(start)) {
+        return end || start || fallback;
+      }
+      return mid;
+    }
+    return paint.hex || end || start || fallback;
+  }
+
+  if (paint.potStyle?.toLowerCase() === 'shade' && mid) {
+    return mid;
+  }
+
+  return start || paint.hex || fallback;
+}
+
+/**
+ * Builds a CSS `background` value for paint swatches.
+ * Metallic paints render a multi-stop diagonal specular sheen using their true midtone and shadow;
+ * shade, contrast, gloss, and texture paints render their multi-stop gradients.
+ */
+export function getPaintSwatchBackground(
+  paint: PaintSwatchLike | null | undefined,
+  fallback = '#888888'
+): string {
+  if (!paint) {
+    return fallback;
+  }
+  const start = paint.gradientStartHex || undefined;
+  const mid = paint.gradientMiddleHex || undefined;
+  const end = paint.gradientEndHex || undefined;
+
+  if (isMetallicPaint(paint)) {
+    let highlight: string;
+    let body: string;
+    let shadow: string;
+
+    if (start && mid && end) {
+      if (getHexLuminance(mid) > getHexLuminance(start)) {
+        highlight = mid;
+        body = end;
+        shadow = mixHex(end, '#000000', 0.35);
+      } else {
+        highlight = start;
+        body = mid;
+        shadow = end;
+      }
+    } else {
+      body = getPaintRepresentativeHex(paint, fallback);
+      highlight = start && start !== body ? start : mixHex(body, '#FFFFFF', 0.62);
+      shadow = end && end !== body ? end : mixHex(body, '#000000', 0.45);
+    }
+
+    return `linear-gradient(135deg, ${body} 0%, ${highlight} 26%, ${body} 50%, ${shadow} 86%, ${body} 100%)`;
+  }
+
+  if (start && mid && end) {
+    return `linear-gradient(135deg, ${start} 0%, ${mid} 48%, ${end} 100%)`;
+  }
+  if (start && end) {
+    return `linear-gradient(135deg, ${start} 0%, ${end} 100%)`;
+  }
+
+  return start || paint.hex || fallback;
+}

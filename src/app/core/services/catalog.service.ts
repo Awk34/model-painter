@@ -20,6 +20,7 @@ import {
 } from '../models/catalog.models';
 import { getFirebaseHandles } from './firebase.config';
 import { createIdbStoreClient } from '../utils/idb.util';
+import { getPaintRepresentativeHex } from '../utils/catalog-filter.util';
 import { doc, getDoc } from 'firebase/firestore';
 
 const IDB_NAME = 'whc_catalog_cache_v1';
@@ -654,7 +655,10 @@ export class CatalogService {
             name: p.name,
             range: p.range,
             category: p.category,
+            potStyle: p.potStyle,
             gradientStartHex: p.gradientStartHex,
+            gradientMiddleHex: p.gradientMiddleHex,
+            gradientEndHex: p.gradientEndHex,
             imageUrl: p.imageUrl,
             localImagePath: p.localImagePath,
           },
@@ -768,14 +772,20 @@ export class CatalogService {
       return undefined;
     }
     const catalogPaint = stepPaint.id ? this.paintById().get(stepPaint.id) : undefined;
+    const potStyle = stepPaint.potStyle ?? catalogPaint?.potStyle;
     const gradientStartHex = stepPaint.gradientStartHex ?? catalogPaint?.gradientStartHex;
+    const gradientMiddleHex = stepPaint.gradientMiddleHex ?? catalogPaint?.gradientMiddleHex;
+    const gradientEndHex = stepPaint.gradientEndHex ?? catalogPaint?.gradientEndHex;
     return {
       ...stepPaint,
       id: stepPaint.id ?? catalogPaint?.id ?? '',
       name: stepPaint.name ?? catalogPaint?.name ?? '',
       category: stepPaint.category ?? catalogPaint?.category,
       range: stepPaint.range ?? catalogPaint?.range,
+      potStyle,
       gradientStartHex,
+      gradientMiddleHex,
+      gradientEndHex,
       imageUrl: stepPaint.imageUrl ?? catalogPaint?.imageUrl,
       localImagePath: stepPaint.localImagePath ?? catalogPaint?.localImagePath,
     };
@@ -801,7 +811,7 @@ export class CatalogService {
           paint: enriched
             ? {
                 ...enriched,
-                hex: step.paint?.hex ?? enriched.gradientStartHex,
+                hex: step.paint?.hex ?? getPaintRepresentativeHex(enriched),
               }
             : undefined,
         };
@@ -856,8 +866,11 @@ export class CatalogService {
             name: p.name,
             category: p.category,
             range: p.range,
-            hex: p.gradientStartHex,
+            potStyle: p.potStyle,
+            hex: getPaintRepresentativeHex(p),
             gradientStartHex: p.gradientStartHex,
+            gradientMiddleHex: p.gradientMiddleHex,
+            gradientEndHex: p.gradientEndHex,
             imageUrl: p.imageUrl,
             localImagePath: p.localImagePath,
           },
