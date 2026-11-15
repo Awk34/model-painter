@@ -53,7 +53,7 @@
   max-height: 440px;
   object-fit: contain;
 }
-.colour-pin {
+.color-pin {
   position: absolute;
   width: 24px;
   height: 24px;
@@ -64,8 +64,8 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   z-index: 5;
 }
-.colour-pin:hover,
-.colour-pin.active {
+.color-pin:hover,
+.color-pin.active {
   transform: translate(-50%, -50%) scale(1.35);
   border-color: var(--gold-bright);
   box-shadow: 0 0 0 4px rgba(237, 179, 4, 0.45);
@@ -219,13 +219,13 @@
 .progress-fill.complete {
   background: var(--status-owned);
 }
-.colours-on-model {
+.colors-on-model {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 4px;
 }
-.colours-on-model h3 {
+.colors-on-model h3 {
   font-size: 1.1rem;
 }
 .hint {

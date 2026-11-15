@@ -84,13 +84,13 @@ export interface CitadelThirdPartyMatchRef {
   matchQuality: 'exact' | 'close' | 'similar';
 }
 
-export interface ColourSummary {
+export interface ColorSummary {
   id: string;
   name: string;
   hex: string;
   range: string;
   guideType: 'miniature' | 'basing' | string;
-  colourGroups: string[];
+  colorGroups: string[];
   imageUrl?: string;
   localImagePath?: string;
   headerImage?: string;
@@ -108,7 +108,7 @@ export interface ColourSummary {
   updatedAt?: string;
 }
 
-export interface ColourStageStep {
+export interface ColorStageStep {
   id: string;
   stepOrder: number;
   technique?: string;
@@ -124,37 +124,37 @@ export interface ColourStageStep {
   };
 }
 
-export interface ColourFinishTier {
+export interface ColorFinishTier {
   backpackImage?: string;
   localBackpackImagePath?: string;
-  stages: ColourStageStep[];
+  stages: ColorStageStep[];
 }
 
-export interface ColourDetails {
+export interface ColorDetails {
   id: string;
   name: string;
   hex: string;
   rgb?: string;
   range: string;
   guideType: 'miniature' | 'basing' | string;
-  colourGroups: string[];
+  colorGroups: string[];
   imageUrl?: string;
   localImagePath?: string;
   headerImage?: string;
   localHeaderImagePath?: string;
   galleryImages?: string[];
   localGalleryImagePaths?: string[];
-  baseFinish?: ColourFinishTier;
-  detailFinish?: ColourFinishTier;
-  artificerFinish?: ColourFinishTier;
+  baseFinish?: ColorFinishTier;
+  detailFinish?: ColorFinishTier;
+  artificerFinish?: ColorFinishTier;
   updatedAt?: string;
 }
 
-export interface ColourGroup {
+export interface ColorGroup {
   id: string;
   name: string;
   hex?: string;
-  colourCount?: number;
+  colorCount?: number;
 }
 
 export interface FactionNode {
@@ -187,7 +187,7 @@ export interface ModelSummary {
   gameNames: string[];
   factionIds: string[];
   factionNames: string[];
-  colourIds: string[];
+  colorIds: string[];
   requiredPaintIds: string[];
   allPaintIds?: string[];
   paintsByStage?: {
@@ -198,10 +198,10 @@ export interface ModelSummary {
   updatedAt?: string;
 }
 
-export interface ModelColourPoint {
+export interface ModelColorPoint {
   id: string;
   name: string;
-  colourId: string;
+  colorId: string;
   hex: string;
   point: {
     x: number;
@@ -260,7 +260,7 @@ export interface ModelRecipe {
   }[];
   images: string[];
   localImagePaths: string[];
-  colourPoints: ModelColourPoint[];
+  colorPoints: ModelColorPoint[];
   paintingAreas: ModelPaintingArea[];
   updatedAt?: string;
 }
@@ -280,7 +280,7 @@ export interface CatalogManifest {
   counts?: {
     paints: number;
     thirdPartyPaints: number;
-    colours: number;
+    colors: number;
     games: number;
     models: number;
   };
@@ -309,7 +309,7 @@ export interface UserProject {
   createdAt: string;
   updatedAt: string;
   recipeIds: string[];
-  colourIds: string[];
+  colorIds: string[];
   notes: UserProjectNote[];
 }
 

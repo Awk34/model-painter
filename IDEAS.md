@@ -9,7 +9,7 @@ Allow users to upload and share their own completed or work-in-progress miniatur
 - **Kitbashing & Conversions (Other Kits Used):** Link other miniature kits from the model catalog (`4,531` models) or custom bitz sources that were combined to kitbash or convert the model, with notes on which parts came from which kit.
 - **Tools, Brushes & Hobby Supplies Used:** Record which brushes, airbrushes, primers, basing materials, glues, magnifiers, or hobby tools were used to assemble and paint the model.
 - **Integration with Inventory & Projects:**
-  - View user builds directly on a model's detail page (`ModelDetailComponent`) alongside the official Citadel recipe.
+  - View user builds directly on a model's detail page (`ModelDetailComponent`) alongside the catalog recipe.
   - Check **"Can I Paint This Build?"** readiness against the viewer's own paint & model inventory.
   - Clone a community build's paint recipe into a personal Hobby Desk project.
 

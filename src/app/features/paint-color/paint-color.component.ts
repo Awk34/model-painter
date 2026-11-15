@@ -7,13 +7,13 @@ import { InventoryMatchService } from '../../core/services/inventory-match.servi
 import { ImageService } from '../../core/services/image.service';
 
 @Component({
-  selector: 'app-paint-colour',
+  selector: 'app-paint-color',
   imports: [CommonModule, FormsModule, RouterModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './paint-colour.component.ng.html',
-  styleUrl: './paint-colour.component.css',
+  templateUrl: './paint-color.component.ng.html',
+  styleUrl: './paint-color.component.css',
 })
-export class PaintColourComponent {
+export class PaintColorComponent {
   readonly catalog = inject(CatalogService);
   readonly readinessService = inject(InventoryMatchService);
   readonly img = inject(ImageService);
@@ -26,7 +26,7 @@ export class PaintColourComponent {
   readonly targetStage = signal<'base' | 'detail' | 'artificer'>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing1' | 'sortReady'>('all');
 
-  readonly filteredColours = computed(() => {
+  readonly filteredColors = computed(() => {
     const grp = this.selectedGroup();
     const basing = this.onlyBasing();
     const q = this.searchQuery().trim().toLowerCase();
@@ -34,28 +34,28 @@ export class PaintColourComponent {
     const tStage = this.targetStage();
     const rFilter = this.readinessFilter();
 
-    const matches = this.catalog.colours().filter((c) => {
+    const matches = this.catalog.colors().filter((c) => {
       if (basing && c.guideType !== 'basing') return false;
-      if (grp && !c.colourGroups.some((g) => g.toLowerCase() === grp.toLowerCase())) {
+      if (grp && !c.colorGroups.some((g) => g.toLowerCase() === grp.toLowerCase())) {
         return false;
       }
       if (range !== 'all' && c.range !== range) return false;
       if (q) {
-        const hay = `${c.name} ${c.colourGroups.join(' ')}`.toLowerCase();
+        const hay = `${c.name} ${c.colorGroups.join(' ')}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
 
-    const evaluated = matches.map((colour) => {
+    const evaluated = matches.map((color) => {
       const staged = this.readinessService.evaluateStagedReadiness({
-        base: colour.basePaintIds,
-        detail: colour.detailPaintIds,
-        artificer: colour.artificerPaintIds,
-        all: colour.requiredPaintIds,
+        base: color.basePaintIds,
+        detail: color.detailPaintIds,
+        artificer: color.artificerPaintIds,
+        all: color.requiredPaintIds,
       });
       return {
-        colour,
+        color,
         staged,
         readiness: staged[tStage],
       };
@@ -86,7 +86,7 @@ export class PaintColourComponent {
     this.readinessFilter.set('all');
   }
 
-  openColour(id: string): void {
-    this.router.navigate(['/colours', id]);
+  openColor(id: string): void {
+    this.router.navigate(['/colors', id]);
   }
 }

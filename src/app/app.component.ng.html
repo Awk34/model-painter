@@ -6,8 +6,8 @@
         <img src="/logo.svg" alt="Model Painter logo" class="crest-img" />
       </div>
       <div class="brand-titles">
-        <span class="brand-main">CITADEL COLOUR</span>
-        <span class="brand-sub">Paint Warhammer Web</span>
+        <span class="brand-main">Model Painter</span>
+        <span class="brand-sub">Miniature painting companion</span>
       </div>
     </div>
 
@@ -35,13 +35,13 @@
       </a>
 
       <a
-        routerLink="/colours"
+        routerLink="/colors"
         routerLinkActive="active"
         class="nav-link"
       >
-        <img src="/icons/ic_colour.svg" alt="" class="nav-ic" />
-        <span>Paint A Colour</span>
-        <span class="nav-count muted">{{ catalog.colours().length }}</span>
+        <img src="/icons/ic_color.svg" alt="" class="nav-ic" />
+        <span>Paint A Color</span>
+        <span class="nav-count muted">{{ catalog.colors().length }}</span>
       </a>
 
       <a
@@ -134,9 +134,9 @@
   <main class="main-viewport">
     @if (catalog.loading() && catalog.models().length === 0) {
       <div class="boot-loader">
-        <img src="/icons/ic_hobby_desk.svg" alt="" class="pulse-ic" />
-        <h2>Hydrating Citadel Colour Catalog...</h2>
-        <p>Loading 4,531 Model Guides, 596 Colours, 487 Citadel Paints & 145 Cross-Brand Equivalents</p>
+        <img src="/logo.svg" alt="" class="pulse-ic" />
+        <h2>Hydrating Paint Catalog...</h2>
+        <p>Loading 4,531 Model Guides, 596 Colors, 487 Paints & 145 Cross-Brand Equivalents</p>
       </div>
     } @else {
       <router-outlet></router-outlet>
@@ -153,9 +153,9 @@
       <img src="/icons/ic_models.svg" alt="" />
       <span>Paint Model</span>
     </a>
-    <a routerLink="/colours" routerLinkActive="active" class="mob-tab">
-      <img src="/icons/ic_colour.svg" alt="" />
-      <span>Paint Colour</span>
+    <a routerLink="/colors" routerLinkActive="active" class="mob-tab">
+      <img src="/icons/ic_color.svg" alt="" />
+      <span>Paint Color</span>
     </a>
     <a routerLink="/search" routerLinkActive="active" class="mob-tab">
       <img src="/icons/ic_search.svg" alt="" />

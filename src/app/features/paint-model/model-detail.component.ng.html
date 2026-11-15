@@ -46,13 +46,13 @@
 
   @if (loading()) {
     <div class="loading-card studio-card">
-      <p>Loading model recipe & interactive colour points...</p>
+      <p>Loading model recipe & interactive color points...</p>
     </div>
   } @else {
     @if (recipe(); as r) {
-    <!-- Top Split Layout: Interactive Model Image + Colour Points on Left, Summary & Colours on Right -->
+    <!-- Top Split Layout: Interactive Model Image + Color Points on Left, Summary & Colors on Right -->
     <div class="hero-split">
-      <!-- Left Column: High-Res Image Viewer with Interactive (x,y) Colour Point Pins -->
+      <!-- Left Column: High-Res Image Viewer with Interactive (x,y) Color Point Pins -->
       <div class="viewer-panel studio-card">
         <div class="main-img-stage">
           <div class="img-overlay-box">
@@ -62,16 +62,16 @@
               class="stage-img"
             />
 
-            <!-- Interactive Normalized (x,y) Colour Pins on Primary Angle -->
-            @if (selectedImageIndex() === 0 && showPins() && r.colourPoints.length) {
-              @for (cp of r.colourPoints; track cp.id) {
+            <!-- Interactive Normalized (x,y) Color Pins on Primary Angle -->
+            @if (selectedImageIndex() === 0 && showPins() && r.colorPoints.length) {
+              @for (cp of r.colorPoints; track cp.id) {
                 <button
-                  class="colour-pin"
-                  [class.active]="selectedColourPointId() === cp.id"
+                  class="color-pin"
+                  [class.active]="selectedColorPointId() === cp.id"
                   [style.left.%]="cp.point.x * 100"
                   [style.top.%]="cp.point.y * 100"
                   [style.background]="cp.hex"
-                  (click)="selectColourPoint(cp.id)"
+                  (click)="selectColorPoint(cp.id)"
                   [title]="cp.name"
                 >
                   <span class="pin-ring"></span>
@@ -100,18 +100,18 @@
             </div>
           }
 
-          @if (r.colourPoints.length) {
+          @if (r.colorPoints.length) {
             <button
               class="btn btn-sm btn-ghost"
               (click)="showPins.set(!showPins())"
             >
-              {{ showPins() ? '👁 Hide Colour Pins' : '👁 Show Colour Pins' }} ({{ r.colourPoints.length }})
+              {{ showPins() ? '👁 Hide Color Pins' : '👁 Show Color Pins' }} ({{ r.colorPoints.length }})
             </button>
           }
         </div>
       </div>
 
-      <!-- Right Column: Model Metadata, Readiness & "Colours On This Model" -->
+      <!-- Right Column: Model Metadata, Readiness & "Colors On This Model" -->
       <div class="meta-panel studio-card">
         <div class="badge-row">
           @if (r.range === 'warhammer_pro') {
@@ -277,28 +277,28 @@
           </div>
         </div>
 
-        <!-- Colours On This Model (Linked to interactive pins) -->
-        @if (r.colourPoints.length) {
-          <div class="colours-on-model">
-            <h3>Colours On This Model ({{ r.colourPoints.length }})</h3>
-            <p class="hint">Click a pin on the miniature or a colour below to inspect or open its Colour Guide.</p>
+        <!-- Colors On This Model (Linked to interactive pins) -->
+        @if (r.colorPoints.length) {
+          <div class="colors-on-model">
+            <h3>Colors On This Model ({{ r.colorPoints.length }})</h3>
+            <p class="hint">Click a pin on the miniature or a color below to inspect or open its Color Guide.</p>
 
             <div class="cp-list">
-              @for (cp of r.colourPoints; track cp.id) {
+              @for (cp of r.colorPoints; track cp.id) {
                 <div
                   class="cp-card"
-                  [class.active]="selectedColourPointId() === cp.id"
-                  (click)="selectColourPoint(cp.id)"
+                  [class.active]="selectedColorPointId() === cp.id"
+                  (click)="selectColorPoint(cp.id)"
                 >
                   <span class="paint-swatch" [style.background]="cp.hex"></span>
                   <div class="cp-info">
                     <strong>{{ cp.name }}</strong>
                     <span>Normalized Pin ({{ (cp.point.x * 100) | number:'1.0-0' }}%, {{ (cp.point.y * 100) | number:'1.0-0' }}%)</span>
                   </div>
-                  @if (cp.colourId) {
+                  @if (cp.colorId) {
                     <button
                       class="btn btn-sm btn-secondary"
-                      (click)="$event.stopPropagation(); goToColour(cp.colourId)"
+                      (click)="$event.stopPropagation(); goToColor(cp.colorId)"
                     >
                       Open Guide →
                     </button>

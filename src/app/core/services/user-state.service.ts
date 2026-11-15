@@ -7,7 +7,7 @@ import {
   UserProject,
   UserProjectNote,
   UserProjectNoteComponent,
-} from '../models/warhammer.models';
+} from '../models/catalog.models';
 import { getFirebaseHandles } from './firebase.config';
 import {
   GoogleAuthProvider,
@@ -102,7 +102,13 @@ export class UserStateService {
           typeof parsed.customCompatibilityOverrides === 'object'
             ? parsed.customCompatibilityOverrides
             : {},
-        projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+        projects: Array.isArray(parsed.projects)
+          ? parsed.projects.map((p) => ({
+              ...p,
+              colorIds:
+                p.colorIds ?? (p as { colourIds?: string[] }).colourIds ?? [],
+            }))
+          : [],
         preferences: {
           ...def.preferences,
           ...(parsed.preferences ?? {}),
@@ -290,7 +296,7 @@ export class UserStateService {
       createdAt: now,
       updatedAt: now,
       recipeIds: [],
-      colourIds: [],
+      colorIds: [],
       notes: [],
     };
     this.commit((prev) => ({
@@ -389,31 +395,31 @@ export class UserStateService {
     }));
   }
 
-  addColourToProject(projectId: string, colourId: string): void {
+  addColorToProject(projectId: string, colorId: string): void {
     this.commit((prev) => ({
       ...prev,
       projects: prev.projects.map((p) => {
         if (p.id !== projectId) return p;
-        const set = new Set(p.colourIds);
-        set.add(colourId);
+        const set = new Set(p.colorIds);
+        set.add(colorId);
         return {
           ...p,
-          colourIds: Array.from(set),
+          colorIds: Array.from(set),
           updatedAt: new Date().toISOString(),
         };
       }),
     }));
-    this.showToast('Added colour guide to project');
+    this.showToast('Added color guide to project');
   }
 
-  removeColourFromProject(projectId: string, colourId: string): void {
+  removeColorFromProject(projectId: string, colorId: string): void {
     this.commit((prev) => ({
       ...prev,
       projects: prev.projects.map((p) =>
         p.id === projectId
           ? {
               ...p,
-              colourIds: p.colourIds.filter((id) => id !== colourId),
+              colorIds: p.colorIds.filter((id) => id !== colorId),
               updatedAt: new Date().toISOString(),
             }
           : p
@@ -613,8 +619,12 @@ export class UserStateService {
           ? (rp['recipes'] as Record<string, unknown>[]).map((r) => String(r['id']))
           : [];
 
-        const colourIds: string[] = Array.isArray(rp['colourIds'])
+        const colorIds: string[] = Array.isArray(rp['colorIds'])
+          ? (rp['colorIds'] as string[])
+          : Array.isArray(rp['colourIds'])
           ? (rp['colourIds'] as string[])
+          : Array.isArray(rp['colors'])
+          ? (rp['colors'] as Record<string, unknown>[]).map((c) => String(c['id']))
           : Array.isArray(rp['colours'])
           ? (rp['colours'] as Record<string, unknown>[]).map((c) => String(c['id']))
           : [];
@@ -662,7 +672,7 @@ export class UserStateService {
           createdAt,
           updatedAt,
           recipeIds: Array.from(new Set(recipeIds)),
-          colourIds: Array.from(new Set(colourIds)),
+          colorIds: Array.from(new Set(colorIds)),
           notes,
         };
       });
@@ -714,7 +724,7 @@ export class UserStateService {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `warhammer_colour_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `model_painter_backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     this.showToast('Exported JSON backup');

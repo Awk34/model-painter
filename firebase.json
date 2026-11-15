@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/warhammer-webapp/browser",
+    "public": "dist/model-painter/browser",
     "ignore": [
       "firebase.json",
       "**/.*",

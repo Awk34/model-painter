@@ -2,20 +2,20 @@
   <!-- Header -->
   <header class="section-hero">
     <div class="hero-left">
-      <img src="/icons/ic_colour.svg" alt="" class="hero-ic" />
+      <img src="/icons/ic_color.svg" alt="" class="hero-ic" />
       <div>
-        <h1>Paint A Colour</h1>
+        <h1>Paint A Color</h1>
         <p class="subtitle">
-          Explore {{ catalog.colours().length }} official Citadel colour & basing guides across {{ catalog.colourGroups().length }} colour families, complete with Base, Detail, and Artificer Space Marine backpack showcases.
+          Explore {{ catalog.colors().length }} color & basing guides across {{ catalog.colorGroups().length }} color families, complete with Base, Detail, and Artificer finish showcases.
         </p>
       </div>
     </div>
   </header>
 
-  <!-- 16 Colour Group Filter Chips -->
+  <!-- 16 Color Group Filter Chips -->
   <section class="groups-panel studio-card">
     <div class="groups-top-row">
-      <span class="field-label">Filter by Colour Family:</span>
+      <span class="field-label">Filter by Color Family:</span>
 
       <label class="basing-toggle">
         <input
@@ -34,10 +34,10 @@
         [class.active]="!selectedGroup()"
         (click)="selectedGroup.set(null)"
       >
-        All Colour Families ({{ catalog.colours().length }})
+        All Color Families ({{ catalog.colors().length }})
       </button>
 
-      @for (grp of catalog.colourGroups(); track grp.id) {
+      @for (grp of catalog.colorGroups(); track grp.id) {
         <button
           class="chip"
           [class.active]="selectedGroup() === grp.name"
@@ -58,7 +58,7 @@
       <input
         type="text"
         class="input-control"
-        placeholder="Search colours by name, shade, or family (e.g., Ultramarine Blue, Pale Skin, Lava Base)..."
+        placeholder="Search colors by name, shade, or family (e.g., Ultramarine Blue, Pale Skin, Lava Base)..."
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
       />
@@ -81,7 +81,7 @@
         [ngModel]="readinessFilter()"
         (ngModelChange)="readinessFilter.set($event)"
       >
-        <option value="all">Can I Paint This? — All Colours</option>
+        <option value="all">Can I Paint This? — All Colors</option>
         <option value="ready100">✓ 100% Ready for Target Finish</option>
         <option value="missing1">⚡ Missing ≤ 1 Paint for Target Finish</option>
         <option value="sortReady">Sort by Highest Match % (Target Finish)</option>
@@ -100,45 +100,45 @@
   </section>
 
   <div class="results-meta">
-    <span>Showing <strong>{{ filteredColours().length }}</strong> matching colour guides</span>
+    <span>Showing <strong>{{ filteredColors().length }}</strong> matching color guides</span>
   </div>
 
-  <!-- Colours Grid -->
-  @if (filteredColours().length > 0) {
-    <div class="colours-grid">
-      @for (item of filteredColours(); track item.colour.id) {
+  <!-- Colors Grid -->
+  @if (filteredColors().length > 0) {
+    <div class="colors-grid">
+      @for (item of filteredColors(); track item.color.id) {
         <div
-          class="colour-card studio-card interactive"
-          (click)="openColour(item.colour.id)"
+          class="color-card studio-card interactive"
+          (click)="openColor(item.color.id)"
         >
-          <div class="colour-preview-box">
-            @if (item.colour.localImagePath || item.colour.imageUrl) {
+          <div class="color-preview-box">
+            @if (item.color.localImagePath || item.color.imageUrl) {
               <img
-                [src]="img.resolve(item.colour.localImagePath, item.colour.imageUrl)"
-                [alt]="item.colour.name"
+                [src]="img.resolve(item.color.localImagePath, item.color.imageUrl)"
+                [alt]="item.color.name"
                 loading="lazy"
               />
             } @else {
-              <div class="fallback-swatch" [style.background]="item.colour.hex"></div>
+              <div class="fallback-swatch" [style.background]="item.color.hex"></div>
             }
 
             <span
               class="swatch-corner"
-              [style.background]="item.colour.hex"
-              [title]="item.colour.hex"
+              [style.background]="item.color.hex"
+              [title]="item.color.hex"
             ></span>
 
-            @if (item.colour.guideType === 'basing') {
+            @if (item.color.guideType === 'basing') {
               <span class="type-tag badge badge-gold">Basing Guide</span>
-            } @else if (item.colour.range === 'warhammer_pro') {
+            } @else if (item.color.range === 'warhammer_pro') {
               <span class="type-tag badge badge-pro">Tone Pro</span>
             }
           </div>
 
-          <div class="colour-card-body">
-            <h3 class="colour-name">{{ item.colour.name }}</h3>
-            <p class="colour-groups">
-              {{ item.colour.colourGroups.join(' • ') }} • {{ item.colour.requiredPaintIds.length }} Paints
+          <div class="color-card-body">
+            <h3 class="color-name">{{ item.color.name }}</h3>
+            <p class="color-groups">
+              {{ item.color.colorGroups.join(' • ') }} • {{ item.color.requiredPaintIds.length }} Paints
             </p>
 
             <!-- 3-Tier "Can I Paint This?" Readiness Breakdown -->
@@ -191,7 +191,7 @@
     </div>
   } @else {
     <div class="empty-state studio-card">
-      <h3>No Colour Guides Match Your Filters</h3>
+      <h3>No Color Guides Match Your Filters</h3>
       <button class="btn btn-gold" (click)="resetFilters()">Reset Filters</button>
     </div>
   }

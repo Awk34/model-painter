@@ -6,7 +6,7 @@
       <div>
         <h1>Paint A Model</h1>
         <p class="subtitle">
-          Browse {{ catalog.models().length | number }} official miniature painting recipes across {{ catalog.games().length }} Warhammer game systems, with instant "Can I Paint This?" readiness matching.
+          Browse {{ catalog.models().length | number }} miniature painting recipes across {{ catalog.games().length }} game systems, with instant "Can I Paint This?" readiness matching.
         </p>
       </div>
     </div>
@@ -210,7 +210,7 @@
           <div class="model-card-body">
             <h3 class="model-name">{{ item.model.name }}</h3>
             <p class="model-factions">
-              {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Warhammer Miniature' }}
+              {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Miniature' }}
             </p>
 
             <!-- 3-Tier "Can I Paint This?" Readiness Breakdown -->

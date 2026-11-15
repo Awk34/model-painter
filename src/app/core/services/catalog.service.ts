@@ -3,16 +3,16 @@ import {
   CatalogManifest,
   CatalogSyncStatus,
   CitadelThirdPartyMatchRef,
-  ColourDetails,
-  ColourGroup,
-  ColourSummary,
+  ColorDetails,
+  ColorGroup,
+  ColorSummary,
   GameSystem,
   ModelRecipe,
   ModelSummary,
   Paint,
   PaintCompatibilityLink,
   ThirdPartyPaint,
-} from '../models/warhammer.models';
+} from '../models/catalog.models';
 import { getFirebaseHandles } from './firebase.config';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -20,7 +20,7 @@ const IDB_NAME = 'whc_catalog_cache_v1';
 const IDB_VERSION = 1;
 const STORE_BUNDLES = 'bundles';
 const STORE_RECIPES = 'recipes';
-const STORE_COLOURS = 'colours';
+const STORE_COLORS = 'colors';
 
 @Injectable({
   providedIn: 'root',
@@ -37,8 +37,8 @@ export class CatalogService {
   readonly thirdPartyPaints = signal<ThirdPartyPaint[]>([]);
   readonly thirdPartyBrands = signal<string[]>([]);
   readonly citadelToThirdPartyMap = signal<Record<string, CitadelThirdPartyMatchRef[]>>({});
-  readonly colours = signal<ColourSummary[]>([]);
-  readonly colourGroups = signal<ColourGroup[]>([]);
+  readonly colors = signal<ColorSummary[]>([]);
+  readonly colorGroups = signal<ColorGroup[]>([]);
   readonly games = signal<GameSystem[]>([]);
   readonly models = signal<ModelSummary[]>([]);
 
@@ -59,9 +59,9 @@ export class CatalogService {
     return map;
   });
 
-  readonly colourById = computed(() => {
-    const map = new Map<string, ColourSummary>();
-    for (const c of this.colours()) {
+  readonly colorById = computed(() => {
+    const map = new Map<string, ColorSummary>();
+    for (const c of this.colors()) {
       map.set(c.id, c);
     }
     return map;
@@ -96,7 +96,7 @@ export class CatalogService {
     return map;
   });
 
-  /** Reverse lookup maps: which models/colours use a given paint, and which models use a given colour */
+  /** Reverse lookup maps: which models/colors use a given paint, and which models use a given color */
   readonly modelsUsingPaintMap = computed(() => {
     const map = new Map<string, ModelSummary[]>();
     for (const m of this.models()) {
@@ -112,9 +112,9 @@ export class CatalogService {
     return map;
   });
 
-  readonly coloursUsingPaintMap = computed(() => {
-    const map = new Map<string, ColourSummary[]>();
-    for (const c of this.colours()) {
+  readonly colorsUsingPaintMap = computed(() => {
+    const map = new Map<string, ColorSummary[]>();
+    for (const c of this.colors()) {
       for (const pid of c.requiredPaintIds) {
         let arr = map.get(pid);
         if (!arr) {
@@ -127,10 +127,10 @@ export class CatalogService {
     return map;
   });
 
-  readonly modelsUsingColourMap = computed(() => {
+  readonly modelsUsingColorMap = computed(() => {
     const map = new Map<string, ModelSummary[]>();
     for (const m of this.models()) {
-      for (const cid of m.colourIds) {
+      for (const cid of m.colorIds) {
         let arr = map.get(cid);
         if (!arr) {
           arr = [];
@@ -161,8 +161,8 @@ export class CatalogService {
         if (!db.objectStoreNames.contains(STORE_RECIPES)) {
           db.createObjectStore(STORE_RECIPES);
         }
-        if (!db.objectStoreNames.contains(STORE_COLOURS)) {
-          db.createObjectStore(STORE_COLOURS);
+        if (!db.objectStoreNames.contains(STORE_COLORS)) {
+          db.createObjectStore(STORE_COLORS);
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -205,7 +205,7 @@ export class CatalogService {
     try {
       const db = await this.openIdb();
       await Promise.all(
-        [STORE_BUNDLES, STORE_RECIPES, STORE_COLOURS].map(
+        [STORE_BUNDLES, STORE_RECIPES, STORE_COLORS].map(
           (storeName) =>
             new Promise<void>((resolve) => {
               const tx = db.transaction(storeName, 'readwrite');
@@ -296,7 +296,7 @@ export class CatalogService {
     const [
       paintsBundle,
       thirdPartyBundle,
-      coloursBundle,
+      colorsBundle,
       gamesBundle,
       m0,
       m1,
@@ -315,10 +315,12 @@ export class CatalogService {
         citadelToThirdParty?: Record<string, CitadelThirdPartyMatchRef[]>;
         citadelToThirdPartyMap?: Record<string, CitadelThirdPartyMatchRef[]>;
       }>(STORE_BUNDLES, 'third_party_paints_bundle'),
-      this.idbGet<{ colours: ColourSummary[]; colourGroups: ColourGroup[] }>(
-        STORE_BUNDLES,
-        'colours_bundle'
-      ),
+      this.idbGet<{
+        colors?: ColorSummary[];
+        colours?: (ColorSummary & { colourGroups?: (string | { name?: string })[] })[];
+        colorGroups?: ColorGroup[];
+        colourGroups?: ColorGroup[];
+      }>(STORE_BUNDLES, 'colours_bundle'),
       this.idbGet<{ games: GameSystem[] }>(STORE_BUNDLES, 'games_factions_bundle'),
       this.idbGet<{ models: ModelSummary[] }>(STORE_BUNDLES, 'models_index_0'),
       this.idbGet<{ models: ModelSummary[] }>(STORE_BUNDLES, 'models_index_1'),
@@ -344,9 +346,12 @@ export class CatalogService {
         thirdPartyBundle.citadelToThirdPartyMap ?? thirdPartyBundle.citadelToThirdParty ?? {}
       );
     }
-    if (coloursBundle) {
-      const normalizedColours = (coloursBundle.colours ?? []).map((c) => {
-        const rawGroups = (c.colourGroups ?? []) as (string | { name?: string })[];
+    if (colorsBundle) {
+      const rawColorList = colorsBundle.colors ?? colorsBundle.colours ?? [];
+      const normalizedColors = rawColorList.map((c) => {
+        const rawGroups = (c.colorGroups ??
+          (c as { colourGroups?: (string | { name?: string })[] }).colourGroups ??
+          []) as (string | { name?: string })[];
         const normalizedGroups = rawGroups
           .map((g) => (typeof g === 'string' ? g : g?.name ?? ''))
           .filter(Boolean);
@@ -359,15 +364,15 @@ export class CatalogService {
           Array.from(new Set([...basePaintIds, ...detailPaintIds, ...artificerPaintIds]));
         return {
           ...c,
-          colourGroups: normalizedGroups,
+          colorGroups: normalizedGroups,
           basePaintIds,
           detailPaintIds,
           artificerPaintIds,
           requiredPaintIds,
         };
       });
-      this.colours.set(normalizedColours);
-      this.colourGroups.set(coloursBundle.colourGroups ?? []);
+      this.colors.set(normalizedColors);
+      this.colorGroups.set(colorsBundle.colorGroups ?? colorsBundle.colourGroups ?? []);
     }
     if (gamesBundle) {
       this.games.set(gamesBundle.games ?? []);
@@ -386,7 +391,7 @@ export class CatalogService {
       gameNames: m.gameNames ?? [],
       factionIds: m.factionIds ?? [],
       factionNames: m.factionNames ?? [],
-      colourIds: m.colourIds ?? [],
+      colorIds: m.colorIds ?? (m as { colourIds?: string[] }).colourIds ?? [],
       paintsByStage: {
         base: m.paintsByStage?.base ?? [],
         detail: m.paintsByStage?.detail ?? [],
@@ -428,7 +433,7 @@ export class CatalogService {
   }
 
   /**
-   * Fetches full ModelRecipe details (colourPoints, paintingAreas, step instructions).
+   * Fetches full ModelRecipe details (colorPoints, paintingAreas, step instructions).
    * Checks IndexedDB cache and validates `updatedAt` against the model summary in `models_index_*`.
    */
   async getModelRecipe(recipeId: string): Promise<ModelRecipe | null> {
@@ -447,7 +452,19 @@ export class CatalogService {
       try {
         const snap = await getDoc(doc(fb.db, 'recipes', recipeId));
         if (snap.exists()) {
-          const data = snap.data() as ModelRecipe;
+          const raw = snap.data() as ModelRecipe & {
+            colourPoints?: Array<
+              ModelRecipe['colorPoints'][0] & { colourId?: string }
+            >;
+          };
+          const rawPoints = raw.colorPoints ?? raw.colourPoints ?? [];
+          const data: ModelRecipe = {
+            ...raw,
+            colorPoints: rawPoints.map((cp) => ({
+              ...cp,
+              colorId: cp.colorId ?? (cp as { colourId?: string }).colourId ?? '',
+            })),
+          };
           await this.idbSet(STORE_RECIPES, recipeId, data);
           return data;
         }
@@ -460,14 +477,14 @@ export class CatalogService {
     if (!summary) return null;
 
     // Synthesize from bundle summary when running without split recipe files
-    const colourPoints = (summary.colourIds ?? [])
+    const colorPoints = (summary.colorIds ?? [])
       .map((cid, idx) => {
-        const col = this.colourById().get(cid);
+        const col = this.colorById().get(cid);
         if (!col) return null;
         return {
           id: `cp_${cid}`,
           name: col.name,
-          colourId: cid,
+          colorId: cid,
           hex: col.hex,
           point: {
             x: 0.25 + ((idx * 0.17) % 0.55),
@@ -519,7 +536,7 @@ export class CatalogService {
       range: summary.range,
       games: (summary.gameIds ?? []).map((gid, i) => ({
         id: gid,
-        name: summary.gameNames?.[i] ?? 'Warhammer',
+        name: summary.gameNames?.[i] ?? 'Miniature Game',
       })),
       factions: (summary.factionIds ?? []).map((fid, i) => ({
         gameId: summary.gameIds?.[0] ?? '',
@@ -529,7 +546,7 @@ export class CatalogService {
       })),
       images: summary.primaryImage ? [summary.primaryImage] : [],
       localImagePaths: summary.localPrimaryImage ? [summary.localPrimaryImage] : [],
-      colourPoints,
+      colorPoints,
       paintingAreas: [
         {
           id: 'area_required',
@@ -543,15 +560,15 @@ export class CatalogService {
   }
 
   /**
-   * Fetches full ColourDetails (Base/Detail/Artificer backpack showcase images and stage steps).
-   * Checks IndexedDB cache and validates `updatedAt` against the colour summary in `colours_bundle`.
+   * Fetches full ColorDetails (Base/Detail/Artificer backpack showcase images and stage steps).
+   * Checks IndexedDB cache and validates `updatedAt` against the color summary in `colors_bundle`.
    */
-  async getColourDetails(colourId: string): Promise<ColourDetails | null> {
-    if (this.colours().length === 0 && this.initPromise) {
+  async getColorDetails(colorId: string): Promise<ColorDetails | null> {
+    if (this.colors().length === 0 && this.initPromise) {
       await this.initPromise;
     }
-    const summary = this.colourById().get(colourId);
-    const cached = await this.idbGet<ColourDetails>(STORE_COLOURS, colourId);
+    const summary = this.colorById().get(colorId);
+    const cached = await this.idbGet<ColorDetails>(STORE_COLORS, colorId);
 
     if (cached && (!summary?.updatedAt || cached.updatedAt === summary.updatedAt)) {
       return cached;
@@ -560,10 +577,14 @@ export class CatalogService {
     const fb = getFirebaseHandles();
     if (fb) {
       try {
-        const snap = await getDoc(doc(fb.db, 'colours', colourId));
+        const snap = await getDoc(doc(fb.db, 'colours', colorId));
         if (snap.exists()) {
-          const data = snap.data() as ColourDetails;
-          await this.idbSet(STORE_COLOURS, colourId, data);
+          const raw = snap.data() as ColorDetails & { colourGroups?: string[] };
+          const data: ColorDetails = {
+            ...raw,
+            colorGroups: raw.colorGroups ?? raw.colourGroups ?? [],
+          };
+          await this.idbSet(STORE_COLORS, colorId, data);
           return data;
         }
       } catch {
@@ -603,7 +624,7 @@ export class CatalogService {
       hex: summary.hex,
       range: summary.range,
       guideType: summary.guideType,
-      colourGroups: summary.colourGroups,
+      colorGroups: summary.colorGroups,
       imageUrl: summary.imageUrl,
       localImagePath: summary.localImagePath,
       headerImage: summary.headerImage,

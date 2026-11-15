@@ -6,7 +6,7 @@
       <div>
         <h1>Global Search</h1>
         <p class="subtitle">
-          Instant search across {{ catalog.models().length | number }} Models, {{ catalog.colours().length }} Colours, {{ catalog.paints().length }} Citadel Paints, and {{ catalog.thirdPartyPaints().length }} 3rd-Party Paints.
+          Instant search across {{ catalog.models().length | number }} Models, {{ catalog.colors().length }} Colors, and {{ catalog.paints().length + catalog.thirdPartyPaints().length }} Paints across all brands.
         </p>
       </div>
     </div>
@@ -15,7 +15,7 @@
       <input
         type="text"
         class="input-control big-search"
-        placeholder="Type any miniature, faction, Citadel paint, Army Painter / Vallejo / Two Thin Coats paint, or colour scheme..."
+        placeholder="Type any miniature, faction, paint brand or name, or color scheme..."
         [ngModel]="query()"
         (ngModelChange)="query.set($event)"
         autofocus
@@ -42,17 +42,17 @@
       </button>
       <button
         class="chip"
-        [class.active]="tab() === 'colours'"
-        (click)="tab.set('colours')"
+        [class.active]="tab() === 'colors'"
+        (click)="tab.set('colors')"
       >
-        Colours ({{ matchedColours().length }})
+        Colors ({{ matchedColors().length }})
       </button>
       <button
         class="chip"
         [class.active]="tab() === 'paints'"
         (click)="tab.set('paints')"
       >
-        Citadel & 3rd-Party Paints ({{ matchedCitadelPaints().length + matchedThirdPartyPaints().length }})
+        Paints ({{ matchedCitadelPaints().length + matchedThirdPartyPaints().length }})
       </button>
     </div>
   </header>
@@ -108,20 +108,20 @@
     </section>
   }
 
-  <!-- Colours Section -->
-  @if ((tab() === 'all' || tab() === 'colours') && matchedColours().length > 0) {
+  <!-- Colors Section -->
+  @if ((tab() === 'all' || tab() === 'colors') && matchedColors().length > 0) {
     <section class="result-section">
-      <h2>Colour Guides ({{ matchedColours().length }})</h2>
+      <h2>Color Guides ({{ matchedColors().length }})</h2>
       <div class="cards-grid">
-        @for (c of matchedColours().slice(0, 24); track c.id) {
+        @for (c of matchedColors().slice(0, 24); track c.id) {
           <div
             class="result-card studio-card interactive"
-            (click)="router.navigate(['/colours', c.id])"
+            (click)="router.navigate(['/colors', c.id])"
           >
             <div class="c-swatch-bar" [style.background]="c.hex"></div>
             <div class="r-body">
               <strong>{{ c.name }}</strong>
-              <span>{{ c.colourGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</span>
+              <span>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</span>
             </div>
           </div>
         }

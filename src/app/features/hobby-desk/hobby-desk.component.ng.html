@@ -131,7 +131,7 @@
                 <div class="project-counts">
                   <span>{{ proj.recipeIds.length }} Models</span>
                   <span>•</span>
-                  <span>{{ proj.colourIds.length }} Colours</span>
+                  <span>{{ proj.colorIds.length }} Colors</span>
                   <span>•</span>
                   <span>{{ proj.notes.length }} Notes</span>
                 </div>
@@ -202,7 +202,7 @@
           <img src="/icons/ic_project.svg" alt="" class="empty-ic" />
           <h3>No Projects Yet</h3>
           <p>
-            Create a hobby project to group model recipes, colour guides, painting checklists, and see an automatic rollup of required & missing paints.
+            Create a hobby project to group model recipes, color guides, painting checklists, and see an automatic rollup of required & missing paints.
           </p>
           <div class="empty-btn-row">
             <button class="btn btn-gold" (click)="showNewProjectModal.set(true)">
@@ -296,7 +296,7 @@
               <div class="desk-model-body">
                 <h3 class="desk-model-title">{{ item.model.name }}</h3>
                 <span class="desk-model-sub">
-                  {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Warhammer Miniature' }}
+                  {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Miniature' }}
                 </span>
 
                 <div class="card-stage-grid">
@@ -514,7 +514,7 @@
             @if (paintSubMode() === 'inventory') {
               Your Inventory has no paints matching the current filters. Switch to "All Paints Catalogue" to add pots you own, or import your My Warhammer account.
             } @else if (paintSubMode() === 'wishlist') {
-              Your Wishlist is currently empty. Add missing paints from any Model, Colour, or Project guide!
+              Your Wishlist is currently empty. Add missing paints from any Model, Color, or Project guide!
             } @else {
               No paints match your current search or brand/category filter.
             }
@@ -872,7 +872,7 @@
         <span class="badge badge-sub">Readiness & Portability</span>
         <h3>"Can I Paint This?" Rules & Browser Backups</h3>
         <p class="settings-desc">
-          Configure how the app calculates model and colour paint readiness across your inventory.
+          Configure how the app calculates model and color paint readiness across your inventory.
         </p>
 
         <div class="pref-toggles">
@@ -896,7 +896,7 @@
             />
             <div>
               <strong>Allow 3rd-Party Brand Paint Substitutions</strong>
-              <p>Count a required Citadel paint as covered if you own a linked equivalent from The Army Painter, Vallejo, Two Thin Coats, Pro Acryl, or AK 3G.</p>
+              <p>Count a required paint as covered if you own a linked equivalent from The Army Painter, Vallejo, Two Thin Coats, Pro Acryl, or AK 3G.</p>
             </div>
           </label>
         </div>

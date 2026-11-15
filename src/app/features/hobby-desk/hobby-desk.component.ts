@@ -360,7 +360,7 @@ export class HobbyDeskComponent {
     return '/icons/ic_project.svg';
   }
 
-  getProjectReadiness(proj: { recipeIds: string[]; colourIds: string[] }) {
+  getProjectReadiness(proj: { recipeIds: string[]; colorIds: string[] }) {
     const baseIds = new Set<string>();
     const detailIds = new Set<string>();
     const artificerIds = new Set<string>();
@@ -375,8 +375,8 @@ export class HobbyDeskComponent {
         m.requiredPaintIds.forEach((p) => allIds.add(p));
       }
     }
-    for (const cid of proj.colourIds) {
-      const c = this.catalog.colourById().get(cid);
+    for (const cid of proj.colorIds) {
+      const c = this.catalog.colorById().get(cid);
       if (c) {
         c.basePaintIds.forEach((p) => baseIds.add(p));
         c.detailPaintIds.forEach((p) => detailIds.add(p));

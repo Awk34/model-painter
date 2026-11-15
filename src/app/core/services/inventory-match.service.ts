@@ -3,7 +3,7 @@ import {
   InventoryReadinessResult,
   PaintSubstituteMatch,
   StagedReadinessResult,
-} from '../models/warhammer.models';
+} from '../models/catalog.models';
 import { CatalogService } from './catalog.service';
 import { UserStateService } from './user-state.service';
 
@@ -15,7 +15,7 @@ export class InventoryMatchService {
   private readonly userState = inject(UserStateService);
 
   /**
-   * Computes "Can I Paint This?" inventory readiness for any list of required Citadel Paint IDs.
+   * Computes "Can I Paint This?" inventory readiness for any list of required Paint IDs.
    * Respects:
    * - Direct ownership in `inventoryPaintIds`
    * - Official Citadel Classic <-> Tone Pro compatibility (when `allowCompatibleSubstitutions` is enabled)
@@ -169,7 +169,7 @@ export class InventoryMatchService {
   }
 
   /**
-   * Computes "Can I Paint This?" readiness split across the 3 Citadel finish tiers:
+   * Computes "Can I Paint This?" readiness split across the 3 finish tiers:
    * 1. Base Finish (Battle Ready)
    * 2. Detail Finish (Parade Ready)
    * 3. Artificer Finish (Masterclass)

@@ -22,7 +22,7 @@ export class SearchComponent {
   readonly router = inject(Router);
 
   readonly query = signal<string>('');
-  readonly tab = signal<'all' | 'models' | 'colours' | 'paints'>('all');
+  readonly tab = signal<'all' | 'models' | 'colors' | 'paints'>('all');
 
   readonly matchedCitadelPaints = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -44,15 +44,15 @@ export class SearchComponent {
     );
   });
 
-  readonly matchedColours = computed(() => {
+  readonly matchedColors = computed(() => {
     const q = this.query().trim().toLowerCase();
-    if (!q) return this.catalog.colours().slice(0, 12);
+    if (!q) return this.catalog.colors().slice(0, 12);
     return this.catalog
-      .colours()
+      .colors()
       .filter(
         (c) =>
           c.name.toLowerCase().includes(q) ||
-          c.colourGroups.some((g) => g.toLowerCase().includes(q))
+          c.colorGroups.some((g) => g.toLowerCase().includes(q))
       );
   });
 
@@ -73,7 +73,7 @@ export class SearchComponent {
     () =>
       this.matchedCitadelPaints().length +
       this.matchedThirdPartyPaints().length +
-      this.matchedColours().length +
+      this.matchedColors().length +
       this.matchedModels().length
   );
 }

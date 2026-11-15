@@ -1,9 +1,9 @@
 <div class="detail-page">
   <!-- Top Bar -->
   <div class="top-bar">
-    <a routerLink="/colours" class="btn btn-ghost btn-sm">← Back to Paint A Colour</a>
+    <a routerLink="/colors" class="btn btn-ghost btn-sm">← Back to Paint A Color</a>
 
-    @if (colour(); as c) {
+    @if (color(); as c) {
       <div class="top-actions">
         @if (stagedReadiness().base.missingCount > 0) {
           <button
@@ -22,7 +22,7 @@
           </button>
         }
         <button class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
-          + Add Colour to Project
+          + Add Color to Project
         </button>
       </div>
     }
@@ -30,10 +30,10 @@
 
   @if (loading()) {
     <div class="loading-card studio-card">
-      <p>Loading colour guide & showcase stages...</p>
+      <p>Loading color guide & showcase stages...</p>
     </div>
   } @else {
-    @if (colour(); as c) {
+    @if (color(); as c) {
     <div class="hero-split">
       <!-- Left: Interactive Space Marine Backpack Showcase Image Switcher -->
       <div class="showcase-panel studio-card">
@@ -70,9 +70,9 @@
         </div>
       </div>
 
-      <!-- Right: Colour Metadata & Ordered Paint Steps -->
+      <!-- Right: Color Metadata & Ordered Paint Steps -->
       <div class="steps-panel studio-card">
-        <div class="colour-header">
+        <div class="color-header">
           <span class="paint-swatch large" [style.background]="c.hex"></span>
           <div>
             <div class="badge-row">
@@ -83,19 +83,19 @@
               } @else {
                 <span class="badge badge-gold">Citadel Colour</span>
               }
-              @for (grp of c.colourGroups; track grp) {
+              @for (grp of c.colorGroups; track grp) {
                 <span class="badge group-badge">{{ grp }}</span>
               }
               <span class="hex-pill">{{ c.hex }}</span>
             </div>
-            <h1 class="colour-title">{{ c.name }}</h1>
+            <h1 class="color-title">{{ c.name }}</h1>
           </div>
         </div>
 
         <!-- Readiness Bar (Split by 3 Finish Levels) -->
         <div class="readiness-box">
           <div class="ready-header">
-            <strong>Can I Paint This Colour? — Readiness by Detail Level</strong>
+            <strong>Can I Paint This Color? — Readiness by Detail Level</strong>
             <span>Click a stage below to preview showcase</span>
           </div>
 
@@ -310,12 +310,12 @@
       </div>
     </div>
 
-    <!-- Models Using This Colour -->
-    @if (modelsUsingColour().length > 0) {
+    <!-- Models Using This Color -->
+    @if (modelsUsingColor().length > 0) {
       <section class="reverse-section studio-card">
-        <h2>Models Using "{{ c.name }}" ({{ modelsUsingColour().length }})</h2>
+        <h2>Models Using "{{ c.name }}" ({{ modelsUsingColor().length }})</h2>
         <div class="models-grid">
-          @for (m of modelsUsingColour().slice(0, 24); track m.id) {
+          @for (m of modelsUsingColor().slice(0, 24); track m.id) {
             <div class="model-mini-card studio-card interactive" (click)="goToModel(m.id)">
               <img
                 [src]="img.resolve(m.localPrimaryImage, m.primaryImage)"
@@ -334,8 +334,8 @@
     }
   }
 
-  <!-- Modal: Add Colour to Project -->
-  @if (showProjectModal() && colour(); as c) {
+  <!-- Modal: Add Color to Project -->
+  @if (showProjectModal() && color(); as c) {
     <div class="modal-backdrop" (click)="showProjectModal.set(false)">
       <div class="modal-panel" style="max-width: 480px" (click)="$event.stopPropagation()">
         <div class="modal-header">
@@ -351,13 +351,13 @@
                   (click)="addToExistingProject(p.id, c.id)"
                 >
                   <strong>{{ p.name }}</strong>
-                  <span>{{ p.colourIds.includes(c.id) ? '✓ Already Added' : '+ Add to Project' }}</span>
+                  <span>{{ p.colorIds.includes(c.id) ? '✓ Already Added' : '+ Add to Project' }}</span>
                 </button>
               }
             </div>
           }
           <hr class="divider" />
-          <label class="field-label">Or Create a New Project with This Colour:</label>
+          <label class="field-label">Or Create a New Project with This Color:</label>
           <div style="display: flex; gap: 8px">
             <input
               type="text"
@@ -365,7 +365,7 @@
               placeholder="New project name..."
               [(ngModel)]="newProjectName"
             />
-            <button class="btn btn-gold" (click)="createProjectWithColour(c)">
+            <button class="btn btn-gold" (click)="createProjectWithColor(c)">
               Create & Add
             </button>
           </div>

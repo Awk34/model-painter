@@ -1,10 +1,10 @@
-# DESIGN.md — Paint Warhammer / Citadel Colour Companion (`model-painter`)
+# DESIGN.md — Model Painter Miniature Painting Companion (`model-painter`)
 
 ## 1. Brand & Aesthetic Direction
-**Theme:** *Citadel Studio Dark* — a focused, high-contrast hobbyist workbench aesthetic derived from the official **Paint Warhammer / Citadel Colour** (`com.gamesworkshop.citadelpaint` v3.1.1) Android app and expanded for responsive web workflows.
+**Theme:** *Studio Dark* — a focused, high-contrast hobbyist workbench aesthetic designed for miniature painters across all paint brands and tabletop game systems.
 
-- **Mood:** Tactical, editorial, colour-accurate, and craft-focused. Dark neutral slate surfaces keep the eye calibrated so miniature photography, metallic pigments, and paint swatches remain true-to-life without colour cast.
-- **Dual Identity:** Bridges **Warhammer Colour** (signature warm Citadel Gold `#EDB304` / `#FBBA00`) with **Warhammer Pro / Tone Pro** (prismatic cyan-purple-gold brush-stroke accent) and multi-brand hobbyist utility.
+- **Mood:** Tactical, editorial, color-accurate, and craft-focused. Dark neutral slate surfaces keep the eye calibrated so miniature photography, metallic pigments, and paint swatches remain true-to-life without color cast.
+- **Visual Identity:** Pairs warm gold primary accents (`#EDB304` / `#FBBA00`) with a prismatic cyan-purple-gold brush-stroke accent and multi-brand hobbyist utility.
 - **Target Platforms:** Responsive Desktop (`>= 860px` persistent left rail + split studio stages) and Mobile (`< 860px` 5-tab bottom navigation bar).
 
 ---
@@ -20,7 +20,7 @@
 | `--bg-elevated` | `#191C22` | Modals, drawers, secondary sub-tab bars |
 | `--bg-card` | `#1F232B` | Studio cards, project tiles, KPI pills |
 | `--bg-card-hover` | `#262B35` | Interactive card hover state |
-| **Spotlight Stage** | `radial-gradient(circle, #282E3B 0%, #14171E 100%)` | Hero backdrop behind miniature photos and Space Marine colour backpacks |
+| **Spotlight Stage** | `radial-gradient(circle, #282E3B 0%, #14171E 100%)` | Hero backdrop behind miniature photos and Space Marine color backpacks |
 
 ### Brand Accents
 | Token | Hex / Value | Usage |
@@ -86,20 +86,20 @@ Authentic fonts extracted from the official APK (`public/fonts/`):
 ## 5. Layout & Navigation Patterns
 
 - **Desktop Shell (`>= 860px`):**
-  - **Left Sidebar (`260px` sticky, `#0D0E11`):** Brand crest (`ic_warhammerpro.svg`) + `CITADEL COLOUR` title at top; 4 primary navigation links (`Hobby Desk`, `Paint A Model`, `Paint A Colour`, `Search ⌘K`) with item count pills; compact Inventory/Wishlist summary card; Account/Sync status card pinned at bottom.
+  - **Left Sidebar (`260px` sticky, `#0D0E11`):** Brand crest (`logo.svg`) + `MODEL PAINTER` title at top; 4 primary navigation links (`Hobby Desk`, `Paint A Model`, `Paint A Color`, `Search ⌘K`) with item count pills; compact Inventory/Wishlist summary card; Account/Sync status card pinned at bottom.
   - **Main Viewport (`max-width: 1560px`, `24px 28px` padding):**
     - List views use a top hero header with KPI pills, horizontal sub-tab bar, search + filter chip toolbar, and responsive CSS Grid cards.
-    - Detail views (`Model Recipe Detail`, `Colour Detail`) use a **2-column Hero Split** (`1.15fr` interactive visual stage on left, `1fr` metadata + progressive stage readiness on right) followed by full-width progressive painting area steps below.
+    - Detail views (`Model Recipe Detail`, `Color Detail`) use a **2-column Hero Split** (`1.15fr` interactive visual stage on left, `1fr` metadata + progressive stage readiness on right) followed by full-width progressive painting area steps below.
 - **Mobile Shell (`< 860px`):**
-  - Sidebar collapses into a fixed `66px` frosted glass **5-Tab Bottom Navigation Bar** (`Hobby Desk`, `Paint Model`, `Paint Colour`, `Search`, `Account`) and single-column stacked cards.
+  - Sidebar collapses into a fixed `66px` frosted glass **5-Tab Bottom Navigation Bar** (`Hobby Desk`, `Paint Model`, `Paint Color`, `Search`, `Account`) and single-column stacked cards.
 
 ---
 
 ## 6. Signature Domain Components
 
 1. **Glossy Paint Swatch (`.paint-swatch`):** `34px` (`52px`–`56px` in detail headers) circle with `2px solid rgba(255, 255, 255, 0.22)` and `inset 0 2px 4px rgba(255, 255, 255, 0.25)` so dark blacks and bright metallics remain distinct against dark cards.
-2. **Interactive `(x, y)` Miniature Colour Pins (`.colour-pin`):** `24px` circular colour swatches overlaid at normalized coordinates on miniature photography with a `2px` `#FFFFFF` border; hover/active scales `1.35x` with a `#FBBA00` ring and `4px` gold glow.
-3. **Progressive 3-Stage Readiness System:** Every recipe and colour progresses through **`1. Base Finish`** (Basic), **`2. Detail Finish`** (Battle Ready), and **`3. Artificer Finish`** (Parade Ready), paired with ownership match percentages and inline substitute pills (`⇄ Covered by ...`).
+2. **Interactive `(x, y)` Miniature Color Pins (`.color-pin`):** `24px` circular color swatches overlaid at normalized coordinates on miniature photography with a `2px` `#FFFFFF` border; hover/active scales `1.35x` with a `#FBBA00` ring and `4px` gold glow.
+3. **Progressive 3-Stage Readiness System:** Every recipe and color progresses through **`1. Base Finish`** (Basic), **`2. Detail Finish`** (Battle Ready), and **`3. Artificer Finish`** (Parade Ready), paired with ownership match percentages and inline substitute pills (`⇄ Covered by ...`).
 4. **Tone Pro 1–5 Pentad Strip:** Horizontal 5-step tonal progression strip (`1` darkest shadow to `5` brightest highlight) inside the Paint Detail Modal, highlighting the active paint in gold and marking owned steps with a green dot.
 5. **Cross-Brand Equivalence Card:** Side-by-side Citadel vs. 3rd-party swatch comparison displaying brand/range label, hex code, perceptual color distance badge (`ΔE`), and 1-click Inventory (`✓ Own`) / Wishlist (`★`) toggles.
 

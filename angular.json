@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "warhammer-webapp": {
+    "model-painter": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:class": {
@@ -38,7 +38,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/warhammer-webapp",
+            "outputPath": "dist/model-painter",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -116,10 +116,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "warhammer-webapp:build:production"
+              "buildTarget": "model-painter:build:production"
             },
             "development": {
-              "buildTarget": "warhammer-webapp:build:development"
+              "buildTarget": "model-painter:build:development"
             }
           },
           "defaultConfiguration": "development"

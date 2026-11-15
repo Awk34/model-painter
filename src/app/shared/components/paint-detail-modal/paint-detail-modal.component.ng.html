@@ -232,23 +232,23 @@
           </section>
         }
 
-        <!-- Reverse Lookups: Colours & Models using this Paint -->
+        <!-- Reverse Lookups: Colors & Models using this Paint -->
         @if (citadelPaint()) {
           <section class="modal-section">
             <h3 class="section-title">
-              Colours Using This Paint ({{ coloursUsingPaint().length }})
+              Colors Using This Paint ({{ colorsUsingPaint().length }})
             </h3>
-            @if (coloursUsingPaint().length > 0) {
+            @if (colorsUsingPaint().length > 0) {
               <div class="reverse-chip-list">
-                @for (col of coloursUsingPaint().slice(0, 24); track col.id) {
-                  <button class="reverse-chip" (click)="goToColour(col.id)">
+                @for (col of colorsUsingPaint().slice(0, 24); track col.id) {
+                  <button class="reverse-chip" (click)="goToColor(col.id)">
                     <span class="mini-dot" [style.background]="col.hex"></span>
                     <span>{{ col.name }}</span>
                   </button>
                 }
               </div>
             } @else {
-              <p class="empty-hint">No colour guides directly list this paint.</p>
+              <p class="empty-hint">No color guides directly list this paint.</p>
             }
           </section>
 

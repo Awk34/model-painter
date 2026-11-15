@@ -6,7 +6,7 @@ import { CatalogService } from '../../core/services/catalog.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { ImageService } from '../../core/services/image.service';
 import { UserStateService } from '../../core/services/user-state.service';
-import { FactionNode, GameSystem, ModelSummary } from '../../core/models/warhammer.models';
+import { FactionNode, GameSystem, ModelSummary } from '../../core/models/catalog.models';
 
 @Component({
   selector: 'app-paint-model',

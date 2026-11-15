@@ -105,10 +105,10 @@ export class PaintDetailModalComponent {
     return combined;
   });
 
-  readonly coloursUsingPaint = computed(() => {
+  readonly colorsUsingPaint = computed(() => {
     const id = this.activePaintId();
     if (!id) return [];
-    return this.catalog.coloursUsingPaintMap().get(id) ?? [];
+    return this.catalog.colorsUsingPaintMap().get(id) ?? [];
   });
 
   readonly modelsUsingPaint = computed(() => {
@@ -127,9 +127,9 @@ export class PaintDetailModalComponent {
     this.selectedOverridePaintId = '';
   }
 
-  goToColour(colourId: string): void {
+  goToColor(colorId: string): void {
     this.close();
-    this.router.navigate(['/colours', colourId]);
+    this.router.navigate(['/colors', colorId]);
   }
 
   goToModel(modelId: string): void {

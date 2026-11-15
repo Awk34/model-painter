@@ -8,7 +8,7 @@ import { UserStateService } from '../../core/services/user-state.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
-import { UserProjectNote, UserProjectNoteComponent } from '../../core/models/warhammer.models';
+import { UserProjectNote, UserProjectNoteComponent } from '../../core/models/catalog.models';
 
 @Component({
   selector: 'app-project-detail',
@@ -27,7 +27,7 @@ export class ProjectDetailComponent {
   readonly img = inject(ImageService);
 
   readonly projectId = signal<string>('');
-  readonly activeTab = signal<'paints' | 'models' | 'colours' | 'notes'>('paints');
+  readonly activeTab = signal<'paints' | 'models' | 'colors' | 'notes'>('paints');
   readonly selectedRollupStage = signal<'base' | 'detail' | 'artificer' | 'all'>('base');
 
   readonly editingTitle = signal(false);
@@ -35,7 +35,7 @@ export class ProjectDetailComponent {
 
   // Modals
   readonly showAddModelModal = signal(false);
-  readonly showAddColourModal = signal(false);
+  readonly showAddColorModal = signal(false);
   readonly showThumbnailModal = signal(false);
   pickerSearch = '';
 
@@ -62,11 +62,11 @@ export class ProjectDetailComponent {
     return p.recipeIds.map((id) => map.get(id)).filter((m): m is NonNullable<typeof m> => Boolean(m));
   });
 
-  readonly attachedColours = computed(() => {
+  readonly attachedColors = computed(() => {
     const p = this.project();
     if (!p) return [];
-    const map = this.catalog.colourById();
-    return p.colourIds.map((id) => map.get(id)).filter((c): c is NonNullable<typeof c> => Boolean(c));
+    const map = this.catalog.colorById();
+    return p.colorIds.map((id) => map.get(id)).filter((c): c is NonNullable<typeof c> => Boolean(c));
   });
 
   readonly coverUrl = computed(() => {
@@ -94,7 +94,7 @@ export class ProjectDetailComponent {
       (m.paintsByStage?.artificer ?? []).forEach((id) => artificerIds.add(id));
       m.requiredPaintIds.forEach((id) => allIds.add(id));
     }
-    for (const c of this.attachedColours()) {
+    for (const c of this.attachedColors()) {
       c.basePaintIds.forEach((id) => baseIds.add(id));
       c.detailPaintIds.forEach((id) => detailIds.add(id));
       c.artificerPaintIds.forEach((id) => artificerIds.add(id));
@@ -154,9 +154,9 @@ export class ProjectDetailComponent {
       .slice(0, 40);
   });
 
-  readonly pickerColours = computed(() => {
+  readonly pickerColors = computed(() => {
     const q = this.pickerSearch.trim().toLowerCase();
-    const list = this.catalog.colours();
+    const list = this.catalog.colors();
     if (!q) return list.slice(0, 40);
     return list.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 40);
   });
@@ -233,7 +233,7 @@ export class ProjectDetailComponent {
     this.router.navigate(['/models', id]);
   }
 
-  goToColour(id: string): void {
-    this.router.navigate(['/colours', id]);
+  goToColor(id: string): void {
+    this.router.navigate(['/colors', id]);
   }
 }

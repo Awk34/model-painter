@@ -7,7 +7,7 @@ import { UserStateService } from '../../core/services/user-state.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
-import { ModelRecipe } from '../../core/models/warhammer.models';
+import { ModelRecipe } from '../../core/models/catalog.models';
 
 @Component({
   selector: 'app-model-detail',
@@ -29,7 +29,7 @@ export class ModelDetailComponent {
   readonly recipe = signal<ModelRecipe | null>(null);
   readonly selectedImageIndex = signal(0);
   readonly showPins = signal(true);
-  readonly selectedColourPointId = signal<string | null>(null);
+  readonly selectedColorPointId = signal<string | null>(null);
   readonly stageFilter = signal<'all' | 'Base Finish' | 'Detail Finish' | 'Artificer Finish'>('all');
 
   readonly showProjectModal = signal(false);
@@ -43,7 +43,7 @@ export class ModelDetailComponent {
       this.selectedImageIndex.set(0);
       const data = await this.catalog.getModelRecipe(id);
       this.recipe.set(data);
-      this.selectedColourPointId.set(data?.colourPoints?.[0]?.id ?? null);
+      this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
       this.loading.set(false);
     });
   }
@@ -109,8 +109,8 @@ export class ModelDetailComponent {
     return Array.from(names).join(' • ');
   }
 
-  selectColourPoint(cpId: string): void {
-    this.selectedColourPointId.set(cpId);
+  selectColorPoint(cpId: string): void {
+    this.selectedColorPointId.set(cpId);
   }
 
   filterSteps(steps: ModelRecipe['paintingAreas'][0]['paintingSteps']) {
@@ -119,8 +119,8 @@ export class ModelDetailComponent {
     return steps.filter((s) => s.paintingStage === sf);
   }
 
-  goToColour(colourId: string): void {
-    this.router.navigate(['/colours', colourId]);
+  goToColor(colorId: string): void {
+    this.router.navigate(['/colors', colorId]);
   }
 
   addToExistingProject(projectId: string, r: ModelRecipe): void {

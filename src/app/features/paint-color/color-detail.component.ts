@@ -7,16 +7,16 @@ import { UserStateService } from '../../core/services/user-state.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { ImageService } from '../../core/services/image.service';
-import { ColourDetails, ColourStageStep } from '../../core/models/warhammer.models';
+import { ColorDetails, ColorStageStep } from '../../core/models/catalog.models';
 
 @Component({
-  selector: 'app-colour-detail',
+  selector: 'app-color-detail',
   imports: [CommonModule, FormsModule, RouterModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './colour-detail.component.ng.html',
-  styleUrl: './colour-detail.component.css',
+  templateUrl: './color-detail.component.ng.html',
+  styleUrl: './color-detail.component.css',
 })
-export class ColourDetailComponent {
+export class ColorDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly catalog = inject(CatalogService);
@@ -26,7 +26,7 @@ export class ColourDetailComponent {
   readonly img = inject(ImageService);
 
   readonly loading = signal(true);
-  readonly colour = signal<ColourDetails | null>(null);
+  readonly color = signal<ColorDetails | null>(null);
   readonly activeTier = signal<'base' | 'detail' | 'artificer'>('base');
   readonly showProjectModal = signal(false);
   newProjectName = '';
@@ -36,15 +36,15 @@ export class ColourDetailComponent {
       const id = params.get('id');
       if (!id) return;
       this.loading.set(true);
-      const data = await this.catalog.getColourDetails(id);
-      this.colour.set(data);
+      const data = await this.catalog.getColorDetails(id);
+      this.color.set(data);
       this.loading.set(false);
     });
   }
 
   readonly activeShowcaseImage = computed(() => {
-    const c = this.colour();
-    if (!c) return '/icons/ic_colour.svg';
+    const c = this.color();
+    if (!c) return '/icons/ic_color.svg';
     const tier = this.activeTier();
     if (tier === 'base' && (c.baseFinish?.localBackpackImagePath || c.baseFinish?.backpackImage)) {
       return this.img.resolve(c.baseFinish.localBackpackImagePath, c.baseFinish.backpackImage);
@@ -71,12 +71,12 @@ export class ColourDetailComponent {
   });
 
   readonly allTierBlocks = computed(() => {
-    const c = this.colour();
+    const c = this.color();
     if (!c) return [];
     const blocks: {
       key: 'base' | 'detail' | 'artificer';
       label: string;
-      steps: ColourStageStep[];
+      steps: ColorStageStep[];
     }[] = [];
     if (c.baseFinish?.stages?.length) {
       blocks.push({ key: 'base', label: 'Base Finish (Battle Ready)', steps: c.baseFinish.stages });
@@ -99,9 +99,9 @@ export class ColourDetailComponent {
   });
 
   readonly stagedReadiness = computed(() => {
-    const c = this.colour();
+    const c = this.color();
     if (!c) return this.readinessService.evaluateStagedReadiness({});
-    const extractIds = (steps?: ColourStageStep[]) =>
+    const extractIds = (steps?: ColorStageStep[]) =>
       (steps ?? []).map((st) => st.paint?.id).filter((id): id is string => Boolean(id));
 
     return this.readinessService.evaluateStagedReadiness({
@@ -113,28 +113,28 @@ export class ColourDetailComponent {
 
   readonly readiness = computed(() => this.stagedReadiness().overall);
 
-  readonly modelsUsingColour = computed(() => {
-    const c = this.colour();
+  readonly modelsUsingColor = computed(() => {
+    const c = this.color();
     if (!c) return [];
-    return this.catalog.modelsUsingColourMap().get(c.id) ?? [];
+    return this.catalog.modelsUsingColorMap().get(c.id) ?? [];
   });
 
   goToModel(id: string): void {
     this.router.navigate(['/models', id]);
   }
 
-  addToExistingProject(projectId: string, colourId: string): void {
-    this.userState.addColourToProject(projectId, colourId);
+  addToExistingProject(projectId: string, colorId: string): void {
+    this.userState.addColorToProject(projectId, colorId);
     this.showProjectModal.set(false);
   }
 
-  createProjectWithColour(c: ColourDetails): void {
+  createProjectWithColor(c: ColorDetails): void {
     const created = this.userState.createProject(
       this.newProjectName || `${c.name} Scheme`,
       c.imageUrl,
       c.localImagePath
     );
-    this.userState.addColourToProject(created.id, c.id);
+    this.userState.addColorToProject(created.id, c.id);
     this.newProjectName = '';
     this.showProjectModal.set(false);
   }

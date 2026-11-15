@@ -2,17 +2,17 @@
   <img src="public/logo.svg" alt="Model Painter Logo" width="160" />
 </p>
 
-# Model Painter — Citadel Colour Web App & Data Extractor (`model-painter`)
+# Model Painter — Miniature Painting Companion (`model-painter`)
 
-A full-featured **Angular 19** + **Firebase** web companion for **Paint Warhammer / Citadel Colour** (`com.gamesworkshop.citadelpaint` v3.1.1), complete with local-first browser storage, multi-user **My Warhammer** account import, **"Can I Paint This?"** inventory readiness calculation, and **Cross-Brand 3rd-Party Paint Compatibility** (**The Army Painter**, **Vallejo**, **Two Thin Coats**, **Monument Hobbies Pro Acryl**, and **AK Interactive 3rd Gen**).
+A product-agnostic **Angular** + **Firebase** miniature painting companion for tracking projects, miniature recipes, color guides, and paint inventories across all major miniature paint brands (**Citadel Colour**, **Citadel Tone Pro**, **The Army Painter**, **Vallejo**, **Two Thin Coats**, **Monument Hobbies Pro Acryl**, **AK Interactive 3rd Gen**, and custom paints), complete with local-first browser storage, **"Can I Paint This?"** inventory readiness calculation, and optional **My Warhammer** account import.
 
 ---
 
 ## ✨ Key Features
 
 1. **Hobby Desk (Local-First in Browser `localStorage` + Optional Firebase Cloud Sync)**
-   - **My Projects:** Create, rename, duplicate, and delete projects; attach **Model Painting Guides** (`recipes`), **Colour Guides** (`colours`), and drag-and-drop block **Notes & Checklists** (`@angular/cdk/drag-drop`).
-   - **Aggregated Required & Missing Paints Rollup Tab:** Automatically deduplicates every paint required across a project's attached models and colours, grouping them into **Missing**, **Covered by Equivalent** (Tone Pro or 3rd-Party), and **Owned Directly**, with 1-click **"★ Add All Missing Paints to Wishlist"**.
+   - **My Projects:** Create, rename, duplicate, and delete projects; attach **Model Painting Guides** (`recipes`), **Color Guides** (`colors`), and drag-and-drop block **Notes & Checklists** (`@angular/cdk/drag-drop`).
+   - **Aggregated Required & Missing Paints Rollup Tab:** Automatically deduplicates every paint required across a project's attached models and colors, grouping them into **Missing**, **Covered by Equivalent** (Tone Pro or 3rd-Party), and **Owned Directly**, with 1-click **"★ Add All Missing Paints to Wishlist"**.
    - **My Paints (`Inventory`, `Wishlist`, & `Full Catalogue`):** Track all **487 Citadel Paints** (`warhammer_colour` Classic & `warhammer_pro` Tone Pro) and **145+ pre-seeded 3rd-party paints**, plus add your own **Custom 3rd-Party Paints** and equivalence overrides.
    - **Multi-Brand Comparison & Conversion Tool:**
      - **Mode 1:** Cross-Brand Converter (**Citadel** ↔ **The Army Painter** *Warpaints Fanatic / Original / Speedpaint 2.0*, **Vallejo** *Game Color / Model Color*, **Two Thin Coats**, **Monument Hobbies** *Pro Acryl*, **AK Interactive** *3rd Gen*) with CIE76 $\Delta E$ color distance metrics.
@@ -24,10 +24,10 @@ A full-featured **Angular 19** + **Firebase** web companion for **Paint Warhamme
 3. **Paint A Model (`4,531` Miniature Painting Guides)**
    - Browse by **15 Game Systems** and **335 hierarchical Faction nodes**.
    - **"Can I Paint This?"** Inventory Readiness filter (`100% Paint Ready`, `Missing ≤ 2 Paints`, `Sort by Match %`).
-   - Interactive normalized `(x, y)` **Colour Point Pins** on miniature photos, progressive **Painting Areas** (`Base Finish`, `Detail Finish`, `Artificer Finish`), and inline **Owned Substitute Badges** (`⇄ Covered by ...`).
-4. **Paint A Colour (`596` Colour & Basing Guides)**
-   - Filter by **16 Colour Groups** or toggle **"Only show guides for painting bases"** (`17` basing guides).
-   - Interactive **Space Marine Backpack Showcase Image** switcher (`Base` / `Detail` / `Artificer`) and reverse lookup of **Models Using This Colour**.
+   - Interactive normalized `(x, y)` **Color Point Pins** on miniature photos, progressive **Painting Areas** (`Base Finish`, `Detail Finish`, `Artificer Finish`), and inline **Owned Substitute Badges** (`⇄ Covered by ...`).
+4. **Paint A Color (`596` Color & Basing Guides)**
+   - Filter by **16 Color Groups** or toggle **"Only show guides for painting bases"** (`17` basing guides).
+   - Interactive **Space Marine Backpack Showcase Image** switcher (`Base` / `Detail` / `Artificer`) and reverse lookup of **Models Using This Color**.
 5. **Smart `IndexedDB` + Manifest Hash-Diffing Cache (`catalog_meta/manifest`)**
    - Hydrates in `0ms` from browser `IndexedDB` (`whc_catalog_cache_v1`), performs a `1`-document manifest check on startup (`catalog_meta/manifest`), diffs SHA-256 hashes per bundle, and re-fetches **only** changed bundles.
 

@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PAINT WARHAMMER / CITADEL COLOUR WEB APP — DESIGN SYSTEM & GLOBAL STYLES
-   Uses authentic APK fonts (Anton & Bitter) and Citadel Studio dark palette
+   MODEL PAINTER — DESIGN SYSTEM & GLOBAL STYLES
+   Uses Anton & Bitter typography and Studio Dark palette
    ========================================================================== */
 
 @font-face {
@@ -53,7 +53,7 @@
   --bg-glass: rgba(25, 28, 34, 0.88);
   --bg-input: #15181e;
 
-  /* Citadel Gold & Brand Accents */
+  /* Gold & Brand Accents */
   --gold-primary: #edb304;
   --gold-bright: #fbba00;
   --gold-soft: rgba(237, 179, 4, 0.16);

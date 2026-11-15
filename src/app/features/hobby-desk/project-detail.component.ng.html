@@ -44,7 +44,7 @@
         <div class="hero-meta">
           <span>{{ proj.recipeIds.length }} Model Guides</span>
           <span>•</span>
-          <span>{{ proj.colourIds.length }} Colour Guides</span>
+          <span>{{ proj.colorIds.length }} Color Guides</span>
           <span>•</span>
           <span>{{ proj.notes.length }} Notes</span>
           <span>•</span>
@@ -217,10 +217,10 @@
       </button>
       <button
         class="subtab-btn"
-        [class.active]="activeTab() === 'colours'"
-        (click)="activeTab.set('colours')"
+        [class.active]="activeTab() === 'colors'"
+        (click)="activeTab.set('colors')"
       >
-        💧 Colours ({{ attachedColours().length }})
+        💧 Colors ({{ attachedColors().length }})
       </button>
       <button
         class="subtab-btn"
@@ -270,10 +270,10 @@
         @if (stagedRollupReadiness().overall.totalRequired === 0) {
           <div class="empty-box studio-card">
             <h3>No Paints Required Yet</h3>
-            <p>Add Model Painting Guides or Colour Guides to this project to automatically compute all required & missing paints.</p>
+            <p>Add Model Painting Guides or Color Guides to this project to automatically compute all required & missing paints.</p>
             <div style="display: flex; gap: 10px">
               <button class="btn btn-gold" (click)="showAddModelModal.set(true)">+ Add Model Guide</button>
-              <button class="btn btn-secondary" (click)="showAddColourModal.set(true)">+ Add Colour Guide</button>
+              <button class="btn btn-secondary" (click)="showAddColorModal.set(true)">+ Add Color Guide</button>
             </div>
           </div>
         } @else {
@@ -282,7 +282,7 @@
             <div class="group-header">
               <div>
                 <span class="badge badge-missing">Missing Paints ({{ missingPaintObjects().length }})</span>
-                <p class="group-sub">Paints required by your project's models & colours that are not yet in your Inventory.</p>
+                <p class="group-sub">Paints required by your project's models & colors that are not yet in your Inventory.</p>
               </div>
               @if (missingPaintObjects().length > 0) {
                 <div class="group-actions">
@@ -345,7 +345,7 @@
               <div class="group-header">
                 <div>
                   <span class="badge badge-sub">Covered by Equivalent in Inventory ({{ substitutedList().length }})</span>
-                  <p class="group-sub">Required Citadel paints satisfied by Tone Pro or 3rd-party paints you already own.</p>
+                  <p class="group-sub">Required paints satisfied by equivalent paints you already own.</p>
                 </div>
               </div>
               <div class="rollup-paint-grid">
@@ -440,30 +440,30 @@
     }
 
     <!-- ==================================================================
-         TAB 3: ATTACHED COLOURS
+         TAB 3: ATTACHED COLORS
          ================================================================== -->
-    @if (activeTab() === 'colours') {
+    @if (activeTab() === 'colors') {
       <section class="tab-section">
         <div class="section-bar">
-          <h3>Attached Colour Guides ({{ attachedColours().length }})</h3>
-          <button class="btn btn-gold btn-sm" (click)="showAddColourModal.set(true)">
-            + Add Colour to Project
+          <h3>Attached Color Guides ({{ attachedColors().length }})</h3>
+          <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
+            + Add Color to Project
           </button>
         </div>
 
-        @if (attachedColours().length > 0) {
+        @if (attachedColors().length > 0) {
           <div class="cards-grid">
-            @for (c of attachedColours(); track c.id) {
-              <div class="attached-card studio-card interactive" (click)="goToColour(c.id)">
-                <div class="colour-banner" [style.background]="c.hex"></div>
+            @for (c of attachedColors(); track c.id) {
+              <div class="attached-card studio-card interactive" (click)="goToColor(c.id)">
+                <div class="color-banner" [style.background]="c.hex"></div>
                 <div class="attached-body">
                   <h4>{{ c.name }}</h4>
-                  <p>{{ c.colourGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</p>
+                  <p>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</p>
                 </div>
                 <div class="attached-footer" (click)="$event.stopPropagation()">
                   <button
                     class="btn btn-ghost btn-sm danger-text"
-                    (click)="userState.removeColourFromProject(proj.id, c.id)"
+                    (click)="userState.removeColorFromProject(proj.id, c.id)"
                   >
                     Remove
                   </button>
@@ -473,9 +473,9 @@
           </div>
         } @else {
           <div class="empty-box studio-card">
-            <p>No Colour Guides attached to this project yet.</p>
-            <button class="btn btn-gold btn-sm" (click)="showAddColourModal.set(true)">
-              + Add Colour Guide
+            <p>No Color Guides attached to this project yet.</p>
+            <button class="btn btn-gold btn-sm" (click)="showAddColorModal.set(true)">
+              + Add Color Guide
             </button>
           </div>
         }
@@ -645,32 +645,32 @@
     </div>
   }
 
-  <!-- Modal: Add Colour Picker -->
-  @if (showAddColourModal()) {
-    <div class="modal-backdrop" (click)="showAddColourModal.set(false)">
+  <!-- Modal: Add Color Picker -->
+  @if (showAddColorModal()) {
+    <div class="modal-backdrop" (click)="showAddColorModal.set(false)">
       <div class="modal-panel" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>Add Colour Guide to "{{ proj.name }}"</h3>
-          <button class="close-btn" (click)="showAddColourModal.set(false)">✕</button>
+          <h3>Add Color Guide to "{{ proj.name }}"</h3>
+          <button class="close-btn" (click)="showAddColorModal.set(false)">✕</button>
         </div>
         <div class="modal-body">
           <input
             type="text"
             class="input-control"
-            placeholder="Search 596 colour schemes..."
+            placeholder="Search 596 color schemes..."
             [(ngModel)]="pickerSearch"
           />
           <div class="picker-grid">
-            @for (c of pickerColours(); track c.id) {
+            @for (c of pickerColors(); track c.id) {
               <div class="picker-item studio-card">
                 <span class="paint-swatch" [style.background]="c.hex"></span>
                 <div class="picker-info">
                   <strong>{{ c.name }}</strong>
-                  <span>{{ c.colourGroups.join(', ') }}</span>
+                  <span>{{ c.colorGroups.join(', ') }}</span>
                 </div>
                 <button
                   class="btn btn-sm btn-gold"
-                  (click)="userState.addColourToProject(proj.id, c.id)"
+                  (click)="userState.addColorToProject(proj.id, c.id)"
                 >
                   + Add
                 </button>
