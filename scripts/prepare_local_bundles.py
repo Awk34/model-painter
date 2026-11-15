@@ -14,9 +14,12 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-EXPORT_DIR = Path("/home/antigravity/warhammer_extractor/data/export")
+BASE_DIR = Path(__file__).resolve().parent.parent
+EXPORT_DIR = Path(
+    os.environ.get("WARHAMMER_EXPORT_DIR", str(BASE_DIR / "data" / "export"))
+)
 JSON_DIR = EXPORT_DIR / "json"
-WEBAPP_PUBLIC = Path("/home/antigravity/warhammer_webapp/public")
+WEBAPP_PUBLIC = BASE_DIR / "public"
 DATA_OUT = WEBAPP_PUBLIC / "data"
 META_OUT = DATA_OUT / "catalog_meta"
 RECIPES_OUT = DATA_OUT / "recipes"
@@ -220,11 +223,13 @@ def main():
 
     shutil.copy2(JSON_DIR / "user_account.json", DATA_OUT / "user_account_snapshot.json")
 
+    export_assets = EXPORT_DIR / "assets"
     assets_link = WEBAPP_PUBLIC / "assets"
-    if assets_link.is_symlink() or assets_link.exists():
+    if export_assets.exists():
         if assets_link.is_symlink():
             assets_link.unlink()
-    os.symlink(str(EXPORT_DIR / "assets"), str(assets_link))
+        if not assets_link.exists():
+            os.symlink(str(export_assets), str(assets_link))
 
     print(f"[DONE] Prepared all catalog_meta bundles, {len(model_summaries)} split recipe files, {len(colour_summaries)} split colour files, and symlinked {assets_link}")
 
