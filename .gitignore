@@ -5,6 +5,7 @@ dist/
 out-tsc/
 functions/node_modules/
 functions/lib/
+.venv
 
 # Large local media symlink & split static caches (seeded to Firebase or generated locally)
 public/assets
