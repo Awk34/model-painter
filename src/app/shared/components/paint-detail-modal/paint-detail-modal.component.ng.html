@@ -16,6 +16,7 @@
                 <div
                   class="paint-swatch large"
                   [class.metallic]="isMetallicPaint(cp)"
+                  [class.shade]="isShadePaint(cp)"
                   [style.background]="getPaintSwatchBackground(cp)"
                 ></div>
               }
@@ -38,6 +39,7 @@
                 <div
                   class="paint-swatch large"
                   [class.metallic]="isMetallicPaint(tp)"
+                  [class.shade]="isShadePaint(tp)"
                   [style.background]="getPaintSwatchBackground(tp)"
                 ></div>
               </div>
@@ -121,6 +123,7 @@
                     <span
                       class="paint-swatch"
                       [class.metallic]="eq.isMetallic"
+                      [class.shade]="eq.isShade"
                       [style.background]="eq.swatchBg"
                     ></span>
                     <div class="equiv-info">
@@ -162,6 +165,7 @@
                       <span
                         class="paint-swatch"
                         [class.metallic]="isThirdPartyMetallic(m.thirdPartyPaintId, m.category)"
+                        [class.shade]="isThirdPartyShade(m.thirdPartyPaintId, m.category)"
                         [style.background]="getThirdPartySwatchBg(m.thirdPartyPaintId, m.hex)"
                       ></span>
                       <div class="equiv-info">
@@ -223,6 +227,7 @@
                     <span
                       class="paint-swatch"
                       [class.metallic]="isCitadelMatchMetallic(cm.citadelPaintId, cm.citadelCategory)"
+                      [class.shade]="isCitadelMatchShade(cm.citadelPaintId, cm.citadelCategory)"
                       [style.background]="getCitadelMatchSwatchBg(cm.citadelPaintId, cm.citadelHex)"
                     ></span>
                     <div class="equiv-info">

@@ -6,6 +6,7 @@ import {
   getPaintRepresentativeHex,
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
   matchesModelSearch,
 } from './catalog-filter.util';
 
@@ -155,6 +156,12 @@ describe('catalog-filter.util', () => {
       gradientEndHex: '#311908',
     };
 
+    const thirdPartyShade = {
+      potStyle: 'shade',
+      category: 'shade',
+      hex: '#423122',
+    };
+
     const baalRed = {
       potStyle: 'contrast',
       category: 'contrast',
@@ -183,6 +190,15 @@ describe('catalog-filter.util', () => {
       expect(isMetallicPaint(null)).toBeFalse();
     });
 
+    it('detects shade paints by potStyle or category', () => {
+      expect(isShadePaint(nulnOil)).toBeTrue();
+      expect(isShadePaint(thirdPartyShade)).toBeTrue();
+      expect(isShadePaint({ category: 'Shade' })).toBeTrue();
+      expect(isShadePaint(retributorArmour)).toBeFalse();
+      expect(isShadePaint(abaddonBlack)).toBeFalse();
+      expect(isShadePaint(null)).toBeFalse();
+    });
+
     it('returns representative body hexes rather than white highlights for metallics and shades', () => {
       expect(getPaintRepresentativeHex(retributorArmour)).toBe('#EBB854');
       expect(getPaintRepresentativeHex(leadbelcher)).toBe('#8A8A8A');
@@ -190,6 +206,7 @@ describe('catalog-filter.util', () => {
       expect(getPaintRepresentativeHex(thirdPartyMetallic)).toBe('#C4902C');
       expect(getPaintRepresentativeHex(nulnOil)).toBe('#5D5A58');
       expect(getPaintRepresentativeHex(reiklandFleshshade)).toBe('#AC491D');
+      expect(getPaintRepresentativeHex(thirdPartyShade)).toBe('#423122');
       expect(getPaintRepresentativeHex(baalRed)).toBe('#C01823');
       expect(getPaintRepresentativeHex(abaddonBlack)).toBe('#000000');
       expect(getPaintRepresentativeHex(mephistonRed)).toBe('#960C09');
@@ -213,13 +230,16 @@ describe('catalog-filter.util', () => {
       expect(customBg).toContain('linear-gradient(135deg, #6D7378 0%');
     });
 
-    it('builds multi-stop gradients for shade/contrast paints and solid hexes for flat paints', () => {
+    it('builds strong pooling gradients for shade paints, gradients for contrast, and solid hexes for flat paints', () => {
       expect(getPaintSwatchBackground(nulnOil)).toBe(
-        'linear-gradient(135deg, #DFD9D6 0%, #5D5A58 48%, #101010 100%)'
+        'linear-gradient(145deg, #DFD9D6 0%, #DFD9D6 16%, #5D5A58 38%, #101010 66%, #0B0A09 86%, #0B0A09 100%)'
       );
       expect(getPaintSwatchBackground(reiklandFleshshade)).toBe(
-        'linear-gradient(135deg, #FFD5B7 0%, #AC491D 48%, #311908 100%)'
+        'linear-gradient(145deg, #FFD5B7 0%, #FFD5B7 16%, #AC491D 38%, #311908 66%, #1C0E05 86%, #1C0E05 100%)'
       );
+      const tpShadeBg = getPaintSwatchBackground(thirdPartyShade);
+      expect(tpShadeBg).toContain('linear-gradient(145deg,');
+      expect(tpShadeBg).toContain('#423122 38%');
       expect(getPaintSwatchBackground(baalRed)).toBe(
         'linear-gradient(135deg, #C01823 0%, #D51C29 100%)'
       );

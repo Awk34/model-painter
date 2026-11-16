@@ -71,6 +71,7 @@
               <span
                 class="paint-swatch"
                 [class.metallic]="isMetallicPaint(cp)"
+                [class.shade]="isShadePaint(cp)"
                 [style.background]="getPaintSwatchBackground(cp)"
               ></span>
               <div class="p-info">
@@ -95,6 +96,7 @@
               <span
                 class="paint-swatch"
                 [class.metallic]="isMetallicPaint(tp)"
+                [class.shade]="isShadePaint(tp)"
                 [style.background]="getPaintSwatchBackground(tp)"
               ></span>
               <div class="p-info">

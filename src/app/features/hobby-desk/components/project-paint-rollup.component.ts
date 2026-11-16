@@ -6,6 +6,7 @@ import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
 } from '../../../core/utils/catalog-filter.util';
 
 export type ProjectRollupStage = FinishStageKey | 'all';
@@ -22,6 +23,7 @@ export class ProjectPaintRollupComponent {
   readonly paintModal = inject(PaintModalService);
   readonly getPaintSwatchBackground = getPaintSwatchBackground;
   readonly isMetallicPaint = isMetallicPaint;
+  readonly isShadePaint = isShadePaint;
 
   readonly staged = input.required<StagedReadinessResult>();
   readonly expanded = model<boolean>(true);

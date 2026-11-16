@@ -135,6 +135,19 @@ export function isMetallicPaint(paint: PaintSwatchLike | null | undefined): bool
 }
 
 /**
+ * Returns true when a paint is a shade or wash.
+ */
+export function isShadePaint(paint: PaintSwatchLike | null | undefined): boolean {
+  if (!paint) {
+    return false;
+  }
+  return (
+    paint.potStyle?.toLowerCase() === 'shade' ||
+    paint.category?.toLowerCase() === 'shade'
+  );
+}
+
+/**
  * Returns the single best representative hex color for a paint.
  * For Citadel metallic and shade paints, `gradientStartHex` stores the specular highlight
  * or pale edge while `gradientMiddleHex` holds the true body tone.
@@ -160,8 +173,8 @@ export function getPaintRepresentativeHex(
     return paint.hex || end || start || fallback;
   }
 
-  if (paint.potStyle?.toLowerCase() === 'shade' && mid) {
-    return mid;
+  if (isShadePaint(paint)) {
+    return mid || paint.hex || end || start || fallback;
   }
 
   return start || paint.hex || fallback;
@@ -205,6 +218,26 @@ export function getPaintSwatchBackground(
     }
 
     return `linear-gradient(135deg, ${body} 0%, ${highlight} 26%, ${body} 50%, ${shadow} 86%, ${body} 100%)`;
+  }
+
+  if (isShadePaint(paint)) {
+    let tint: string;
+    let midTone: string;
+    let recess: string;
+
+    if (start && mid && end) {
+      tint = start;
+      midTone = mid;
+      recess = end;
+    } else {
+      const base = getPaintRepresentativeHex(paint, fallback);
+      tint = start && start !== base ? start : mixHex(base, '#EDE6DC', 0.72);
+      midTone = mid && mid !== base ? mid : base;
+      recess = end && end !== base ? end : mixHex(base, '#080504', 0.48);
+    }
+    const deepPool = mixHex(recess, '#050302', 0.48);
+
+    return `linear-gradient(145deg, ${tint} 0%, ${tint} 16%, ${midTone} 38%, ${recess} 66%, ${deepPool} 86%, ${deepPool} 100%)`;
   }
 
   if (start && mid && end) {

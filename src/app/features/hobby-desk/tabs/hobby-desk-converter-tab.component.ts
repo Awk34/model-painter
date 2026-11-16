@@ -8,6 +8,7 @@ import {
   getPaintRepresentativeHex,
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
 } from '../../../core/utils/catalog-filter.util';
 
 @Component({
@@ -24,6 +25,7 @@ export class HobbyDeskConverterTabComponent {
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
   readonly getPaintSwatchBackground = getPaintSwatchBackground;
   readonly isMetallicPaint = isMetallicPaint;
+  readonly isShadePaint = isShadePaint;
 
   readonly converterMode = signal<'cross-brand' | 'tone-pro'>('cross-brand');
   readonly converterSearch = signal('');
@@ -89,6 +91,7 @@ export class HobbyDeskConverterTabComponent {
       const classicHex = getPaintRepresentativeHex(classicPaint);
       const classicSwatchBg = getPaintSwatchBackground(classicPaint);
       const classicIsMetallic = isMetallicPaint(classicPaint);
+      const classicIsShade = isShadePaint(classicPaint);
 
       if (q) {
         const matchClassic = classicName.toLowerCase().includes(q);
@@ -105,6 +108,7 @@ export class HobbyDeskConverterTabComponent {
         classicHex,
         classicSwatchBg,
         classicIsMetallic,
+        classicIsShade,
         toneProList: links,
       });
     }
@@ -121,6 +125,11 @@ export class HobbyDeskConverterTabComponent {
     return tp ? isMetallicPaint(tp) : isMetallicPaint({ category });
   }
 
+  isThirdPartyShade(id: string, category?: string): boolean {
+    const tp = this.catalog.thirdPartyPaintById().get(id);
+    return tp ? isShadePaint(tp) : isShadePaint({ category });
+  }
+
   getToneProSwatchBg(id: string, fallbackHex: string): string {
     const p = this.catalog.paintById().get(id);
     return p ? getPaintSwatchBackground(p, fallbackHex) : fallbackHex;
@@ -128,6 +137,10 @@ export class HobbyDeskConverterTabComponent {
 
   isToneProMetallic(id: string): boolean {
     return isMetallicPaint(this.catalog.paintById().get(id));
+  }
+
+  isToneProShade(id: string): boolean {
+    return isShadePaint(this.catalog.paintById().get(id));
   }
 }
 

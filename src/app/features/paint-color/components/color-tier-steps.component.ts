@@ -9,6 +9,7 @@ import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
 } from '../../../core/utils/catalog-filter.util';
 
 export interface ColorTierBlock {
@@ -28,6 +29,7 @@ export class ColorTierStepsComponent {
   readonly paintModal = inject(PaintModalService);
   readonly getPaintSwatchBackground = getPaintSwatchBackground;
   readonly isMetallicPaint = isMetallicPaint;
+  readonly isShadePaint = isShadePaint;
 
   readonly tierBlocks = input.required<ColorTierBlock[]>();
   readonly readiness = input.required<InventoryReadinessResult>();

@@ -10,6 +10,7 @@ import {
   getCitadelBrandLabel,
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
   matchesModelSearch,
 } from '../../core/utils/catalog-filter.util';
 
@@ -29,6 +30,7 @@ export class SearchComponent {
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
   readonly getPaintSwatchBackground = getPaintSwatchBackground;
   readonly isMetallicPaint = isMetallicPaint;
+  readonly isShadePaint = isShadePaint;
 
   readonly query = signal<string>('');
   readonly tab = signal<'all' | 'models' | 'colors' | 'paints'>('all');

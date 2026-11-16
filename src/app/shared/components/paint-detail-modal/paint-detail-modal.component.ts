@@ -10,6 +10,7 @@ import {
   getPaintRepresentativeHex,
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
 } from '../../../core/utils/catalog-filter.util';
 
 @Component({
@@ -28,6 +29,7 @@ export class PaintDetailModalComponent {
   readonly getPaintRepresentativeHex = getPaintRepresentativeHex;
   readonly getPaintSwatchBackground = getPaintSwatchBackground;
   readonly isMetallicPaint = isMetallicPaint;
+  readonly isShadePaint = isShadePaint;
   private readonly router = inject(Router);
 
   selectedOverridePaintId = '';
@@ -71,6 +73,7 @@ export class PaintDetailModalComponent {
       hex: string;
       swatchBg: string;
       isMetallic: boolean;
+      isShade: boolean;
       label: string;
     }[] = [];
 
@@ -83,6 +86,7 @@ export class PaintDetailModalComponent {
         hex: proP ? getPaintRepresentativeHex(proP) : l.tone_pro_hex,
         swatchBg: proP ? getPaintSwatchBackground(proP) : l.tone_pro_hex,
         isMetallic: isMetallicPaint(proP),
+        isShade: isShadePaint(proP),
         label: 'Citadel Tone Pro Equivalent',
       });
     }
@@ -96,6 +100,7 @@ export class PaintDetailModalComponent {
         hex: getPaintRepresentativeHex(classicP),
         swatchBg: getPaintSwatchBackground(classicP),
         isMetallic: isMetallicPaint(classicP),
+        isShade: isShadePaint(classicP),
         label: `Citadel Classic (${l.classic_category})`,
       });
     }
@@ -166,6 +171,12 @@ export class PaintDetailModalComponent {
     return tp ? isMetallicPaint(tp) : isMetallicPaint({ category });
   }
 
+  isThirdPartyShade(id: string, category?: string): boolean {
+    const tp =
+      this.catalog.thirdPartyPaintById().get(id) ?? this.userState.customPaintById().get(id);
+    return tp ? isShadePaint(tp) : isShadePaint({ category });
+  }
+
   getCitadelMatchSwatchBg(id: string, fallbackHex: string): string {
     const cp = this.catalog.paintById().get(id);
     return cp ? getPaintSwatchBackground(cp, fallbackHex) : fallbackHex;
@@ -174,6 +185,11 @@ export class PaintDetailModalComponent {
   isCitadelMatchMetallic(id: string, category?: string): boolean {
     const cp = this.catalog.paintById().get(id);
     return cp ? isMetallicPaint(cp) : isMetallicPaint({ category });
+  }
+
+  isCitadelMatchShade(id: string, category?: string): boolean {
+    const cp = this.catalog.paintById().get(id);
+    return cp ? isShadePaint(cp) : isShadePaint({ category });
   }
 
   selectPaint(id: string): void {

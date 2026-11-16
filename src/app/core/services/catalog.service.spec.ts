@@ -470,34 +470,60 @@ describe('ModelPaintingStepsComponent stage filtering', () => {
               gradientStartHex: '#000000',
             },
           },
+          {
+            id: 'step-shade',
+            stepOrder: 3,
+            stepNumber: 9,
+            paintingStage: 'Base Finish',
+            techniqueName: 'Shade',
+            text: '• Gold areas',
+            paint: {
+              id: 'paint-reikland',
+              name: 'Reikland Fleshshade',
+              category: 'shade',
+              potStyle: 'shade',
+              gradientStartHex: '#FFD5B7',
+              gradientMiddleHex: '#AC491D',
+              gradientEndHex: '#311908',
+            },
+          },
         ],
       },
     ]);
     fixture.componentRef.setInput('readiness', {
-      totalRequired: 2,
+      totalRequired: 3,
       ownedDirectCount: 0,
       substitutedCount: 0,
-      missingCount: 2,
+      missingCount: 3,
       matchPercent: 0,
       ownedDirectIds: [],
       substitutedByPaintId: {},
-      missingPaintIds: ['paint-retributor', 'paint-abaddon'],
+      missingPaintIds: ['paint-retributor', 'paint-abaddon', 'paint-reikland'],
     });
     fixture.detectChanges();
 
     const swatches = Array.from(
       fixture.nativeElement.querySelectorAll('.paint-swatch')
     ) as HTMLElement[];
-    expect(swatches.length).toBe(2);
+    expect(swatches.length).toBe(3);
 
     const goldSwatch = swatches[0];
     expect(goldSwatch.classList.contains('metallic')).toBeTrue();
+    expect(goldSwatch.classList.contains('shade')).toBeFalse();
     const goldBg = goldSwatch.style.background || goldSwatch.style.backgroundImage;
     expect(goldBg).toContain('linear-gradient');
     expect(goldBg).toContain('235, 184, 84'); // #EBB854 in rgb
 
     const blackSwatch = swatches[1];
     expect(blackSwatch.classList.contains('metallic')).toBeFalse();
+    expect(blackSwatch.classList.contains('shade')).toBeFalse();
     expect(blackSwatch.style.background).toContain('rgb(0, 0, 0)');
+
+    const shadeSwatch = swatches[2];
+    expect(shadeSwatch.classList.contains('shade')).toBeTrue();
+    expect(shadeSwatch.classList.contains('metallic')).toBeFalse();
+    const shadeBg = shadeSwatch.style.background || shadeSwatch.style.backgroundImage;
+    expect(shadeBg).toContain('linear-gradient');
+    expect(shadeBg).toContain('172, 73, 29'); // #AC491D in rgb
   });
 });

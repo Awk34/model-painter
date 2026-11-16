@@ -101,6 +101,7 @@
                     <span
                       class="paint-swatch"
                       [class.metallic]="isMetallicPaint(p)"
+                      [class.shade]="isShadePaint(p)"
                       [style.background]="getPaintSwatchBackground(p)"
                     ></span>
                     <div class="rp-info">
@@ -154,6 +155,7 @@
                     <span
                       class="paint-swatch"
                       [class.metallic]="isMetallicPaint(item.paint)"
+                      [class.shade]="isShadePaint(item.paint)"
                       [style.background]="getPaintSwatchBackground(item.paint)"
                     ></span>
                     <div class="rp-info">
@@ -184,6 +186,7 @@
                     <span
                       class="paint-swatch"
                       [class.metallic]="isMetallicPaint(p)"
+                      [class.shade]="isShadePaint(p)"
                       [style.background]="getPaintSwatchBackground(p)"
                     ></span>
                     <div class="rp-info">

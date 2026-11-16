@@ -9,6 +9,7 @@ import {
   getPaintRepresentativeHex,
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
 } from '../../../core/utils/catalog-filter.util';
 import { CollectionSubMode } from './hobby-desk-models-tab.component';
 
@@ -21,6 +22,7 @@ interface UnifiedPaintRow {
   hex: string;
   swatchBg: string;
   isMetallic: boolean;
+  isShade: boolean;
   localImagePath?: string;
   imageUrl?: string;
   isCitadel: boolean;
@@ -69,6 +71,7 @@ export class HobbyDeskPaintsTabComponent {
         hex: getPaintRepresentativeHex(cp),
         swatchBg: getPaintSwatchBackground(cp),
         isMetallic: isMetallicPaint(cp),
+        isShade: isShadePaint(cp),
         localImagePath: cp.localImagePath,
         imageUrl: cp.imageUrl,
         isCitadel: true,
@@ -85,6 +88,7 @@ export class HobbyDeskPaintsTabComponent {
         hex: tp.hex,
         swatchBg: getPaintSwatchBackground(tp),
         isMetallic: isMetallicPaint(tp),
+        isShade: isShadePaint(tp),
         isCitadel: false,
         isTonePro: false,
         code: tp.code,

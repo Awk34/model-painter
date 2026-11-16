@@ -11,6 +11,7 @@ import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getPaintSwatchBackground,
   isMetallicPaint,
+  isShadePaint,
 } from '../../../core/utils/catalog-filter.util';
 
 export type ModelStageFilter = 'all' | 'Base Finish' | 'Detail Finish' | 'Artificer Finish';
@@ -27,6 +28,7 @@ export class ModelPaintingStepsComponent {
   readonly img = inject(ImageService);
   readonly getPaintSwatchBackground = getPaintSwatchBackground;
   readonly isMetallicPaint = isMetallicPaint;
+  readonly isShadePaint = isShadePaint;
 
   readonly paintingAreas = input.required<ModelPaintingArea[]>();
   readonly readiness = input.required<InventoryReadinessResult>();
