@@ -6,12 +6,17 @@
 }
 
 .paint-swatch {
+  --swatch-ring-width: 2px;
   display: inline-block;
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.45);
+  border: none;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 var(--swatch-ring-width) rgba(255, 255, 255, 0.22),
+    inset 0 2px 4px rgba(255, 255, 255, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.45);
   flex-shrink: 0;
 }
 
@@ -21,25 +26,24 @@
 }
 
 .paint-swatch.mini {
+  --swatch-ring-width: 1px;
   width: 22px;
   height: 22px;
-  border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .paint-swatch.metallic {
-  border-color: rgba(255, 255, 255, 0.45);
   box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.65),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 var(--swatch-ring-width) rgba(255, 255, 255, 0.42),
+    inset 0 2px 4px rgba(255, 255, 255, 0.55),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.5),
     0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .paint-swatch.shade {
-  border-color: rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset -3px -4px 7px rgba(0, 0, 0, 0.72),
-    inset 1px 1px 2px rgba(255, 255, 255, 0.32),
+    inset 0 0 0 var(--swatch-ring-width) rgba(255, 255, 255, 0.2),
+    inset -3px -4px 7px rgba(0, 0, 0, 0.65),
+    inset 1px 2px 3px rgba(255, 255, 255, 0.25),
     0 2px 6px rgba(0, 0, 0, 0.55);
 }
 

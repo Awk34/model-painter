@@ -237,7 +237,7 @@ export function getPaintSwatchBackground(
     }
     const deepPool = mixHex(recess, '#050302', 0.48);
 
-    return `linear-gradient(145deg, ${tint} 0%, ${tint} 16%, ${midTone} 38%, ${recess} 66%, ${deepPool} 86%, ${deepPool} 100%)`;
+    return `linear-gradient(145deg, ${tint} 12%, ${midTone} 40%, ${recess} 68%, ${deepPool} 90%)`;
   }
 
   if (start && mid && end) {

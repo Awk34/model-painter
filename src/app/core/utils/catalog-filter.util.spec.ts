@@ -232,14 +232,14 @@ describe('catalog-filter.util', () => {
 
     it('builds strong pooling gradients for shade paints, gradients for contrast, and solid hexes for flat paints', () => {
       expect(getPaintSwatchBackground(nulnOil)).toBe(
-        'linear-gradient(145deg, #DFD9D6 0%, #DFD9D6 16%, #5D5A58 38%, #101010 66%, #0B0A09 86%, #0B0A09 100%)'
+        'linear-gradient(145deg, #DFD9D6 12%, #5D5A58 40%, #101010 68%, #0B0A09 90%)'
       );
       expect(getPaintSwatchBackground(reiklandFleshshade)).toBe(
-        'linear-gradient(145deg, #FFD5B7 0%, #FFD5B7 16%, #AC491D 38%, #311908 66%, #1C0E05 86%, #1C0E05 100%)'
+        'linear-gradient(145deg, #FFD5B7 12%, #AC491D 40%, #311908 68%, #1C0E05 90%)'
       );
       const tpShadeBg = getPaintSwatchBackground(thirdPartyShade);
       expect(tpShadeBg).toContain('linear-gradient(145deg,');
-      expect(tpShadeBg).toContain('#423122 38%');
+      expect(tpShadeBg).toContain('#423122 40%');
       expect(getPaintSwatchBackground(baalRed)).toBe(
         'linear-gradient(135deg, #C01823 0%, #D51C29 100%)'
       );
