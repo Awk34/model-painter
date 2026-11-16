@@ -18,7 +18,7 @@
           <div class="picker-grid">
             @for (c of pickerColors(); track c.id) {
               <div class="picker-item studio-card">
-                <span class="paint-swatch" [style.background]="c.hex"></span>
+                <app-paint-swatch [paint]="c" />
                 <div class="picker-info">
                   <strong>{{ c.name }}</strong>
                   <span>{{ c.colorGroups.join(', ') }}</span>

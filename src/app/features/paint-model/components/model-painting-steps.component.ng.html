@@ -99,12 +99,7 @@
                     class="step-paint-main"
                     (click)="paintModal.openPaint(sp.id)"
                   >
-                    <span
-                      class="paint-swatch"
-                      [class.metallic]="isMetallicPaint(sp)"
-                      [class.shade]="isShadePaint(sp)"
-                      [style.background]="getPaintSwatchBackground(sp)"
-                    ></span>
+                    <app-paint-swatch [paint]="sp" />
                     <div class="sp-info">
                       <strong>{{ sp.name }}</strong>
                       <span>{{ sp.category }}</span>

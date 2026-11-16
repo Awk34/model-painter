@@ -5,12 +5,13 @@ import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { matchesModelSearch } from '../../../core/utils/catalog-filter.util';
+import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
 
 export type ProjectPickerMode = 'model' | 'color' | 'thumbnail' | null;
 
 @Component({
   selector: 'app-project-picker-modal',
-  imports: [FormsModule],
+  imports: [FormsModule, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-picker-modal.component.ng.html',
   styleUrl: './project-picker-modal.component.css',

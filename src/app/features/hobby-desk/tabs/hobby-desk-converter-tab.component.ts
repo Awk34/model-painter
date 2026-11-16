@@ -6,14 +6,13 @@ import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
   getPaintRepresentativeHex,
-  getPaintSwatchBackground,
-  isMetallicPaint,
-  isShadePaint,
+  PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
+import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
 
 @Component({
   selector: 'app-hobby-desk-converter-tab',
-  imports: [FormsModule],
+  imports: [FormsModule, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-converter-tab.component.ng.html',
   styleUrl: './hobby-desk-converter-tab.component.css',
@@ -23,9 +22,6 @@ export class HobbyDeskConverterTabComponent {
   readonly userState = inject(UserStateService);
   readonly paintModal = inject(PaintModalService);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
-  readonly getPaintSwatchBackground = getPaintSwatchBackground;
-  readonly isMetallicPaint = isMetallicPaint;
-  readonly isShadePaint = isShadePaint;
 
   readonly converterMode = signal<'cross-brand' | 'tone-pro'>('cross-brand');
   readonly converterSearch = signal('');
@@ -89,9 +85,6 @@ export class HobbyDeskConverterTabComponent {
       const classicName = links[0]?.classic_paint_name ?? classicPaint?.name ?? classicId;
       const classicCategory = links[0]?.classic_category ?? classicPaint?.category ?? '';
       const classicHex = getPaintRepresentativeHex(classicPaint);
-      const classicSwatchBg = getPaintSwatchBackground(classicPaint);
-      const classicIsMetallic = isMetallicPaint(classicPaint);
-      const classicIsShade = isShadePaint(classicPaint);
 
       if (q) {
         const matchClassic = classicName.toLowerCase().includes(q);
@@ -106,41 +99,19 @@ export class HobbyDeskConverterTabComponent {
         classicName,
         classicCategory,
         classicHex,
-        classicSwatchBg,
-        classicIsMetallic,
-        classicIsShade,
+        classicPaint,
         toneProList: links,
       });
     }
     return groups;
   });
 
-  getThirdPartySwatchBg(id: string, fallbackHex: string): string {
-    const tp = this.catalog.thirdPartyPaintById().get(id);
-    return tp ? getPaintSwatchBackground(tp, fallbackHex) : fallbackHex;
+  resolveThirdPartySwatch(id: string, category?: string): PaintSwatchLike {
+    return this.catalog.thirdPartyPaintById().get(id) ?? { category };
   }
 
-  isThirdPartyMetallic(id: string, category?: string): boolean {
-    const tp = this.catalog.thirdPartyPaintById().get(id);
-    return tp ? isMetallicPaint(tp) : isMetallicPaint({ category });
-  }
-
-  isThirdPartyShade(id: string, category?: string): boolean {
-    const tp = this.catalog.thirdPartyPaintById().get(id);
-    return tp ? isShadePaint(tp) : isShadePaint({ category });
-  }
-
-  getToneProSwatchBg(id: string, fallbackHex: string): string {
-    const p = this.catalog.paintById().get(id);
-    return p ? getPaintSwatchBackground(p, fallbackHex) : fallbackHex;
-  }
-
-  isToneProMetallic(id: string): boolean {
-    return isMetallicPaint(this.catalog.paintById().get(id));
-  }
-
-  isToneProShade(id: string): boolean {
-    return isShadePaint(this.catalog.paintById().get(id));
+  resolveCitadelSwatch(id: string): PaintSwatchLike | undefined {
+    return this.catalog.paintById().get(id);
   }
 }
 

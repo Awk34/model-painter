@@ -6,6 +6,7 @@ import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { AddToProjectModalComponent } from '../../shared/components/add-to-project-modal/add-to-project-modal.component';
+import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint-swatch.component';
 import { StageReadinessBarsComponent } from '../../shared/components/stage-readiness-bars/stage-readiness-bars.component';
 import { ColorTierBlock, ColorTierStepsComponent } from './components/color-tier-steps.component';
 
@@ -16,6 +17,7 @@ import { ColorTierBlock, ColorTierStepsComponent } from './components/color-tier
     StageReadinessBarsComponent,
     ColorTierStepsComponent,
     AddToProjectModalComponent,
+    PaintSwatchComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './color-detail.component.ng.html',

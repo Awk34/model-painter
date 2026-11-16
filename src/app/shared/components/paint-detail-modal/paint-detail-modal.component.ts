@@ -8,14 +8,13 @@ import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
   getPaintRepresentativeHex,
-  getPaintSwatchBackground,
-  isMetallicPaint,
-  isShadePaint,
+  PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
+import { PaintSwatchComponent } from '../paint-swatch/paint-swatch.component';
 
 @Component({
   selector: 'app-paint-detail-modal',
-  imports: [FormsModule],
+  imports: [FormsModule, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-detail-modal.component.ng.html',
   styleUrl: './paint-detail-modal.component.css',
@@ -27,9 +26,6 @@ export class PaintDetailModalComponent {
   readonly img = inject(ImageService);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
   readonly getPaintRepresentativeHex = getPaintRepresentativeHex;
-  readonly getPaintSwatchBackground = getPaintSwatchBackground;
-  readonly isMetallicPaint = isMetallicPaint;
-  readonly isShadePaint = isShadePaint;
   private readonly router = inject(Router);
 
   selectedOverridePaintId = '';
@@ -71,9 +67,7 @@ export class PaintDetailModalComponent {
       id: string;
       name: string;
       hex: string;
-      swatchBg: string;
-      isMetallic: boolean;
-      isShade: boolean;
+      paint: PaintSwatchLike | undefined;
       label: string;
     }[] = [];
 
@@ -84,9 +78,7 @@ export class PaintDetailModalComponent {
         id: l.tone_pro_paint_id,
         name: l.tone_pro_paint_name,
         hex: proP ? getPaintRepresentativeHex(proP) : l.tone_pro_hex,
-        swatchBg: proP ? getPaintSwatchBackground(proP) : l.tone_pro_hex,
-        isMetallic: isMetallicPaint(proP),
-        isShade: isShadePaint(proP),
+        paint: proP,
         label: 'Citadel Tone Pro Equivalent',
       });
     }
@@ -98,9 +90,7 @@ export class PaintDetailModalComponent {
         id: l.classic_paint_id,
         name: l.classic_paint_name,
         hex: getPaintRepresentativeHex(classicP),
-        swatchBg: getPaintSwatchBackground(classicP),
-        isMetallic: isMetallicPaint(classicP),
-        isShade: isShadePaint(classicP),
+        paint: classicP,
         label: `Citadel Classic (${l.classic_category})`,
       });
     }
@@ -159,37 +149,16 @@ export class PaintDetailModalComponent {
     return this.catalog.modelsUsingPaintMap().get(id) ?? [];
   });
 
-  getThirdPartySwatchBg(id: string, fallbackHex: string): string {
-    const tp =
-      this.catalog.thirdPartyPaintById().get(id) ?? this.userState.customPaintById().get(id);
-    return tp ? getPaintSwatchBackground(tp, fallbackHex) : fallbackHex;
+  resolveThirdPartySwatch(id: string, category?: string): PaintSwatchLike {
+    return (
+      this.catalog.thirdPartyPaintById().get(id) ??
+      this.userState.customPaintById().get(id) ??
+      { category }
+    );
   }
 
-  isThirdPartyMetallic(id: string, category?: string): boolean {
-    const tp =
-      this.catalog.thirdPartyPaintById().get(id) ?? this.userState.customPaintById().get(id);
-    return tp ? isMetallicPaint(tp) : isMetallicPaint({ category });
-  }
-
-  isThirdPartyShade(id: string, category?: string): boolean {
-    const tp =
-      this.catalog.thirdPartyPaintById().get(id) ?? this.userState.customPaintById().get(id);
-    return tp ? isShadePaint(tp) : isShadePaint({ category });
-  }
-
-  getCitadelMatchSwatchBg(id: string, fallbackHex: string): string {
-    const cp = this.catalog.paintById().get(id);
-    return cp ? getPaintSwatchBackground(cp, fallbackHex) : fallbackHex;
-  }
-
-  isCitadelMatchMetallic(id: string, category?: string): boolean {
-    const cp = this.catalog.paintById().get(id);
-    return cp ? isMetallicPaint(cp) : isMetallicPaint({ category });
-  }
-
-  isCitadelMatchShade(id: string, category?: string): boolean {
-    const cp = this.catalog.paintById().get(id);
-    return cp ? isShadePaint(cp) : isShadePaint({ category });
+  resolveCitadelSwatch(id: string, category?: string): PaintSwatchLike {
+    return this.catalog.paintById().get(id) ?? { category };
   }
 
   selectPaint(id: string): void {

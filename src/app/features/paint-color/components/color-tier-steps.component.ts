@@ -6,11 +6,7 @@ import {
 } from '../../../core/models/catalog.models';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
-import {
-  getPaintSwatchBackground,
-  isMetallicPaint,
-  isShadePaint,
-} from '../../../core/utils/catalog-filter.util';
+import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
 
 export interface ColorTierBlock {
   key: FinishStageKey;
@@ -20,6 +16,7 @@ export interface ColorTierBlock {
 
 @Component({
   selector: 'app-color-tier-steps',
+  imports: [PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './color-tier-steps.component.ng.html',
   styleUrl: './color-tier-steps.component.css',
@@ -27,9 +24,6 @@ export interface ColorTierBlock {
 export class ColorTierStepsComponent {
   readonly userState = inject(UserStateService);
   readonly paintModal = inject(PaintModalService);
-  readonly getPaintSwatchBackground = getPaintSwatchBackground;
-  readonly isMetallicPaint = isMetallicPaint;
-  readonly isShadePaint = isShadePaint;
 
   readonly tierBlocks = input.required<ColorTierBlock[]>();
   readonly readiness = input.required<InventoryReadinessResult>();

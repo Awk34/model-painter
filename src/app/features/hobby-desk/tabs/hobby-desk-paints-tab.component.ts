@@ -7,10 +7,9 @@ import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
   getPaintRepresentativeHex,
-  getPaintSwatchBackground,
-  isMetallicPaint,
-  isShadePaint,
+  PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
+import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
 import { CollectionSubMode } from './hobby-desk-models-tab.component';
 
 interface UnifiedPaintRow {
@@ -20,9 +19,7 @@ interface UnifiedPaintRow {
   rangeLabel: string;
   category: string;
   hex: string;
-  swatchBg: string;
-  isMetallic: boolean;
-  isShade: boolean;
+  paint: PaintSwatchLike;
   localImagePath?: string;
   imageUrl?: string;
   isCitadel: boolean;
@@ -32,7 +29,7 @@ interface UnifiedPaintRow {
 
 @Component({
   selector: 'app-hobby-desk-paints-tab',
-  imports: [FormsModule],
+  imports: [FormsModule, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-paints-tab.component.ng.html',
   styleUrl: './hobby-desk-paints-tab.component.css',
@@ -69,9 +66,7 @@ export class HobbyDeskPaintsTabComponent {
         rangeLabel: getCitadelBrandLabel(cp.range, 'Citadel Colour'),
         category: cp.category,
         hex: getPaintRepresentativeHex(cp),
-        swatchBg: getPaintSwatchBackground(cp),
-        isMetallic: isMetallicPaint(cp),
-        isShade: isShadePaint(cp),
+        paint: cp,
         localImagePath: cp.localImagePath,
         imageUrl: cp.imageUrl,
         isCitadel: true,
@@ -86,9 +81,7 @@ export class HobbyDeskPaintsTabComponent {
         rangeLabel: `${tp.brand} • ${tp.range}`,
         category: tp.category,
         hex: tp.hex,
-        swatchBg: getPaintSwatchBackground(tp),
-        isMetallic: isMetallicPaint(tp),
-        isShade: isShadePaint(tp),
+        paint: tp,
         isCitadel: false,
         isTonePro: false,
         code: tp.code,

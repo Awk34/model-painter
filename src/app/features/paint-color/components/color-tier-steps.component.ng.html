@@ -22,12 +22,7 @@
                 (click)="paintModal.openPaint(sp.id)"
               >
                 <span class="step-order-num">{{ st.stepOrder }}</span>
-                <span
-                  class="paint-swatch"
-                  [class.metallic]="isMetallicPaint(sp)"
-                  [class.shade]="isShadePaint(sp)"
-                  [style.background]="getPaintSwatchBackground(sp)"
-                ></span>
+                <app-paint-swatch [paint]="sp" />
                 <div class="step-paint-info">
                   <strong>{{ sp.name }}</strong>
                   <span>{{ st.technique || sp.category }}</span>

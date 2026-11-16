@@ -3,16 +3,13 @@ import { FinishStageKey, StagedReadinessResult } from '../../../core/models/cata
 import { CatalogService } from '../../../core/services/catalog.service';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
-import {
-  getPaintSwatchBackground,
-  isMetallicPaint,
-  isShadePaint,
-} from '../../../core/utils/catalog-filter.util';
+import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
 
 export type ProjectRollupStage = FinishStageKey | 'all';
 
 @Component({
   selector: 'app-project-paint-rollup',
+  imports: [PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-paint-rollup.component.ng.html',
   styleUrl: './project-paint-rollup.component.css',
@@ -21,9 +18,6 @@ export class ProjectPaintRollupComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
   readonly paintModal = inject(PaintModalService);
-  readonly getPaintSwatchBackground = getPaintSwatchBackground;
-  readonly isMetallicPaint = isMetallicPaint;
-  readonly isShadePaint = isShadePaint;
 
   readonly staged = input.required<StagedReadinessResult>();
   readonly expanded = model<boolean>(true);

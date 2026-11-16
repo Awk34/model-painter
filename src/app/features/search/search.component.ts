@@ -8,15 +8,13 @@ import { PaintModalService } from '../../core/services/paint-modal.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
-  getPaintSwatchBackground,
-  isMetallicPaint,
-  isShadePaint,
   matchesModelSearch,
 } from '../../core/utils/catalog-filter.util';
+import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint-swatch.component';
 
 @Component({
   selector: 'app-search',
-  imports: [DecimalPipe, FormsModule, RouterModule],
+  imports: [DecimalPipe, FormsModule, RouterModule, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './search.component.ng.html',
   styleUrl: './search.component.css',
@@ -28,9 +26,6 @@ export class SearchComponent {
   readonly img = inject(ImageService);
   readonly router = inject(Router);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
-  readonly getPaintSwatchBackground = getPaintSwatchBackground;
-  readonly isMetallicPaint = isMetallicPaint;
-  readonly isShadePaint = isShadePaint;
 
   readonly query = signal<string>('');
   readonly tab = signal<'all' | 'models' | 'colors' | 'paints'>('all');

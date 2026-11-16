@@ -77,7 +77,7 @@
       <!-- Right: Color Metadata & Ordered Paint Steps -->
       <div class="steps-panel studio-card">
         <div class="color-header">
-          <span class="paint-swatch large" [style.background]="c.hex"></span>
+          <app-paint-swatch [paint]="c" size="large" />
           <div>
             <div class="badge-row">
               @if (c.guideType === 'basing') {

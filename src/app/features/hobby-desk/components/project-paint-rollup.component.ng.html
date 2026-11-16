@@ -98,12 +98,7 @@
               @for (p of missingPaintObjects(); track p.id) {
                 <div class="rollup-paint-card">
                   <button type="button" class="rp-main" (click)="paintModal.openPaint(p.id)">
-                    <span
-                      class="paint-swatch"
-                      [class.metallic]="isMetallicPaint(p)"
-                      [class.shade]="isShadePaint(p)"
-                      [style.background]="getPaintSwatchBackground(p)"
-                    ></span>
+                    <app-paint-swatch [paint]="p" />
                     <div class="rp-info">
                       <span class="rp-name">{{ p.name }}</span>
                       <span class="rp-meta">{{ p.category }}</span>
@@ -152,12 +147,7 @@
               @for (item of substitutedList(); track item.paint.id) {
                 <div class="rollup-paint-card">
                   <button type="button" class="rp-main" (click)="paintModal.openPaint(item.paint.id)">
-                    <span
-                      class="paint-swatch"
-                      [class.metallic]="isMetallicPaint(item.paint)"
-                      [class.shade]="isShadePaint(item.paint)"
-                      [style.background]="getPaintSwatchBackground(item.paint)"
-                    ></span>
+                    <app-paint-swatch [paint]="item.paint" />
                     <div class="rp-info">
                       <span class="rp-name">{{ item.paint.name }}</span>
                       <span class="sub-note">
@@ -183,12 +173,7 @@
               @for (p of ownedDirectObjects(); track p.id) {
                 <div class="rollup-paint-card">
                   <button type="button" class="rp-main" (click)="paintModal.openPaint(p.id)">
-                    <span
-                      class="paint-swatch"
-                      [class.metallic]="isMetallicPaint(p)"
-                      [class.shade]="isShadePaint(p)"
-                      [style.background]="getPaintSwatchBackground(p)"
-                    ></span>
+                    <app-paint-swatch [paint]="p" />
                     <div class="rp-info">
                       <span class="rp-name">{{ p.name }}</span>
                       <span class="rp-meta">{{ p.category }}</span>

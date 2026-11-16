@@ -68,12 +68,7 @@
         @for (cp of matchedCitadelPaints().slice(0, 24); track cp.id) {
           <div class="paint-item studio-card">
             <button class="paint-main" (click)="paintModal.openPaint(cp.id)">
-              <span
-                class="paint-swatch"
-                [class.metallic]="isMetallicPaint(cp)"
-                [class.shade]="isShadePaint(cp)"
-                [style.background]="getPaintSwatchBackground(cp)"
-              ></span>
+              <app-paint-swatch [paint]="cp" />
               <div class="p-info">
                 <strong>{{ cp.name }}</strong>
                 <span>{{ getCitadelBrandLabel(cp.range, 'Citadel Colour') }} • {{ cp.category }}</span>
@@ -93,12 +88,7 @@
         @for (tp of matchedThirdPartyPaints().slice(0, 24); track tp.id) {
           <div class="paint-item studio-card">
             <button class="paint-main" (click)="paintModal.openPaint(tp.id)">
-              <span
-                class="paint-swatch"
-                [class.metallic]="isMetallicPaint(tp)"
-                [class.shade]="isShadePaint(tp)"
-                [style.background]="getPaintSwatchBackground(tp)"
-              ></span>
+              <app-paint-swatch [paint]="tp" />
               <div class="p-info">
                 <strong>{{ tp.name }}</strong>
                 <span>{{ tp.brand }} • {{ tp.range }}</span>

@@ -173,7 +173,7 @@
                   [class.active]="selectedColorPointId() === cp.id"
                   (click)="selectColorPoint(cp.id)"
                 >
-                  <span class="paint-swatch" [style.background]="cp.hex"></span>
+                  <app-paint-swatch [paint]="cp" />
                   <div class="cp-info">
                     <strong>{{ cp.name }}</strong>
                     <span>Normalized Pin ({{ (cp.point.x * 100) | number:'1.0-0' }}%, {{ (cp.point.y * 100) | number:'1.0-0' }}%)</span>

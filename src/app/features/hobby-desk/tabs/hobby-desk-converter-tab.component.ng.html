@@ -65,12 +65,7 @@
               class="conv-paint-btn"
               (click)="paintModal.openPaint(row.citadel.id)"
             >
-              <span
-                class="paint-swatch"
-                [class.metallic]="isMetallicPaint(row.citadel)"
-                [class.shade]="isShadePaint(row.citadel)"
-                [style.background]="getPaintSwatchBackground(row.citadel)"
-              ></span>
+              <app-paint-swatch [paint]="row.citadel" />
               <div class="conv-info">
                 <span class="conv-name">{{ row.citadel.name }}</span>
                 <span class="conv-meta">
@@ -99,12 +94,11 @@
                   class="conv-eq-main"
                   (click)="paintModal.openPaint(eq.thirdPartyPaintId)"
                 >
-                  <span
-                    class="mini-swatch"
-                    [class.metallic]="isThirdPartyMetallic(eq.thirdPartyPaintId, eq.category)"
-                    [class.shade]="isThirdPartyShade(eq.thirdPartyPaintId, eq.category)"
-                    [style.background]="getThirdPartySwatchBg(eq.thirdPartyPaintId, eq.hex)"
-                  ></span>
+                  <app-paint-swatch
+                    [paint]="resolveThirdPartySwatch(eq.thirdPartyPaintId, eq.category)"
+                    [hex]="eq.hex"
+                    size="mini"
+                  />
                   <div class="conv-eq-text">
                     <span class="conv-eq-name">{{ eq.name }}</span>
                     <span class="conv-eq-brand">
@@ -137,12 +131,7 @@
               class="conv-paint-btn"
               (click)="paintModal.openPaint(group.classicId)"
             >
-              <span
-                class="paint-swatch"
-                [class.metallic]="group.classicIsMetallic"
-                [class.shade]="group.classicIsShade"
-                [style.background]="group.classicSwatchBg"
-              ></span>
+              <app-paint-swatch [paint]="group.classicPaint" [hex]="group.classicHex" />
               <div class="conv-info">
                 <span class="conv-name">{{ group.classicName }}</span>
                 <span class="conv-meta">Citadel Classic • {{ group.classicCategory }}</span>
@@ -169,12 +158,11 @@
                   class="conv-eq-main"
                   (click)="paintModal.openPaint(tp.tone_pro_paint_id)"
                 >
-                  <span
-                    class="mini-swatch"
-                    [class.metallic]="isToneProMetallic(tp.tone_pro_paint_id)"
-                    [class.shade]="isToneProShade(tp.tone_pro_paint_id)"
-                    [style.background]="getToneProSwatchBg(tp.tone_pro_paint_id, tp.tone_pro_hex)"
-                  ></span>
+                  <app-paint-swatch
+                    [paint]="resolveCitadelSwatch(tp.tone_pro_paint_id)"
+                    [hex]="tp.tone_pro_hex"
+                    size="mini"
+                  />
                   <div class="conv-eq-text">
                     <span class="conv-eq-name">{{ tp.tone_pro_paint_name }}</span>
                     <span class="conv-eq-brand">Citadel Tone Pro</span>
