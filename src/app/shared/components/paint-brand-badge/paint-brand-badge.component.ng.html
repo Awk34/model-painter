@@ -1,0 +1,8 @@
+<span
+  class="badge"
+  [class.badge-gold]="variant() === 'gold'"
+  [class.badge-pro]="variant() === 'pro'"
+  [class.badge-sub]="variant() === 'sub'"
+  [attr.data-brand]="resolvedBrand()"
+  [attr.data-known-brand]="isKnownBrand()"
+>{{ label() }}</span>

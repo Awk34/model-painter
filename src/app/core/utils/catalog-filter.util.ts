@@ -1,4 +1,10 @@
-import { InventoryReadinessResult, ModelSummary } from '../models/catalog.models';
+import {
+  CitadelPaintRange,
+  InventoryReadinessResult,
+  KNOWN_THIRD_PARTY_BRANDS,
+  ModelSummary,
+  PaintBrand,
+} from '../models/catalog.models';
 
 export type ReadinessFilterMode = 'all' | 'ready100' | 'missing1' | 'missing2' | 'sortReady';
 
@@ -47,11 +53,168 @@ export function applyReadinessFilter<T extends { readiness: InventoryReadinessRe
 /**
  * Formats a Citadel paint range identifier into its user-facing display label.
  */
-export function getCitadelBrandLabel(range?: string, classicLabel = 'Citadel Classic'): string {
-  if (range === 'warhammer_pro') {
-    return 'Citadel Tone Pro';
+export function getCitadelBrandLabel(
+  range?: CitadelPaintRange | string | null,
+  classicLabel: PaintBrand | string = PaintBrand.CitadelClassic
+): string {
+  if (range === CitadelPaintRange.WarhammerPro || range === PaintBrand.CitadelTonePro) {
+    return PaintBrand.CitadelTonePro;
   }
   return classicLabel;
+}
+
+export type PaintBrandBadgeVariant = 'gold' | 'pro' | 'sub';
+
+export interface PaintBrandLike {
+  brand?: PaintBrand | string | null;
+  range?: CitadelPaintRange | string | null;
+}
+
+export interface NormalizedPaintBrand {
+  brand: PaintBrand | string;
+  isKnownBrand: boolean;
+  isCitadel: boolean;
+  isTonePro: boolean;
+  variant: PaintBrandBadgeVariant;
+}
+
+const PAINT_BRAND_VALUES = Object.values(PaintBrand) as string[];
+
+export function isKnownPaintBrand(brand: string | null | undefined): brand is PaintBrand {
+  if (!brand) {
+    return false;
+  }
+  const lower = brand.trim().toLowerCase();
+  return PAINT_BRAND_VALUES.some((b) => b.toLowerCase() === lower);
+}
+
+/**
+ * Merges the hard-coded `KNOWN_THIRD_PARTY_BRANDS` enum list with dynamic brands
+ * pulled from the Firestore catalog (`brands` array and `thirdPartyPaints` items).
+ * Deduplicates case-insensitively so newly added catalog brands appear immediately
+ * and do not duplicate once promoted into `PaintBrand`.
+ */
+export function mergeCatalogBrands(
+  catalogBrands?: readonly string[] | null,
+  paints?: readonly { brand?: string | null }[] | null,
+  baseBrands: readonly string[] = KNOWN_THIRD_PARTY_BRANDS
+): string[] {
+  const seenLower = new Set<string>();
+  const result: string[] = [];
+
+  const addBrand = (raw: string | null | undefined) => {
+    const trimmed = (raw ?? '').trim();
+    if (!trimmed) {
+      return;
+    }
+    const lower = trimmed.toLowerCase();
+    if (
+      lower === PaintBrand.CitadelColour.toLowerCase() ||
+      lower === PaintBrand.CitadelClassic.toLowerCase() ||
+      lower === PaintBrand.CitadelTonePro.toLowerCase()
+    ) {
+      return;
+    }
+    if (seenLower.has(lower)) {
+      return;
+    }
+    seenLower.add(lower);
+    const enumMatch = PAINT_BRAND_VALUES.find((b) => b.toLowerCase() === lower);
+    result.push(enumMatch ?? trimmed);
+  };
+
+  for (const b of baseBrands) {
+    addBrand(b);
+  }
+  for (const b of catalogBrands ?? []) {
+    addBrand(b);
+  }
+  for (const p of paints ?? []) {
+    addBrand(p?.brand);
+  }
+
+  return result;
+}
+
+/**
+ * Resolves a paint/color/model brand and range against the hard-coded `PaintBrand` enum
+ * and dynamic Firestore catalog brands.
+ */
+export function normalizePaintBrand(
+  brand?: PaintBrand | string | null,
+  range?: CitadelPaintRange | string | null,
+  catalogBrands: readonly string[] = KNOWN_THIRD_PARTY_BRANDS,
+  classicLabel: PaintBrand | string = PaintBrand.CitadelColour
+): NormalizedPaintBrand {
+  const trimmedBrand = (brand ?? '').trim();
+  const trimmedRange = (range ?? '').trim();
+
+  if (trimmedBrand) {
+    const lower = trimmedBrand.toLowerCase();
+    const enumMatch = PAINT_BRAND_VALUES.find((b) => b.toLowerCase() === lower) as
+      | PaintBrand
+      | undefined;
+
+    if (
+      enumMatch === PaintBrand.CitadelTonePro ||
+      trimmedRange === CitadelPaintRange.WarhammerPro
+    ) {
+      return {
+        brand: PaintBrand.CitadelTonePro,
+        isKnownBrand: true,
+        isCitadel: true,
+        isTonePro: true,
+        variant: 'pro',
+      };
+    }
+
+    if (enumMatch === PaintBrand.CitadelColour || enumMatch === PaintBrand.CitadelClassic) {
+      return {
+        brand: classicLabel,
+        isKnownBrand: true,
+        isCitadel: true,
+        isTonePro: false,
+        variant: 'gold',
+      };
+    }
+
+    if (enumMatch) {
+      return {
+        brand: enumMatch,
+        isKnownBrand: true,
+        isCitadel: false,
+        isTonePro: false,
+        variant: 'sub',
+      };
+    }
+
+    const catalogMatch = catalogBrands.find((b) => b.trim().toLowerCase() === lower);
+    return {
+      brand: catalogMatch ? catalogMatch.trim() : trimmedBrand,
+      isKnownBrand: false,
+      isCitadel: false,
+      isTonePro: false,
+      variant: 'sub',
+    };
+  }
+
+  if (trimmedRange === CitadelPaintRange.WarhammerPro) {
+    return {
+      brand: PaintBrand.CitadelTonePro,
+      isKnownBrand: true,
+      isCitadel: true,
+      isTonePro: true,
+      variant: 'pro',
+    };
+  }
+
+  return {
+    brand: classicLabel,
+    isKnownBrand: true,
+    isCitadel: true,
+    isTonePro: false,
+    variant: 'gold',
+  };
 }
 
 /**

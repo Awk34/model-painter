@@ -1,3 +1,28 @@
+export enum CitadelPaintRange {
+  WarhammerColour = 'warhammer_colour',
+  WarhammerPro = 'warhammer_pro',
+}
+
+export enum PaintBrand {
+  CitadelColour = 'Citadel Colour',
+  CitadelClassic = 'Citadel Classic',
+  CitadelTonePro = 'Citadel Tone Pro',
+  TheArmyPainter = 'The Army Painter',
+  Vallejo = 'Vallejo',
+  TwoThinCoats = 'Two Thin Coats',
+  MonumentHobbies = 'Monument Hobbies',
+  ProAcryl = 'Pro Acryl',
+  AkInteractive = 'AK Interactive',
+}
+
+export const KNOWN_THIRD_PARTY_BRANDS: readonly PaintBrand[] = [
+  PaintBrand.TheArmyPainter,
+  PaintBrand.Vallejo,
+  PaintBrand.TwoThinCoats,
+  PaintBrand.MonumentHobbies,
+  PaintBrand.AkInteractive,
+] as const;
+
 export enum CatalogSyncStatus {
   Hydrating = 'hydrating',
   UpToDate = 'up-to-date',
@@ -28,7 +53,7 @@ export interface CompatibleToneProRef {
 export interface Paint {
   id: string;
   name: string;
-  range: 'warhammer_colour' | 'warhammer_pro' | string;
+  range: CitadelPaintRange | 'warhammer_colour' | 'warhammer_pro' | string;
   category: string;
   potStyle?: string;
   gradientStartHex: string;
@@ -62,7 +87,7 @@ export interface ThirdPartyCitadelMatch {
 
 export interface ThirdPartyPaint {
   id: string;
-  brand: string;
+  brand: PaintBrand | string;
   range: string;
   code?: string;
   name: string;
@@ -75,7 +100,7 @@ export interface ThirdPartyPaint {
 
 export interface CitadelThirdPartyMatchRef {
   thirdPartyPaintId: string;
-  brand: string;
+  brand: PaintBrand | string;
   range: string;
   code?: string;
   name: string;

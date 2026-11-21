@@ -82,10 +82,8 @@
             <div class="badge-row">
               @if (c.guideType === 'basing') {
                 <span class="badge badge-gold">Miniature Basing Guide</span>
-              } @else if (c.range === 'warhammer_pro') {
-                <span class="badge badge-pro">Citadel Tone Pro</span>
               } @else {
-                <span class="badge badge-gold">Citadel Colour</span>
+                <app-paint-brand-badge [paint]="c" />
               }
               @for (grp of c.colorGroups; track grp) {
                 <span class="badge group-badge">{{ grp }}</span>

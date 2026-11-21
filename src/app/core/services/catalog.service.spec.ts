@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ModelPaintingStepsComponent } from '../../features/paint-model/components/model-painting-steps.component';
+import { KNOWN_THIRD_PARTY_BRANDS } from '../models/catalog.models';
 import { CatalogService, normalizePaintingStageLabel } from './catalog.service';
 import { InventoryMatchService } from './inventory-match.service';
 import { UserStateService } from './user-state.service';
@@ -372,6 +373,44 @@ describe('CatalogService', () => {
     expect(colorPaint?.hex).toBe('#8A8A8A');
     expect(colorPaint?.gradientMiddleHex).toBe('#8A8A8A');
     expect(colorPaint?.gradientEndHex).toBe('#151E24');
+  });
+
+  it('merges hard-coded KNOWN_THIRD_PARTY_BRANDS with dynamic brands pulled from third_party_paints_bundle', async () => {
+    routeResponses.set('/data/catalog_meta/third_party_paints_bundle.json', () =>
+      jsonResponse({
+        brands: ['vallejo', 'Scale75'],
+        thirdPartyPaints: [
+          {
+            id: 'tp-kimera-red',
+            brand: 'Kimera Kolors',
+            range: 'Pure Pigments',
+            name: 'The Red',
+            category: 'layer',
+            hex: '#D62828',
+            citadelMatches: [],
+          },
+          {
+            id: 'tp-scale-black',
+            brand: 'scale75',
+            range: 'Scalecolor',
+            name: 'Black',
+            category: 'base',
+            hex: '#111111',
+            citadelMatches: [],
+          },
+        ],
+        citadelToThirdPartyMap: {},
+      })
+    );
+
+    const service = TestBed.inject(CatalogService);
+    await service.initializeCatalog(true);
+
+    expect(service.thirdPartyBrands()).toEqual([
+      ...KNOWN_THIRD_PARTY_BRANDS,
+      'Scale75',
+      'Kimera Kolors',
+    ]);
   });
 });
 

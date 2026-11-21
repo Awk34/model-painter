@@ -18,11 +18,7 @@
             </div>
             <div>
               <div class="badge-row">
-                @if (cp.range === 'warhammer_pro') {
-                  <span class="badge badge-pro">Citadel Tone Pro</span>
-                } @else {
-                  <span class="badge badge-gold">Citadel Colour</span>
-                }
+                <app-paint-brand-badge [paint]="cp" />
                 <span class="badge category-badge">{{ cp.category }}</span>
                 <span class="hex-pill">{{ getPaintRepresentativeHex(cp) }}</span>
               </div>
@@ -35,7 +31,7 @@
               </div>
               <div>
                 <div class="badge-row">
-                  <span class="badge badge-sub">{{ tp.brand }} — {{ tp.range }}</span>
+                  <app-paint-brand-badge [paint]="tp" />
                   <span class="badge category-badge">{{ tp.category }}</span>
                   @if (tp.code) {
                     <span class="hex-pill">{{ tp.code }}</span>

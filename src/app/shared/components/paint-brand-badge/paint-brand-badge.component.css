@@ -1,0 +1,38 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill, 9999px);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-gold {
+  background: var(--gold-soft, rgba(237, 179, 4, 0.16));
+  color: var(--gold-bright, #fbba00);
+  border: 1px solid var(--gold-border, rgba(237, 179, 4, 0.42));
+}
+
+.badge-pro {
+  background: var(
+    --pro-gradient,
+    linear-gradient(135deg, #57c2d0 0%, #9e5bd6 50%, #e3a73b 100%)
+  );
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.badge-sub {
+  background: var(--status-sub-bg, rgba(56, 189, 248, 0.15));
+  color: var(--status-sub, #38bdf8);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}

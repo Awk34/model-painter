@@ -136,11 +136,7 @@
       <!-- Right Column: Model Metadata, Readiness & "Colors On This Model" -->
       <div class="meta-panel studio-card">
         <div class="badge-row">
-          @if (r.range === 'warhammer_pro') {
-            <span class="badge badge-pro">Citadel Tone Pro Guide</span>
-          } @else {
-            <span class="badge badge-gold">Citadel Colour Guide</span>
-          }
+          <app-paint-brand-badge [paint]="r" suffix="Guide" />
           @for (g of r.games; track g.id) {
             <span class="badge game-badge">{{ g.name }}</span>
           }

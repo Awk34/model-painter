@@ -9,6 +9,7 @@ import {
   ColorStageStep,
   ColorSummary,
   GameSystem,
+  KNOWN_THIRD_PARTY_BRANDS,
   ModelColorPoint,
   ModelPaintingArea,
   ModelPaintingStep,
@@ -20,7 +21,7 @@ import {
 } from '../models/catalog.models';
 import { getFirebaseHandles } from './firebase.config';
 import { createIdbStoreClient } from '../utils/idb.util';
-import { getPaintRepresentativeHex } from '../utils/catalog-filter.util';
+import { getPaintRepresentativeHex, mergeCatalogBrands } from '../utils/catalog-filter.util';
 import { doc, getDoc } from 'firebase/firestore';
 
 const IDB_NAME = 'whc_catalog_cache_v1';
@@ -194,7 +195,7 @@ export class CatalogService {
   readonly paints = signal<Paint[]>([]);
   readonly compatibilityLinks = signal<PaintCompatibilityLink[]>([]);
   readonly thirdPartyPaints = signal<ThirdPartyPaint[]>([]);
-  readonly thirdPartyBrands = signal<string[]>([]);
+  readonly thirdPartyBrands = signal<string[]>([...KNOWN_THIRD_PARTY_BRANDS]);
   readonly citadelToThirdPartyMap = signal<Record<string, CitadelThirdPartyMatchRef[]>>({});
   readonly colors = signal<ColorSummary[]>([]);
   readonly colorGroups = signal<ColorGroup[]>([]);
@@ -354,10 +355,7 @@ export class CatalogService {
 
     if (thirdPartyBundle) {
       const tpList = thirdPartyBundle.thirdPartyPaints ?? [];
-      const brands =
-        thirdPartyBundle.brands && thirdPartyBundle.brands.length > 0
-          ? thirdPartyBundle.brands
-          : Array.from(new Set(tpList.map((p) => p.brand).filter(Boolean)));
+      const brands = mergeCatalogBrands(thirdPartyBundle.brands, tpList);
       this.thirdPartyBrands.set(brands);
       this.thirdPartyPaints.set(tpList);
       this.citadelToThirdPartyMap.set(

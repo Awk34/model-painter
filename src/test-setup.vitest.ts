@@ -16,4 +16,3 @@ try {
 } catch {
   // Environment already initialized across browser test runs.
 }
-

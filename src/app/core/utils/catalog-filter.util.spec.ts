@@ -1,13 +1,21 @@
-import { InventoryReadinessResult } from '../models/catalog.models';
+import {
+  CitadelPaintRange,
+  InventoryReadinessResult,
+  KNOWN_THIRD_PARTY_BRANDS,
+  PaintBrand,
+} from '../models/catalog.models';
 import {
   applyReadinessFilter,
   createEntityId,
   getCitadelBrandLabel,
   getPaintRepresentativeHex,
   getPaintSwatchBackground,
+  isKnownPaintBrand,
   isMetallicPaint,
   isShadePaint,
   matchesModelSearch,
+  mergeCatalogBrands,
+  normalizePaintBrand,
 } from './catalog-filter.util';
 
 function makeReadiness(overrides: Partial<InventoryReadinessResult>): InventoryReadinessResult {
@@ -92,6 +100,68 @@ describe('catalog-filter.util', () => {
       expect(getCitadelBrandLabel('warhammer_pro')).toBe('Citadel Tone Pro');
       expect(getCitadelBrandLabel('warhammer_colour')).toBe('Citadel Classic');
       expect(getCitadelBrandLabel(undefined, 'Citadel Colour')).toBe('Citadel Colour');
+    });
+  });
+
+  describe('brand enum & dynamic catalog brand helpers', () => {
+    it('identifies hard-coded PaintBrand values case-insensitively via isKnownPaintBrand', () => {
+      expect(isKnownPaintBrand(PaintBrand.CitadelColour)).toBeTrue();
+      expect(isKnownPaintBrand('the army painter')).toBeTrue();
+      expect(isKnownPaintBrand('Scale75')).toBeFalse();
+      expect(isKnownPaintBrand(null)).toBeFalse();
+    });
+
+    it('merges hard-coded brands with Firestore catalog brands without duplicates', () => {
+      const merged = mergeCatalogBrands(
+        ['vallejo', 'Scale75', 'Citadel Colour'],
+        [
+          { brand: 'Kimera Kolors' },
+          { brand: 'AK Interactive' },
+          { brand: 'scale75' },
+        ]
+      );
+
+      expect(merged).toEqual([
+        ...KNOWN_THIRD_PARTY_BRANDS,
+        'Scale75',
+        'Kimera Kolors',
+      ]);
+    });
+
+    it('normalizes Citadel, known 3rd-party, and dynamic catalog brands', () => {
+      expect(normalizePaintBrand(undefined, CitadelPaintRange.WarhammerColour)).toEqual({
+        brand: PaintBrand.CitadelColour,
+        isKnownBrand: true,
+        isCitadel: true,
+        isTonePro: false,
+        variant: 'gold',
+      });
+
+      expect(normalizePaintBrand(undefined, CitadelPaintRange.WarhammerPro)).toEqual({
+        brand: PaintBrand.CitadelTonePro,
+        isKnownBrand: true,
+        isCitadel: true,
+        isTonePro: true,
+        variant: 'pro',
+      });
+
+      expect(normalizePaintBrand('vallejo', 'Game Color')).toEqual({
+        brand: PaintBrand.Vallejo,
+        isKnownBrand: true,
+        isCitadel: false,
+        isTonePro: false,
+        variant: 'sub',
+      });
+
+      expect(
+        normalizePaintBrand('scale75', 'Scalecolor', [...KNOWN_THIRD_PARTY_BRANDS, 'Scale75'])
+      ).toEqual({
+        brand: 'Scale75',
+        isKnownBrand: false,
+        isCitadel: false,
+        isTonePro: false,
+        variant: 'sub',
+      });
     });
   });
 
