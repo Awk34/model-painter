@@ -565,4 +565,118 @@ describe('ModelPaintingStepsComponent stage filtering', () => {
     expect(shadeBg).toContain('linear-gradient');
     expect(shadeBg).toContain('172, 73, 29'); // #AC491D in rgb
   });
+
+  it('tracks individual color area steps and whole stage completion', () => {
+    const progressSignal = signal<Record<string, string[]>>({});
+    TestBed.configureTestingModule({
+      imports: [ModelPaintingStepsComponent],
+      providers: [
+        {
+          provide: UserStateService,
+          useValue: {
+            isOwned: () => false,
+            isWishlisted: () => false,
+            toggleInventory: () => undefined,
+            toggleWishlist: () => undefined,
+            getCompletedStepIds: (modelId: string) => progressSignal()[modelId] ?? [],
+            toggleStepDone: (modelId: string, stepId: string) => {
+              const cur = new Set(progressSignal()[modelId] ?? []);
+              if (cur.has(stepId)) cur.delete(stepId);
+              else cur.add(stepId);
+              progressSignal.set({ ...progressSignal(), [modelId]: Array.from(cur) });
+            },
+            setStepsDone: (modelId: string, stepIds: string[], done: boolean) => {
+              const cur = new Set(progressSignal()[modelId] ?? []);
+              for (const id of stepIds) {
+                if (done) cur.add(id);
+                else cur.delete(id);
+              }
+              progressSignal.set({ ...progressSignal(), [modelId]: Array.from(cur) });
+            },
+            clearModelProgress: (modelId: string) => {
+              const next = { ...progressSignal() };
+              delete next[modelId];
+              progressSignal.set(next);
+            },
+          },
+        },
+        {
+          provide: InventoryMatchService,
+          useValue: {},
+        },
+        {
+          provide: CatalogService,
+          useValue: {
+            paints: signal([]),
+            paintById: signal(new Map()),
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
+    const comp = fixture.componentInstance;
+    const baseArea = {
+      id: 'area-base',
+      areaOrder: 1,
+      name: 'Base Finish',
+      paintingSteps: [
+        { id: 'step-1', stepOrder: 1, stepNumber: 1, paintingStage: 'Base Finish', text: '• Blue areas' },
+        { id: 'step-2', stepOrder: 2, stepNumber: 2, paintingStage: 'Base Finish', text: '• Gold areas' },
+      ],
+    };
+    fixture.componentRef.setInput('modelId', 'model-1');
+    fixture.componentRef.setInput('paintingAreas', [baseArea]);
+    fixture.componentRef.setInput('readiness', {
+      totalRequired: 0,
+      ownedDirectCount: 0,
+      substitutedCount: 0,
+      missingCount: 0,
+      matchPercent: 100,
+      ownedDirectIds: [],
+      substitutedByPaintId: {},
+      missingPaintIds: [],
+    });
+    fixture.detectChanges();
+
+    expect(comp.overallProgress()).toEqual({ done: 0, total: 2, isDone: false, percent: 0 });
+    expect(comp.getAreaProgress(baseArea)).toEqual({ done: 0, total: 2, isDone: false });
+
+    const stageBtn = fixture.nativeElement.querySelector(
+      '.stage-done-btn'
+    ) as HTMLButtonElement;
+    const stepBtns = Array.from(
+      fixture.nativeElement.querySelectorAll('.step-done-btn')
+    ) as HTMLButtonElement[];
+    expect(stageBtn).toBeTruthy();
+    expect(stageBtn.title).toContain('Mark stage done: Base Finish');
+    expect(stepBtns.length).toBe(2);
+    expect(stepBtns[0].title).toContain('Mark done: • Blue areas');
+
+    // Mark an individual color area step done
+    stepBtns[0].click();
+    fixture.detectChanges();
+    expect(comp.isStepDone('step-1')).toBeTrue();
+    expect(comp.isStepDone('step-2')).toBeFalse();
+    expect(stepBtns[0].getAttribute('aria-pressed')).toBe('true');
+    expect(stageBtn.classList.contains('partial')).toBeTrue();
+    expect(comp.overallProgress()).toEqual({ done: 1, total: 2, isDone: false, percent: 50 });
+
+    // Mark entire stage done
+    stageBtn.click();
+    fixture.detectChanges();
+    expect(comp.isStepDone('step-1')).toBeTrue();
+    expect(comp.isStepDone('step-2')).toBeTrue();
+    expect(stageBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(stageBtn.classList.contains('done')).toBeTrue();
+    expect(stageBtn.classList.contains('partial')).toBeFalse();
+    expect(comp.getAreaProgress(baseArea)).toEqual({ done: 2, total: 2, isDone: true });
+    expect(comp.overallProgress()).toEqual({ done: 2, total: 2, isDone: true, percent: 100 });
+
+    // Toggle stage off
+    stageBtn.click();
+    fixture.detectChanges();
+    expect(stageBtn.getAttribute('aria-pressed')).toBe('false');
+    expect(comp.overallProgress()).toEqual({ done: 0, total: 2, isDone: false, percent: 0 });
+  });
 });

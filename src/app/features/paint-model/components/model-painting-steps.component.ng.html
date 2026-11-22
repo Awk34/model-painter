@@ -3,11 +3,15 @@
     <div>
       <h2>Step-by-Step Painting Areas ({{ paintingAreas().length }})</h2>
       <p class="subtitle">
-        Filter steps by progressive finish tier or click any paint pot to inspect Tone Pro & 3rd-party equivalents.
+        Filter steps by progressive finish tier, mark stages or individual color areas done, or click any paint pot to inspect equivalents.
       </p>
     </div>
 
     <div class="chip-bar">
+      @let baseProg = getStageProgress('Base Finish');
+      @let detailProg = getStageProgress('Detail Finish');
+      @let artificerProg = getStageProgress('Artificer Finish');
+
       <button
         type="button"
         class="chip"
@@ -23,6 +27,11 @@
         (click)="stageFilter.set('Base Finish')"
       >
         Base Finish (Battle Ready)
+        @if (modelId() && baseProg.total > 0) {
+          <span class="chip-progress" [class.done]="baseProg.isDone">
+            {{ baseProg.isDone ? '✓' : baseProg.done + '/' + baseProg.total }}
+          </span>
+        }
       </button>
       <button
         type="button"
@@ -31,6 +40,11 @@
         (click)="stageFilter.set('Detail Finish')"
       >
         Detail Finish (Parade Ready)
+        @if (modelId() && detailProg.total > 0) {
+          <span class="chip-progress" [class.done]="detailProg.isDone">
+            {{ detailProg.isDone ? '✓' : detailProg.done + '/' + detailProg.total }}
+          </span>
+        }
       </button>
       <button
         type="button"
@@ -39,13 +53,42 @@
         (click)="stageFilter.set('Artificer Finish')"
       >
         Artificer Finish
+        @if (modelId() && artificerProg.total > 0) {
+          <span class="chip-progress" [class.done]="artificerProg.isDone">
+            {{ artificerProg.isDone ? '✓' : artificerProg.done + '/' + artificerProg.total }}
+          </span>
+        }
       </button>
     </div>
   </div>
 
+  @if (modelId() && overallProgress().total > 0) {
+    @let totalProg = overallProgress();
+    <div class="model-progress-bar studio-card">
+      <div class="mp-meta">
+        <span class="mp-label">
+          Painting Progress: <strong>{{ totalProg.done }} / {{ totalProg.total }}</strong> color areas done ({{ totalProg.percent }}%)
+        </span>
+        @if (totalProg.done > 0) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            (click)="clearProgress()"
+          >
+            Reset Progress
+          </button>
+        }
+      </div>
+      <div class="mp-track" role="progressbar" [attr.aria-valuenow]="totalProg.percent" aria-valuemin="0" aria-valuemax="100">
+        <div class="mp-fill" [class.complete]="totalProg.isDone" [style.width.%]="totalProg.percent"></div>
+      </div>
+    </div>
+  }
+
   <div class="areas-list">
     @for (area of paintingAreas(); track area.id) {
-      <div class="area-card studio-card">
+      @let areaProg = getAreaProgress(area);
+      <div class="area-card studio-card" [class.area-done]="modelId() && areaProg.isDone">
         <div class="area-header">
           <div class="area-title-group">
             @if (area.localImagePath || area.imageUrl) {
@@ -62,11 +105,45 @@
               }
             </div>
           </div>
+
+          @if (modelId() && areaProg.total > 0) {
+            @let stageLabel = (areaProg.isDone ? 'Unmark stage done: ' : 'Mark stage done: ') + area.name;
+            <div class="area-progress-actions">
+              <span class="area-count-pill" [class.done]="areaProg.isDone">
+                {{ areaProg.done }}/{{ areaProg.total }}
+              </span>
+              <button
+                type="button"
+                class="done-icon-btn stage-done-btn"
+                [class.done]="areaProg.isDone"
+                [class.partial]="areaProg.done > 0 && !areaProg.isDone"
+                [attr.aria-pressed]="areaProg.isDone"
+                [title]="stageLabel"
+                [attr.aria-label]="stageLabel"
+                (click)="toggleAreaDone(area)"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+          }
         </div>
 
         <div class="steps-grid">
           @for (step of filterSteps(area.paintingSteps); track step.id) {
-            <div class="step-card">
+            @let stepDone = modelId() && isStepDone(step.id);
+            <div class="step-card" [class.done]="stepDone">
               <div class="step-top">
                 <span class="step-num-badge">Step {{ step.stepNumber || step.stepOrder }}</span>
                 <span class="stage-pill">{{ step.paintingStage }}</span>
@@ -75,6 +152,32 @@
                 }
                 @if (step.brushName) {
                   <span class="brush-pill">🖌 {{ step.brushName }}</span>
+                }
+                @if (modelId()) {
+                  @let stepLabel = (stepDone ? 'Mark not done: ' : 'Mark done: ') + (step.text || step.paint?.name || 'Step ' + (step.stepNumber || step.stepOrder));
+                  <button
+                    type="button"
+                    class="done-icon-btn step-done-btn"
+                    [class.done]="stepDone"
+                    [attr.aria-pressed]="stepDone"
+                    [title]="stepLabel"
+                    [attr.aria-label]="stepLabel"
+                    (click)="toggleStepDone(step.id)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
                 }
               </div>
 

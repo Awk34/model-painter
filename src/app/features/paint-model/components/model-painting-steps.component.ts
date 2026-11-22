@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, model } from '@angular/core';
 import {
   InventoryReadinessResult,
   ModelPaintingArea,
@@ -12,6 +12,12 @@ import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/pa
 
 export type ModelStageFilter = 'all' | 'Base Finish' | 'Detail Finish' | 'Artificer Finish';
 
+export interface PaintingProgressSummary {
+  done: number;
+  total: number;
+  isDone: boolean;
+}
+
 @Component({
   selector: 'app-model-painting-steps',
   imports: [PaintSwatchComponent],
@@ -24,9 +30,36 @@ export class ModelPaintingStepsComponent {
   readonly paintModal = inject(PaintModalService);
   readonly img = inject(ImageService);
 
+  readonly modelId = input<string>('');
   readonly paintingAreas = input.required<ModelPaintingArea[]>();
   readonly readiness = input.required<InventoryReadinessResult>();
   readonly stageFilter = model<ModelStageFilter>('all');
+
+  readonly completedStepSet = computed(() => {
+    const id = this.modelId();
+    if (!id) {
+      return new Set<string>();
+    }
+    return new Set(this.userState.getCompletedStepIds?.(id) ?? []);
+  });
+
+  readonly overallProgress = computed<PaintingProgressSummary & { percent: number }>(() => {
+    const areas = this.paintingAreas();
+    const completed = this.completedStepSet();
+    let total = 0;
+    let done = 0;
+    for (const area of areas) {
+      const ids = this.getAreaTrackingIds(area, false);
+      total += ids.length;
+      for (const id of ids) {
+        if (completed.has(id)) {
+          done += 1;
+        }
+      }
+    }
+    const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { done, total, isDone: total > 0 && done === total, percent };
+  });
 
   filterSteps(steps: ModelPaintingStep[]): ModelPaintingStep[] {
     const sf = this.stageFilter();
@@ -34,6 +67,78 @@ export class ModelPaintingStepsComponent {
       return steps;
     }
     return steps.filter((s) => normalizePaintingStageLabel(s.paintingStage) === sf);
+  }
+
+  isStepDone(stepId: string): boolean {
+    return this.completedStepSet().has(stepId);
+  }
+
+  toggleStepDone(stepId: string): void {
+    const id = this.modelId();
+    if (!id || !stepId) {
+      return;
+    }
+    this.userState.toggleStepDone?.(id, stepId);
+  }
+
+  getAreaProgress(area: ModelPaintingArea): PaintingProgressSummary {
+    const ids = this.getAreaTrackingIds(area, true);
+    const completed = this.completedStepSet();
+    let done = 0;
+    for (const id of ids) {
+      if (completed.has(id)) {
+        done += 1;
+      }
+    }
+    const total = ids.length;
+    return { done, total, isDone: total > 0 && done === total };
+  }
+
+  toggleAreaDone(area: ModelPaintingArea): void {
+    const id = this.modelId();
+    if (!id) {
+      return;
+    }
+    const ids = this.getAreaTrackingIds(area, true);
+    if (ids.length === 0) {
+      return;
+    }
+    const { isDone } = this.getAreaProgress(area);
+    this.userState.setStepsDone?.(id, ids, !isDone);
+  }
+
+  getStageProgress(stage: Exclude<ModelStageFilter, 'all'>): PaintingProgressSummary {
+    const completed = this.completedStepSet();
+    let total = 0;
+    let done = 0;
+    for (const area of this.paintingAreas()) {
+      for (const step of area.paintingSteps ?? []) {
+        if (normalizePaintingStageLabel(step.paintingStage) === stage && step.id) {
+          total += 1;
+          if (completed.has(step.id)) {
+            done += 1;
+          }
+        }
+      }
+    }
+    return { done, total, isDone: total > 0 && done === total };
+  }
+
+  clearProgress(): void {
+    const id = this.modelId();
+    if (!id) {
+      return;
+    }
+    this.userState.clearModelProgress?.(id);
+  }
+
+  private getAreaTrackingIds(area: ModelPaintingArea, useFiltered: boolean): string[] {
+    const rawSteps = area.paintingSteps ?? [];
+    if (rawSteps.length === 0) {
+      return area.id ? [`area:${area.id}`] : [];
+    }
+    const steps = useFiltered ? this.filterSteps(rawSteps) : rawSteps;
+    return steps.map((s) => s.id).filter(Boolean);
   }
 }
 

@@ -386,6 +386,8 @@ export interface UserAccountState {
   customPaints: ThirdPartyPaint[];
   /** Maps Citadel Paint ID -> Array of user-linked Equivalent Paint IDs */
   customCompatibilityOverrides: Record<string, string[]>;
+  /** Maps Model Recipe ID -> Array of completed painting step / area IDs */
+  modelProgress: Record<string, string[]>;
   projects: UserProject[];
   uploadedPhotos: UserUploadedPhoto[];
   preferences: UserPreferences;

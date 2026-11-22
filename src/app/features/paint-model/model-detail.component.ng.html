@@ -230,6 +230,7 @@
 
     @if (r.paintingAreas.length) {
       <app-model-painting-steps
+        [modelId]="r.id"
         [paintingAreas]="r.paintingAreas"
         [readiness]="readiness()"
         [(stageFilter)]="stageFilter"

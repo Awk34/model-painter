@@ -41,6 +41,7 @@ function createDefaultState(): UserAccountState {
     wishlistModelIds: [],
     customPaints: [],
     customCompatibilityOverrides: {},
+    modelProgress: {},
     projects: [],
     uploadedPhotos: [],
     preferences: {
@@ -169,6 +170,26 @@ function normalizeIncomingProject(rp: Record<string, unknown>): UserProject {
   };
 }
 
+function normalizeModelProgress(raw: unknown): Record<string, string[]> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {};
+  }
+  const out: Record<string, string[]> = {};
+  for (const [modelId, stepIds] of Object.entries(raw as Record<string, unknown>)) {
+    if (!modelId) {
+      continue;
+    }
+    const normalized = dedupeBoundedIds(stepIds, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+    if (normalized.length > 0) {
+      out[modelId] = normalized;
+    }
+    if (Object.keys(out).length >= USER_LIMITS.MAX_MODEL_PROGRESS_KEYS) {
+      break;
+    }
+  }
+  return out;
+}
+
 function normalizeAccountState(raw: Partial<UserAccountState>): UserAccountState {
   const def = createDefaultState();
   const rawProjects = Array.isArray(raw.projects)
@@ -190,6 +211,7 @@ function normalizeAccountState(raw: Partial<UserAccountState>): UserAccountState
       raw.customCompatibilityOverrides && typeof raw.customCompatibilityOverrides === 'object'
         ? raw.customCompatibilityOverrides
         : {},
+    modelProgress: normalizeModelProgress(raw.modelProgress),
     projects: rawProjects
       .slice(0, USER_LIMITS.MAX_PROJECTS)
       .map((p) => normalizeIncomingProject(p)),
@@ -236,6 +258,7 @@ export class UserStateService {
   readonly customCompatibilityOverrides = computed(
     () => this.state().customCompatibilityOverrides
   );
+  readonly modelProgress = computed(() => this.state().modelProgress ?? {});
 
   private unsubscribeFirestore: (() => void) | null = null;
 
@@ -510,6 +533,94 @@ export class UserStateService {
       this.getPhotosForTarget(targetType, targetId, 'showcase').length +
       this.getPhotosForTarget(targetType, targetId, 'reference').length
     );
+  }
+
+  /* ========================================================================
+     MODEL PAINTING PROGRESS (STAGES & INDIVIDUAL COLOR AREAS)
+     ======================================================================== */
+
+  getCompletedStepIds(modelId: string): string[] {
+    if (!modelId) {
+      return [];
+    }
+    return this.modelProgress()[modelId] ?? [];
+  }
+
+  isStepDone(modelId: string, stepId: string): boolean {
+    if (!modelId || !stepId) {
+      return false;
+    }
+    return this.getCompletedStepIds(modelId).includes(stepId);
+  }
+
+  toggleStepDone(modelId: string, stepId: string): void {
+    if (!modelId || !stepId) {
+      return;
+    }
+    const currentlyDone = this.isStepDone(modelId, stepId);
+    this.setStepsDone(modelId, [stepId], !currentlyDone);
+  }
+
+  setStepsDone(modelId: string, stepIds: string[], done: boolean): void {
+    const validIds = stepIds.filter(Boolean);
+    if (!modelId || validIds.length === 0) {
+      return;
+    }
+    this.commit((prev) => {
+      const currentMap = prev.modelProgress ?? {};
+      const existing = currentMap[modelId] ?? [];
+      if (
+        done &&
+        existing.length === 0 &&
+        Object.keys(currentMap).length >= USER_LIMITS.MAX_MODEL_PROGRESS_KEYS
+      ) {
+        this.showToast(
+          `Model progress limit reached (${USER_LIMITS.MAX_MODEL_PROGRESS_KEYS} models max).`
+        );
+        return prev;
+      }
+
+      const nextSet = new Set(existing);
+      for (const id of validIds) {
+        if (done) {
+          nextSet.add(id);
+        } else {
+          nextSet.delete(id);
+        }
+      }
+
+      const nextList = Array.from(nextSet).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+      const nextMap = { ...currentMap };
+      if (nextList.length > 0) {
+        nextMap[modelId] = nextList;
+      } else {
+        delete nextMap[modelId];
+      }
+
+      return {
+        ...prev,
+        modelProgress: nextMap,
+      };
+    });
+  }
+
+  clearModelProgress(modelId: string): void {
+    if (!modelId) {
+      return;
+    }
+    this.commit((prev) => {
+      const currentMap = prev.modelProgress ?? {};
+      if (!(modelId in currentMap)) {
+        return prev;
+      }
+      const nextMap = { ...currentMap };
+      delete nextMap[modelId];
+      return {
+        ...prev,
+        modelProgress: nextMap,
+      };
+    });
+    this.showToast('Cleared painting progress for this model');
   }
 
   createProject(
@@ -1100,6 +1211,22 @@ export class UserStateService {
         }
       }
 
+      const mergedProgress: Record<string, string[]> = { ...(base.modelProgress ?? {}) };
+      for (const [modelId, incomingSteps] of Object.entries(incoming.modelProgress ?? {})) {
+        if (
+          !(modelId in mergedProgress) &&
+          Object.keys(mergedProgress).length >= USER_LIMITS.MAX_MODEL_PROGRESS_KEYS
+        ) {
+          break;
+        }
+        const combined = Array.from(
+          new Set([...(mergedProgress[modelId] ?? []), ...incomingSteps])
+        ).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+        if (combined.length > 0) {
+          mergedProgress[modelId] = combined;
+        }
+      }
+
       return {
         ...base,
         inventoryPaintIds: Array.from(invSet).slice(0, USER_LIMITS.MAX_INVENTORY_PAINTS),
@@ -1107,6 +1234,7 @@ export class UserStateService {
         inventoryModelIds: Array.from(modelInvSet).slice(0, USER_LIMITS.MAX_INVENTORY_MODELS),
         wishlistModelIds: Array.from(modelWishSet).slice(0, USER_LIMITS.MAX_WISHLIST_MODELS),
         customPaints: Array.from(customPaintMap.values()),
+        modelProgress: mergedProgress,
         projects: Array.from(projectMap.values()),
         uploadedPhotos: Array.from(photoMap.values()),
       };

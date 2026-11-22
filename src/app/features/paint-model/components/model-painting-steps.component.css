@@ -27,11 +27,100 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transition: border-color 0.15s ease;
+}
+
+.area-card.area-done {
+  border-color: rgba(41, 194, 106, 0.45);
 }
 
 .area-header {
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.area-progress-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.area-count-pill {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.area-count-pill.done {
+  background: var(--status-owned-bg);
+  color: var(--status-owned);
+}
+
+.chip-progress {
+  margin-left: 6px;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.chip-progress.done {
+  color: var(--status-owned);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.model-progress-bar {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.mp-label {
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+.mp-label strong {
+  color: var(--text-primary);
+}
+
+.mp-track {
+  height: 8px;
+  width: 100%;
+  background: var(--bg-void);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.mp-fill {
+  height: 100%;
+  background: var(--gold-bright);
+  border-radius: 999px;
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.mp-fill.complete {
+  background: var(--status-owned);
 }
 
 .area-title-group {
@@ -69,6 +158,59 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.step-card.done {
+  border-color: rgba(41, 194, 106, 0.45);
+  background: linear-gradient(180deg, rgba(41, 194, 106, 0.08), var(--bg-elevated));
+}
+
+.done-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.done-icon-btn:hover {
+  border-color: var(--status-owned);
+  color: var(--text-primary);
+}
+
+.done-icon-btn.partial {
+  border-color: var(--gold-bright);
+  color: var(--gold-bright);
+  background: var(--gold-soft);
+}
+
+.done-icon-btn.done {
+  background: var(--status-owned-bg);
+  border-color: var(--status-owned);
+  color: var(--status-owned);
+}
+
+.done-icon-btn:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+.stage-done-btn {
+  width: 32px;
+  height: 32px;
+}
+
+.step-done-btn {
+  margin-left: auto;
 }
 
 .step-top {

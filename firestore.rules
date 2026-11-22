@@ -29,6 +29,7 @@ rules_version = '2';
 //   - wishlistModelIds: list<string> (optional, size <= 1000) - wishlisted model IDs
 //   - customPaints: list<map> (optional, size <= 200) - user-created 3rd-party paints
 //   - customCompatibilityOverrides: map<string, list<string>> (optional, size <= 500) - paint equivalence map
+//   - modelProgress: map<string, list<string>> (optional, size <= 500) - completed painting step/area IDs per model
 //   - projects: list<map> (optional, size <= 50) - user hobby projects
 //   - uploadedPhotos: list<map> (optional, size <= 250) - user-uploaded showcase & private reference photo metadata
 //   - preferences: map (optional, size <= 10) - user UI & substitution preferences
@@ -236,6 +237,7 @@ service cloud.firestore {
           'wishlistModelIds',
           'customPaints',
           'customCompatibilityOverrides',
+          'modelProgress',
           'projects',
           'uploadedPhotos',
           'preferences'
@@ -249,6 +251,7 @@ service cloud.firestore {
         && (!('wishlistModelIds' in data) || isValidStringIdList(data.wishlistModelIds, 1000))
         && (!('customPaints' in data) || isValidCustomPaintsList(data.customPaints))
         && (!('customCompatibilityOverrides' in data) || (data.customCompatibilityOverrides is map && data.customCompatibilityOverrides.size() <= 500))
+        && (!('modelProgress' in data) || (data.modelProgress is map && data.modelProgress.size() <= 500))
         && (!('projects' in data) || isValidProjectsList(data.projects))
         && (!('uploadedPhotos' in data) || isValidUploadedPhotosList(data.uploadedPhotos, userId))
         && (!('preferences' in data) || isValidPreferences(data.preferences));
