@@ -123,6 +123,9 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
             limits: { MAX_PROJECTS: 200 },
             resolveProjectCoverUrl: () => '/logo.svg',
             getTargetPhotoCount: () => 0,
+            getProjectTotalMiniatures: (p: UserProject) =>
+              p.models.reduce((sum, m) => sum + m.quantity, 0),
+            getProjectTotalPhotoCount: () => 0,
             createProject: () => null,
             deleteProject: () => {},
             duplicateProject: () => {},

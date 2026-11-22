@@ -70,9 +70,7 @@ export class UserPhotoGalleryComponent {
     )
   );
 
-  readonly totalAccountPhotoCount = computed(
-    () => (this.userState.allUploadedPhotos?.() ?? this.userState.uploadedPhotos()).length
-  );
+  readonly totalAccountPhotoCount = computed(() => this.userState.allUploadedPhotos().length);
 
   readonly remainingInSection = computed(() =>
     Math.max(0, this.sectionMax() - this.photos().length)

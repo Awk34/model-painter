@@ -307,17 +307,20 @@ export class ModelDetailComponent {
     this.loading.set(false);
   }
 
-  selectCustomFeaturedView(): void {
-    this.viewingCustomFeatured.set(true);
+  private resetPan(): void {
     this.panX.set(0);
     this.panY.set(0);
+  }
+
+  selectCustomFeaturedView(): void {
+    this.viewingCustomFeatured.set(true);
+    this.resetPan();
   }
 
   selectOfficialAngleView(index: number): void {
     this.viewingCustomFeatured.set(false);
     this.selectedImageIndex.set(index);
-    this.panX.set(0);
-    this.panY.set(0);
+    this.resetPan();
   }
 
   onSelectFeaturedUploadedPhoto(photoId: string | undefined): void {
@@ -386,8 +389,7 @@ export class ModelDetailComponent {
 
   openZoomModal(): void {
     this.zoomScale.set(2);
-    this.panX.set(0);
-    this.panY.set(0);
+    this.resetPan();
     this.isPanning.set(false);
     this.showZoomPins.set(false);
     this.activePointerId = null;
@@ -410,8 +412,7 @@ export class ModelDetailComponent {
     const clamped = Math.round(Math.min(4, Math.max(1, scale)) * 100) / 100;
     this.zoomScale.set(clamped);
     if (clamped <= 1) {
-      this.panX.set(0);
-      this.panY.set(0);
+      this.resetPan();
     }
   }
 
@@ -425,8 +426,7 @@ export class ModelDetailComponent {
 
   resetZoom(): void {
     this.zoomScale.set(1);
-    this.panX.set(0);
-    this.panY.set(0);
+    this.resetPan();
   }
 
   toggleQuickZoom(): void {
@@ -475,9 +475,5 @@ export class ModelDetailComponent {
     }
     this.isPanning.set(false);
     this.activePointerId = null;
-  }
-
-  selectZoomAngle(index: number): void {
-    this.selectOfficialAngleView(index);
   }
 }

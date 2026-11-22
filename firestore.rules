@@ -20,7 +20,8 @@ rules_version = '2';
 //
 // Collection: users
 // Document ID: {userId} (must match `request.auth.uid`)
-// Schema (`UserAccountState` synced via `setDoc(..., { merge: true })`):
+// Schema (`UserAccountState` non-project account state synced via `setDoc(..., { merge: true })`;
+//   user projects live exclusively in `/users/{userId}/projects/{projectId}`):
 //   - schemaVersion: number (optional on partial merge, 1..1000) - state schema version
 //   - updatedAt: string (optional on partial merge, 1..64 chars) - ISO 8601 timestamp
 //   - inventoryPaintIds: list<string> (optional, size <= 1000) - owned paint IDs
@@ -30,8 +31,7 @@ rules_version = '2';
 //   - customPaints: list<map> (optional, size <= 200) - user-created 3rd-party paints
 //   - customCompatibilityOverrides: map<string, list<string>> (optional, size <= 500) - paint equivalence map
 //   - modelProgress: map<string, list<string>> (optional, size <= 500) - completed painting step/area IDs per model
-//   - projects: list<map> (optional legacy field, size <= 50; removable via `deleteField()` during migration)
-//   - uploadedPhotos: list<map> (optional, size <= 250) - user-uploaded showcase & private reference photo metadata
+//   - uploadedPhotos: list<map> (optional, size <= 250) - standalone catalog-model (`targetType == 'model'`) photo metadata
 //   - preferences: map (optional, size <= 10) - user UI & substitution preferences
 //
 // Subcollection: users/{userId}/projects
@@ -190,10 +190,10 @@ service cloud.firestore {
         && (photo.get('storagePath', null) == null || isScopedStoragePath(photo.storagePath, userId));
     }
 
-    // Validate a UserUploadedPhoto entry (generic targetType / targetId bounds)
+    // Validate a standalone catalog-model UserUploadedPhoto entry on `/users/{userId}`
     function isValidUploadedPhoto(photo, userId) {
       return isValidUploadedPhotoCore(photo, userId)
-        && photo.targetType in ['model', 'project', 'project_model']
+        && photo.targetType == 'model'
         && isReqStr(photo.targetId, 200);
     }
 
@@ -211,35 +211,6 @@ service cloud.firestore {
           || (
             isValidUploadedPhoto(photos[0], userId)
             && (photos.size() == 1 || isValidUploadedPhoto(photos[photos.size() - 1], userId))
-          )
-        );
-    }
-
-    // Validate a legacy embedded UserProject entry on `/users/{userId}` (backward compatibility)
-    function isValidProject(proj) {
-      return proj is map
-        && proj.size() <= 20
-        && (!('id' in proj) || isReqStr(proj.id, 120))
-        && (!('name' in proj) || isReqStr(proj.name, 200))
-        && (!('recipeIds' in proj) || isValidList(proj.recipeIds, 100))
-        && (!('models' in proj) || isValidList(proj.models, 100))
-        && (!('colorIds' in proj) || isValidList(proj.colorIds, 100))
-        && (!('notes' in proj) || isValidList(proj.notes, 50))
-        && (!('photos' in proj) || isValidList(proj.photos, 18))
-        && isOptStr(proj.get('coverPhotoId', null), 120)
-        && isOptStr(proj.get('thumbnailUrl', null), 2048)
-        && isOptStr(proj.get('localThumbnailPath', null), 512)
-        && (!('createdAt' in proj) || (proj.createdAt is string && proj.createdAt.size() <= 64))
-        && (!('updatedAt' in proj) || (proj.updatedAt is string && proj.updatedAt.size() <= 64));
-    }
-
-    function isValidProjectsList(projects) {
-      return isValidList(projects, 50)
-        && (
-          projects.size() == 0
-          || (
-            isValidProject(projects[0])
-            && (projects.size() == 1 || isValidProject(projects[projects.size() - 1]))
           )
         );
     }
@@ -292,7 +263,6 @@ service cloud.firestore {
           'customPaints',
           'customCompatibilityOverrides',
           'modelProgress',
-          'projects',
           'uploadedPhotos',
           'preferences'
         ])
@@ -306,7 +276,6 @@ service cloud.firestore {
         && (!('customPaints' in data) || isValidCustomPaintsList(data.customPaints))
         && (!('customCompatibilityOverrides' in data) || (data.customCompatibilityOverrides is map && data.customCompatibilityOverrides.size() <= 500))
         && (!('modelProgress' in data) || (data.modelProgress is map && data.modelProgress.size() <= 500))
-        && (!('projects' in data) || isValidProjectsList(data.projects))
         && (!('uploadedPhotos' in data) || isValidUploadedPhotosList(data.uploadedPhotos, userId))
         && (!('preferences' in data) || isValidPreferences(data.preferences));
     }

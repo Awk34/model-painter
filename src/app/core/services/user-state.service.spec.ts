@@ -8,7 +8,7 @@ import { UserStateService } from './user-state.service';
 
 const STORAGE_KEY = 'whc_user_state_v1';
 
-describe('UserStateService — Project Model Entries & Migration', () => {
+describe('UserStateService — Project Model Entries', () => {
   let service: UserStateService;
   let deletePhotoAssetsSpy: jasmine.Spy;
 
@@ -72,36 +72,49 @@ describe('UserStateService — Project Model Entries & Migration', () => {
     localStorage.removeItem(STORAGE_KEY);
   });
 
-  it('migrates legacy recipeIds to ProjectModelEntry[] starting at 0% progress and embeds legacy project photos', () => {
+  it('hydrates self-contained projects with embedded photos while keeping standalone model photos separate', () => {
     service = setupService({
-      schemaVersion: 1,
+      schemaVersion: 2,
       modelProgress: {
         'redemptor-dreadnought': ['step-1', 'step-2'],
       },
       projects: [
         {
-          id: 'proj_legacy',
-          name: 'Legacy Marines',
+          id: 'proj_1',
+          name: 'Ultramarines Spearhead',
           createdAt: '2026-01-01T00:00:00Z',
           updatedAt: '2026-01-02T00:00:00Z',
-          recipeIds: ['redemptor-dreadnought'],
+          models: [
+            {
+              id: 'pmod_1',
+              recipeId: 'redemptor-dreadnought',
+              quantity: 1,
+              notes: '',
+              completedStepIds: [],
+              photos: [],
+              createdAt: '2026-01-01T00:00:00Z',
+              updatedAt: '2026-01-02T00:00:00Z',
+            },
+          ],
           colorIds: ['c1'],
           notes: [],
           coverPhotoId: 'ph_proj_1',
+          photos: [
+            {
+              id: 'ph_proj_1',
+              targetType: 'project',
+              targetId: 'proj_1',
+              kind: 'showcase',
+              isPrivate: true,
+              fileName: 'squad.jpg',
+              mimeType: 'image/jpeg',
+              sizeBytes: 12000,
+              createdAt: '2026-01-02T00:00:00Z',
+            },
+          ],
         },
       ],
       uploadedPhotos: [
-        {
-          id: 'ph_proj_1',
-          targetType: 'project',
-          targetId: 'proj_legacy',
-          kind: 'showcase',
-          isPrivate: true,
-          fileName: 'squad.jpg',
-          mimeType: 'image/jpeg',
-          sizeBytes: 12000,
-          createdAt: '2026-01-02T00:00:00Z',
-        },
         {
           id: 'ph_model_1',
           targetType: 'model',
@@ -117,22 +130,14 @@ describe('UserStateService — Project Model Entries & Migration', () => {
     });
 
     expect(service.state().schemaVersion).toBe(2);
-    // Standalone global modelProgress & standalone model photos are preserved
     expect(service.getCompletedStepIds('redemptor-dreadnought')).toEqual(['step-1', 'step-2']);
     expect(service.uploadedPhotos().map((p) => p.id)).toEqual(['ph_model_1']);
 
-    const proj = service.getProjectById('proj_legacy');
+    const proj = service.getProjectById('proj_1');
     expect(proj).toBeDefined();
     expect(proj!.models.length).toBe(1);
-    expect(proj!.models[0].recipeId).toBe('redemptor-dreadnought');
-    expect(proj!.models[0].quantity).toBe(1);
-    expect(proj!.models[0].notes).toBe('');
-    // Migrated entries start at 0% progress
-    expect(proj!.models[0].completedStepIds).toEqual([]);
-    // Legacy project photo moved into project.photos and coverPhotoId preserved
     expect(proj!.photos.map((p) => p.id)).toEqual(['ph_proj_1']);
     expect(proj!.coverPhotoId).toBe('ph_proj_1');
-    // allUploadedPhotos aggregates standalone + embedded project photos
     expect(service.allUploadedPhotos().length).toBe(2);
   });
 

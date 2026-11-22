@@ -494,7 +494,7 @@
                       class="angle-thumb"
                       [class.active]="!viewingCustomFeatured() && selectedImageIndex() === idx"
                       [attr.aria-label]="'View angle ' + (idx + 1)"
-                      (click)="selectZoomAngle(idx)"
+                      (click)="selectOfficialAngleView(idx)"
                     >
                       <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
                     </button>
