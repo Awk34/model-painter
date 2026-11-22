@@ -1,7 +1,19 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FinishStageKey, ModelRecipe } from '../../core/models/catalog.models';
+import {
+  FinishStageKey,
+  ModelRecipe,
+  ProjectModelEntry,
+  UserProject,
+} from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
@@ -15,6 +27,8 @@ import {
   ModelPaintingStepsComponent,
   ModelStageFilter,
 } from './components/model-painting-steps.component';
+import { ProjectModelFeaturedImageModalComponent } from './components/project-model-featured-image-modal.component';
+import { ProjectModelWorkspaceBarComponent } from './components/project-model-workspace-bar.component';
 
 const STAGE_KEY_TO_FILTER: Record<FinishStageKey, Exclude<ModelStageFilter, 'all'>> = {
   base: 'Base Finish',
@@ -40,6 +54,8 @@ const FILTER_TO_STAGE_KEY: Record<ModelStageFilter, FinishStageKey | null> = {
     AddToProjectModalComponent,
     PaintBrandBadgeComponent,
     PaintSwatchComponent,
+    ProjectModelWorkspaceBarComponent,
+    ProjectModelFeaturedImageModalComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './model-detail.component.ng.html',
@@ -56,13 +72,20 @@ export class ModelDetailComponent {
   readonly readinessService = inject(InventoryMatchService);
   readonly img = inject(ImageService);
 
+  /** Route params: standalone `/models/:id` OR project-scoped `/projects/:projectId/models/:entryId` */
+  readonly standaloneModelId = signal<string | null>(null);
+  readonly projectId = signal<string | null>(null);
+  readonly entryId = signal<string | null>(null);
+
   readonly loading = signal(true);
   readonly recipe = signal<ModelRecipe | null>(null);
   readonly selectedImageIndex = signal(0);
+  readonly viewingCustomFeatured = signal(false);
   readonly showPins = signal(true);
   readonly selectedColorPointId = signal<string | null>(null);
   readonly stageFilter = signal<ModelStageFilter>('all');
   readonly showProjectModal = signal(false);
+  readonly showFeaturedImageModal = signal(false);
   readonly userPhotosExpanded = signal(true);
   readonly zoomModalOpen = signal(false);
   readonly showZoomPins = signal(false);
@@ -76,12 +99,63 @@ export class ModelDetailComponent {
   private panOriginX = 0;
   private panOriginY = 0;
   private activePointerId: number | null = null;
+  private lastLoadedRecipeId: string | null = null;
+  private lastFeaturedSignature: string | null = null;
+
+  readonly isProjectMode = computed(() => Boolean(this.projectId() && this.entryId()));
+
+  readonly project = computed<UserProject | null>(() => {
+    const pid = this.projectId();
+    if (!pid) {
+      return null;
+    }
+    return this.userState.projects().find((p) => p.id === pid) ?? null;
+  });
+
+  readonly projectModelEntry = computed<ProjectModelEntry | null>(() => {
+    const p = this.project();
+    const eid = this.entryId();
+    if (!p || !eid) {
+      return null;
+    }
+    return p.models.find((m) => m.id === eid) ?? null;
+  });
+
+  readonly activeRecipeId = computed<string | null>(() => {
+    if (this.isProjectMode()) {
+      return this.projectModelEntry()?.recipeId ?? null;
+    }
+    return this.standaloneModelId();
+  });
 
   readonly activeStageKey = computed<FinishStageKey | null>(
     () => FILTER_TO_STAGE_KEY[this.stageFilter()]
   );
 
+  readonly featuredUploadedPhotoId = computed<string | undefined>(() => {
+    const fi = this.projectModelEntry()?.featuredImage;
+    return fi?.source === 'uploaded_photo' ? fi.photoId : undefined;
+  });
+
+  readonly hasCustomOverlayFeatured = computed<boolean>(() => {
+    const fi = this.projectModelEntry()?.featuredImage;
+    return Boolean(fi && (fi.source === 'uploaded_photo' || fi.source === 'catalog_model'));
+  });
+
+  readonly customFeaturedUrl = computed<string | null>(() => {
+    const entry = this.projectModelEntry();
+    if (!entry || !this.hasCustomOverlayFeatured()) {
+      return null;
+    }
+    return this.userState.resolveProjectModelImageUrl(entry, null, this.recipe());
+  });
+
   readonly modelPhotoCount = computed(() => {
+    const p = this.project();
+    const entry = this.projectModelEntry();
+    if (p && entry) {
+      return this.userState.getTargetPhotoCount('project_model', entry.id, p.id);
+    }
     const r = this.recipe();
     if (!r) {
       return 0;
@@ -90,12 +164,25 @@ export class ModelDetailComponent {
   });
 
   readonly activeImageUrl = computed(() => {
+    if (this.viewingCustomFeatured()) {
+      const customUrl = this.customFeaturedUrl();
+      if (customUrl) {
+        return customUrl;
+      }
+    }
     const r = this.recipe();
     if (!r) {
       return '/icons/ic_models.svg';
     }
     const idx = this.selectedImageIndex();
     return this.img.resolve(r.localImagePaths?.[idx], r.images?.[idx]);
+  });
+
+  readonly canShowColorPins = computed(() => {
+    const r = this.recipe();
+    return Boolean(
+      r && !this.viewingCustomFeatured() && this.selectedImageIndex() === 0 && r.colorPoints.length
+    );
   });
 
   readonly stagedReadiness = computed(() => {
@@ -148,21 +235,127 @@ export class ModelDetailComponent {
   readonly readiness = computed(() => this.stagedReadiness().overall);
 
   constructor() {
-    this.route.paramMap.subscribe(async (params) => {
-      const id = params.get('id');
-      if (!id) {
-        return;
-      }
-      this.loading.set(true);
-      this.selectedImageIndex.set(0);
+    this.route.paramMap.subscribe((params) => {
+      const pid = params.get('projectId');
+      const eid = params.get('entryId');
+      const standaloneId = params.get('id');
+
+      this.projectId.set(pid);
+      this.entryId.set(eid);
+      this.standaloneModelId.set(pid && eid ? null : standaloneId);
       this.zoomModalOpen.set(false);
+      this.showFeaturedImageModal.set(false);
       this.isPanning.set(false);
       this.activePointerId = null;
-      const data = await this.catalog.getModelRecipe(id);
-      this.recipe.set(data);
-      this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
-      this.loading.set(false);
+      this.lastFeaturedSignature = null;
     });
+
+    // Load catalog recipe whenever activeRecipeId changes
+    effect(() => {
+      const targetRecipeId = this.activeRecipeId();
+      if (!targetRecipeId) {
+        this.lastLoadedRecipeId = null;
+        this.recipe.set(null);
+        this.loading.set(false);
+        return;
+      }
+      if (targetRecipeId === this.lastLoadedRecipeId) {
+        return;
+      }
+      this.lastLoadedRecipeId = targetRecipeId;
+      void this.loadRecipe(targetRecipeId);
+    });
+
+    // Sync initial/updated featured image into the hero viewer when in project-model mode
+    effect(() => {
+      const entry = this.projectModelEntry();
+      if (!entry) {
+        this.viewingCustomFeatured.set(false);
+        return;
+      }
+      const sig = `${entry.id}:${JSON.stringify(entry.featuredImage ?? null)}`;
+      if (sig === this.lastFeaturedSignature) {
+        return;
+      }
+      this.lastFeaturedSignature = sig;
+
+      const fi = entry.featuredImage;
+      if (fi?.source === 'uploaded_photo' || fi?.source === 'catalog_model') {
+        this.viewingCustomFeatured.set(true);
+      } else if (fi?.source === 'catalog_angle') {
+        this.viewingCustomFeatured.set(false);
+        this.selectedImageIndex.set(fi.imageIndex);
+      } else {
+        this.viewingCustomFeatured.set(false);
+        this.selectedImageIndex.set(0);
+      }
+    });
+  }
+
+  private async loadRecipe(recipeId: string): Promise<void> {
+    this.loading.set(true);
+    if (!this.isProjectMode()) {
+      this.selectedImageIndex.set(0);
+      this.viewingCustomFeatured.set(false);
+    }
+    const data = await this.catalog.getModelRecipe(recipeId);
+    if (this.activeRecipeId() !== recipeId) {
+      return;
+    }
+    this.recipe.set(data);
+    this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
+    this.loading.set(false);
+  }
+
+  selectCustomFeaturedView(): void {
+    this.viewingCustomFeatured.set(true);
+    this.panX.set(0);
+    this.panY.set(0);
+  }
+
+  selectOfficialAngleView(index: number): void {
+    this.viewingCustomFeatured.set(false);
+    this.selectedImageIndex.set(index);
+    this.panX.set(0);
+    this.panY.set(0);
+  }
+
+  onSelectFeaturedUploadedPhoto(photoId: string | undefined): void {
+    const p = this.project();
+    const entry = this.projectModelEntry();
+    if (!p || !entry) {
+      return;
+    }
+    this.userState.setProjectModelFeaturedImage(
+      p.id,
+      entry.id,
+      photoId ? { source: 'uploaded_photo', photoId } : undefined
+    );
+  }
+
+  duplicateCurrentProjectModel(): void {
+    const p = this.project();
+    const entry = this.projectModelEntry();
+    if (!p || !entry) {
+      return;
+    }
+    const copy = this.userState.duplicateProjectModel(p.id, entry.id);
+    if (copy) {
+      this.router.navigate(['/projects', p.id, 'models', copy.id]);
+    }
+  }
+
+  removeCurrentProjectModel(): void {
+    const p = this.project();
+    const entry = this.projectModelEntry();
+    if (!p || !entry) {
+      return;
+    }
+    const label = entry.customName || this.recipe()?.name || 'this model';
+    if (confirm(`Remove "${label}" from "${p.name}"?`)) {
+      this.userState.removeModelFromProject(p.id, entry.id);
+      this.router.navigate(['/projects', p.id]);
+    }
   }
 
   onStageBarClick(key: FinishStageKey): void {
@@ -285,8 +478,6 @@ export class ModelDetailComponent {
   }
 
   selectZoomAngle(index: number): void {
-    this.selectedImageIndex.set(index);
-    this.panX.set(0);
-    this.panY.set(0);
+    this.selectOfficialAngleView(index);
   }
 }

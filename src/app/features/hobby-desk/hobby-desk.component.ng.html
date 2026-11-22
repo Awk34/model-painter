@@ -71,10 +71,10 @@
       </button>
       <div
         class="kpi-pill"
-        [title]="userState.uploadedPhotos().length + ' / ' + userState.limits.MAX_TOTAL_USER_PHOTOS + ' uploaded photos (' + totalUploadedBytesLabel() + ')'"
+        [title]="userState.allUploadedPhotos().length + ' / ' + userState.limits.MAX_TOTAL_USER_PHOTOS + ' uploaded photos (' + totalUploadedBytesLabel() + ')'"
       >
         <span class="kpi-num">
-          {{ userState.uploadedPhotos().length }}<small class="kpi-cap">/{{ userState.limits.MAX_TOTAL_USER_PHOTOS }}</small>
+          {{ userState.allUploadedPhotos().length }}<small class="kpi-cap">/{{ userState.limits.MAX_TOTAL_USER_PHOTOS }}</small>
         </span>
         <span class="kpi-label">Photos</span>
       </div>

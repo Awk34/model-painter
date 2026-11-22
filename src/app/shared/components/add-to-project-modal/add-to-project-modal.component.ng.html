@@ -15,7 +15,7 @@
                 (click)="addToExistingProject(p.id)"
               >
                 <strong>{{ p.name }}</strong>
-                <span>{{ isAlreadyInProject(p) ? '✓ Already Added' : '+ Add to Project' }}</span>
+                <span>{{ getActionLabel(p) }}</span>
               </button>
             }
           </div>

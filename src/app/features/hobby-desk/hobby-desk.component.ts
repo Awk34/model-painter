@@ -37,7 +37,7 @@ export class HobbyDeskComponent {
   readonly paintSubMode = signal<CollectionSubMode>('inventory');
 
   readonly totalUploadedBytesLabel = computed(() => {
-    const total = this.userState.uploadedPhotos().reduce((acc, p) => acc + p.sizeBytes, 0);
+    const total = this.userState.allUploadedPhotos().reduce((acc, p) => acc + p.sizeBytes, 0);
     return formatBytes(total);
   });
 

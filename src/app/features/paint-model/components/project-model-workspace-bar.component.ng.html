@@ -1,0 +1,153 @@
+<section class="workspace-card studio-card" aria-label="Project model settings and notes">
+  <div class="workspace-top-row">
+    <div class="workspace-identity">
+      <div class="project-context-pill">
+        <span>Project:</span>
+        <a [routerLink]="['/projects', project().id]" class="project-link">{{ project().name }}</a>
+      </div>
+
+      @if (editingName()) {
+        <div class="name-edit-row">
+          <label for="project-model-custom-name" class="sr-only">Custom model label</label>
+          <input
+            id="project-model-custom-name"
+            type="text"
+            class="input-control name-input"
+            [maxlength]="userState.limits.MAX_TITLE_LENGTH"
+            placeholder="e.g., Redemptor — Macro Plasma..."
+            [ngModel]="nameDraft()"
+            (ngModelChange)="nameDraft.set($event)"
+            (keyup.enter)="saveCustomName()"
+          />
+          <button type="button" class="btn btn-gold btn-sm" (click)="saveCustomName()">Save</button>
+          @if (hasCustomName()) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="resetCustomName()">
+              Reset
+            </button>
+          }
+          <button type="button" class="btn btn-ghost btn-sm" (click)="editingName.set(false)">
+            Cancel
+          </button>
+        </div>
+      } @else {
+        <div class="name-display-row">
+          <h1 class="workspace-title">{{ displayName() }}</h1>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            (click)="startEditName()"
+          >
+            ✎ Rename Label
+          </button>
+        </div>
+        @if (hasCustomName() && recipe(); as r) {
+          <p class="catalog-base-label">Catalog Model: {{ r.name }}</p>
+        }
+      }
+    </div>
+
+    <div class="workspace-controls">
+      <div class="qty-control-group">
+        <label for="project-model-qty" class="qty-label">Quantity</label>
+        <div class="qty-stepper">
+          <button
+            type="button"
+            class="qty-btn"
+            aria-label="Decrease model quantity"
+            [disabled]="entry().quantity <= 1"
+            (click)="stepQuantity(-1)"
+          >
+            −
+          </button>
+          <input
+            id="project-model-qty"
+            type="number"
+            class="qty-input"
+            min="1"
+            [max]="userState.limits.MAX_MODEL_QUANTITY"
+            [value]="entry().quantity"
+            (change)="onQuantityInputChange($event)"
+          />
+          <button
+            type="button"
+            class="qty-btn"
+            aria-label="Increase model quantity"
+            [disabled]="entry().quantity >= userState.limits.MAX_MODEL_QUANTITY"
+            (click)="stepQuantity(1)"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div class="action-buttons-row">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          (click)="openFeaturedImagePicker.emit()"
+        >
+          🖼 Change Featured Image
+        </button>
+        @if (hasCustomFeaturedImage()) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            (click)="resetFeaturedImage()"
+          >
+            ↺ Reset Image
+          </button>
+        }
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          (click)="duplicateRequested.emit()"
+        >
+          ⧉ Duplicate Entry
+        </button>
+        @if (recipe(); as r) {
+          <a [routerLink]="['/models', r.id]" class="btn btn-ghost btn-sm">
+            Catalog Guide ↗
+          </a>
+        }
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm danger-text"
+          (click)="removeRequested.emit()"
+        >
+          🗑 Remove
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace-notes-block">
+    <div class="notes-header-row">
+      <label for="project-model-notes" class="notes-label">
+        📝 Model Notes
+      </label>
+      <div class="notes-meta-actions">
+        <span class="char-counter">
+          {{ notesDraft().length }} / {{ userState.limits.MAX_MODEL_NOTE_LENGTH }}
+        </span>
+        @if (notesSaved()) {
+          <span class="saved-indicator" role="status">✓ Saved</span>
+        }
+        @if (hasUnsavedNotes()) {
+          <button type="button" class="btn btn-gold btn-sm" (click)="saveNotes()">
+            Save Notes
+          </button>
+        }
+      </div>
+    </div>
+    <textarea
+      id="project-model-notes"
+      class="input-control notes-textarea"
+      rows="3"
+      [maxlength]="userState.limits.MAX_MODEL_NOTE_LENGTH"
+      placeholder="Add build notes, loadout details, paint mix ratios, sub-assembly reminders, or basing recipes for this specific model..."
+      [ngModel]="notesDraft()"
+      (ngModelChange)="notesDraft.set($event)"
+      (blur)="saveNotes()"
+    ></textarea>
+  </div>
+</section>

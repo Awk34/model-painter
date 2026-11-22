@@ -1,0 +1,167 @@
+@if (open()) {
+  <div
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Choose featured image for project model"
+    (click)="close()"
+  >
+    <div class="modal-panel featured-picker-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Choose Featured Image</h3>
+        <button type="button" class="close-btn" aria-label="Close" (click)="close()">✕</button>
+      </div>
+
+      <div class="picker-tabs" role="tablist" aria-label="Featured image sources">
+        <button
+          type="button"
+          role="tab"
+          class="picker-tab-btn"
+          [class.active]="activeTab() === 'angles'"
+          [attr.aria-selected]="activeTab() === 'angles'"
+          (click)="activeTab.set('angles')"
+        >
+          Official Angles ({{ officialAngles().length }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="picker-tab-btn"
+          [class.active]="activeTab() === 'uploaded'"
+          [attr.aria-selected]="activeTab() === 'uploaded'"
+          (click)="activeTab.set('uploaded')"
+        >
+          My Photos ({{ entryPhotos().length }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="picker-tab-btn"
+          [class.active]="activeTab() === 'catalog'"
+          [attr.aria-selected]="activeTab() === 'catalog'"
+          (click)="activeTab.set('catalog')"
+        >
+          Other Catalog Models
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (activeTab() === 'angles') {
+          @if (officialAngles().length > 0) {
+            <div class="image-choice-grid">
+              @for (angle of officialAngles(); track angle.index) {
+                <button
+                  type="button"
+                  class="image-choice-card studio-card"
+                  [class.selected]="isAngleActive(angle.index)"
+                  (click)="selectOfficialAngle(angle)"
+                >
+                  <div class="choice-img-wrap">
+                    <img [src]="angle.url" [alt]="'Official angle ' + (angle.index + 1)" />
+                  </div>
+                  <div class="choice-caption">
+                    <strong>{{ angle.index === 0 ? 'Default Primary Angle' : 'Angle ' + (angle.index + 1) }}</strong>
+                    @if (isAngleActive(angle.index)) {
+                      <span class="active-tag">★ Active</span>
+                    }
+                  </div>
+                </button>
+              }
+            </div>
+          } @else {
+            <p class="empty-hint">No official catalog angles are available for this model.</p>
+          }
+        } @else if (activeTab() === 'uploaded') {
+          <div class="quick-upload-bar">
+            <label for="featured-quick-upload" class="btn btn-gold btn-sm">
+              {{ uploading() ? 'Uploading...' : '+ Upload New Photo & Set Featured' }}
+            </label>
+            <input
+              id="featured-quick-upload"
+              type="file"
+              class="sr-only"
+              [accept]="acceptAttr"
+              [disabled]="uploading()"
+              (change)="onQuickUploadFile($event)"
+            />
+            <span class="upload-hint">
+              {{ limits.ALLOWED_IMAGE_EXTENSIONS_LABEL }} • up to {{ limits.MAX_RAW_INPUT_FILE_SIZE_MB }} MB
+            </span>
+          </div>
+
+          @if (uploadError(); as err) {
+            <div class="upload-err-box" role="alert">{{ err }}</div>
+          }
+
+          @if (entryPhotos().length > 0) {
+            <div class="image-choice-grid">
+              @for (ph of entryPhotos(); track ph.id) {
+                <button
+                  type="button"
+                  class="image-choice-card studio-card"
+                  [class.selected]="isUploadedPhotoActive(ph.id)"
+                  (click)="selectUploadedPhoto(ph.id)"
+                >
+                  <div class="choice-img-wrap">
+                    <img [src]="media.resolvePhotoUrl(ph)" [alt]="ph.caption || ph.fileName" />
+                  </div>
+                  <div class="choice-caption">
+                    <strong>{{ ph.caption || ph.fileName }}</strong>
+                    <span>{{ ph.kind === 'reference' ? '🔒 Reference' : 'Showcase' }}</span>
+                    @if (isUploadedPhotoActive(ph.id)) {
+                      <span class="active-tag">★ Active</span>
+                    }
+                  </div>
+                </button>
+              }
+            </div>
+          } @else {
+            <p class="empty-hint">
+              No photos uploaded for this model entry yet. Upload one above to use it as the featured image.
+            </p>
+          }
+        } @else {
+          <input
+            type="text"
+            class="input-control search-field"
+            placeholder="Search any catalog miniature artwork (e.g., for kitbashes or proxies)..."
+            [ngModel]="catalogSearch()"
+            (ngModelChange)="catalogSearch.set($event)"
+          />
+          <div class="image-choice-grid">
+            @for (m of filteredCatalogModels(); track m.id) {
+              <button
+                type="button"
+                class="image-choice-card studio-card"
+                [class.selected]="isCatalogModelActive(m.id)"
+                (click)="selectCatalogModel(m.id, m.localPrimaryImage, m.primaryImage)"
+              >
+                <div class="choice-img-wrap">
+                  <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
+                </div>
+                <div class="choice-caption">
+                  <strong>{{ m.name }}</strong>
+                  @if (m.gameNames[0]) {
+                    <span>{{ m.gameNames[0] }}</span>
+                  }
+                  @if (isCatalogModelActive(m.id)) {
+                    <span class="active-tag">★ Active</span>
+                  }
+                </div>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        @if (currentFeatured()) {
+          <button type="button" class="btn btn-secondary btn-sm" (click)="resetToDefault()">
+            ↺ Reset to Default Image
+          </button>
+        }
+        <button type="button" class="btn btn-ghost btn-sm" (click)="close()">Close</button>
+      </div>
+    </div>
+  </div>
+}

@@ -333,7 +333,7 @@ export interface UserProjectNote {
   components: UserProjectNoteComponent[];
 }
 
-export type UserPhotoTargetType = 'model' | 'project';
+export type UserPhotoTargetType = 'model' | 'project' | 'project_model';
 export type UserPhotoKind = 'showcase' | 'reference';
 
 export interface UserUploadedPhoto {
@@ -355,6 +355,43 @@ export interface UserUploadedPhoto {
   storagePath?: string;
 }
 
+/** Reserved schema for future model loadout / wargear configurations (e.g., Dreadnought weapons) */
+export interface ProjectModelConfiguration {
+  id: string;
+  slot: string;
+  option: string;
+  optionId?: string;
+  notes?: string;
+}
+
+export type ProjectModelFeaturedImage =
+  | { source: 'uploaded_photo'; photoId: string }
+  | { source: 'catalog_angle'; imageIndex: number; localImagePath?: string; imageUrl?: string }
+  | { source: 'catalog_model'; modelId: string; localImagePath?: string; imageUrl?: string };
+
+export interface ProjectModelEntry {
+  /** Unique instance ID so the same catalog model can be added multiple times to a project */
+  id: string;
+  /** Catalog ModelSummary / ModelRecipe ID */
+  recipeId: string;
+  /** Optional custom nickname/label (e.g., "Redemptor — Macro Plasma") */
+  customName?: string;
+  /** Quantity of this model entry (e.g., 25 for 25x Ork Boy) */
+  quantity: number;
+  /** Freeform multiline notes scoped to this project model entry */
+  notes: string;
+  /** Completed painting step / area IDs scoped exclusively to this project model entry */
+  completedStepIds: string[];
+  /** Custom featured image override; undefined uses the default catalog primary image */
+  featuredImage?: ProjectModelFeaturedImage;
+  /** Showcase & private reference photo metadata stored inside this project entity */
+  photos: UserUploadedPhoto[];
+  /** Reserved for future model configurations/loadouts */
+  configurations?: ProjectModelConfiguration[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserProject {
   id: string;
   name: string;
@@ -364,9 +401,11 @@ export interface UserProject {
   coverPhotoId?: string;
   createdAt: string;
   updatedAt: string;
-  recipeIds: string[];
+  models: ProjectModelEntry[];
   colorIds: string[];
   notes: UserProjectNote[];
+  /** Project-level showcase & private reference photo metadata stored inside this project entity */
+  photos: UserUploadedPhoto[];
 }
 
 export interface UserPreferences {

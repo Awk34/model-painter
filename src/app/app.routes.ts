@@ -21,6 +21,11 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'projects/:projectId/models/:entryId',
+    loadComponent: () =>
+      import('./features/paint-model/model-detail.component').then((m) => m.ModelDetailComponent),
+  },
+  {
     path: 'models',
     loadComponent: () =>
       import('./features/paint-model/paint-model.component').then((m) => m.PaintModelComponent),

@@ -216,7 +216,7 @@ export class InventoryMatchService {
    * and evaluates 3-stage readiness.
    */
   evaluateProjectStagedReadiness(
-    project: Pick<UserProject, 'recipeIds' | 'colorIds'>
+    project: Pick<UserProject, 'models' | 'colorIds'>
   ): StagedReadinessResult {
     const baseIds = new Set<string>();
     const detailIds = new Set<string>();
@@ -225,9 +225,14 @@ export class InventoryMatchService {
 
     const modelById = this.catalog.modelById();
     const colorById = this.catalog.colorById();
+    const seenRecipeIds = new Set<string>();
 
-    for (const rid of project.recipeIds) {
-      const model = modelById.get(rid);
+    for (const entry of project.models) {
+      if (!entry.recipeId || seenRecipeIds.has(entry.recipeId)) {
+        continue;
+      }
+      seenRecipeIds.add(entry.recipeId);
+      const model = modelById.get(entry.recipeId);
       if (model) {
         for (const id of model.paintsByStage?.base ?? []) {
           baseIds.add(id);

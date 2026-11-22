@@ -41,16 +41,21 @@
                 <div class="picker-info">
                   <strong>{{ m.name }}</strong>
                   @if (activeMode === 'model') {
-                    <span>{{ m.gameNames[0] }}</span>
+                    <span>
+                      {{ m.gameNames[0] }}
+                      @if (getModelCount(m.id) > 0) {
+                        • {{ getModelCount(m.id) }} in project
+                      }
+                    </span>
                   }
                 </div>
                 @if (activeMode === 'model') {
                   <button
                     type="button"
                     class="btn btn-sm btn-gold"
-                    (click)="userState.addRecipeToProject(project().id, m.id, m.localPrimaryImage)"
+                    (click)="addModel(m.id, m.localPrimaryImage)"
                   >
-                    + Add
+                    {{ getModelCount(m.id) > 0 ? '+ Add Another' : '+ Add' }}
                   </button>
                 } @else {
                   <button

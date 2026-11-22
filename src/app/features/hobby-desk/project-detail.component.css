@@ -91,6 +91,7 @@
 }
 
 .attached-img-wrap {
+  position: relative;
   height: 150px;
   background: #161920;
   display: flex;
@@ -105,6 +106,20 @@
   object-fit: contain;
 }
 
+.qty-corner-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(13, 14, 17, 0.88);
+  color: var(--gold-bright);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .color-banner {
   height: 76px;
 }
@@ -112,6 +127,9 @@
 .attached-body {
   padding: 12px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .attached-body p {
@@ -120,9 +138,93 @@
   color: var(--text-secondary);
 }
 
+.catalog-subtitle {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.model-meta-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.mini-pill {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 1px 7px;
+}
+
+.mini-pill.progress-pill {
+  color: #29c26a;
+  background: rgba(41, 194, 106, 0.14);
+  border-color: rgba(41, 194, 106, 0.35);
+}
+
 .attached-footer {
   padding: 8px 12px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: flex-end;
+}
+
+.model-card-footer {
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  padding: 2px 4px;
+}
+
+.qty-step-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-step-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--gold-bright);
+}
+
+.qty-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.qty-step-val {
+  min-width: 28px;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.card-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }

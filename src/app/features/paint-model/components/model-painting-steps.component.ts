@@ -31,11 +31,18 @@ export class ModelPaintingStepsComponent {
   readonly img = inject(ImageService);
 
   readonly modelId = input<string>('');
+  readonly projectId = input<string | undefined>(undefined);
+  readonly projectModelId = input<string | undefined>(undefined);
   readonly paintingAreas = input.required<ModelPaintingArea[]>();
   readonly readiness = input.required<InventoryReadinessResult>();
   readonly stageFilter = model<ModelStageFilter>('all');
 
   readonly completedStepSet = computed(() => {
+    const pid = this.projectId();
+    const entryId = this.projectModelId();
+    if (pid && entryId) {
+      return new Set(this.userState.getProjectModelCompletedStepIds?.(pid, entryId) ?? []);
+    }
     const id = this.modelId();
     if (!id) {
       return new Set<string>();
@@ -74,8 +81,17 @@ export class ModelPaintingStepsComponent {
   }
 
   toggleStepDone(stepId: string): void {
+    if (!stepId) {
+      return;
+    }
+    const pid = this.projectId();
+    const entryId = this.projectModelId();
+    if (pid && entryId) {
+      this.userState.toggleProjectModelStepDone?.(pid, entryId, stepId);
+      return;
+    }
     const id = this.modelId();
-    if (!id || !stepId) {
+    if (!id) {
       return;
     }
     this.userState.toggleStepDone?.(id, stepId);
@@ -95,15 +111,21 @@ export class ModelPaintingStepsComponent {
   }
 
   toggleAreaDone(area: ModelPaintingArea): void {
-    const id = this.modelId();
-    if (!id) {
-      return;
-    }
     const ids = this.getAreaTrackingIds(area, true);
     if (ids.length === 0) {
       return;
     }
     const { isDone } = this.getAreaProgress(area);
+    const pid = this.projectId();
+    const entryId = this.projectModelId();
+    if (pid && entryId) {
+      this.userState.setProjectModelStepsDone?.(pid, entryId, ids, !isDone);
+      return;
+    }
+    const id = this.modelId();
+    if (!id) {
+      return;
+    }
     this.userState.setStepsDone?.(id, ids, !isDone);
   }
 
@@ -125,6 +147,12 @@ export class ModelPaintingStepsComponent {
   }
 
   clearProgress(): void {
+    const pid = this.projectId();
+    const entryId = this.projectModelId();
+    if (pid && entryId) {
+      this.userState.clearProjectModelProgress?.(pid, entryId);
+      return;
+    }
     const id = this.modelId();
     if (!id) {
       return;

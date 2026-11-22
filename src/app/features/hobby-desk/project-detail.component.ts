@@ -2,7 +2,11 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FinishStageKey } from '../../core/models/catalog.models';
+import {
+  FinishStageKey,
+  ModelSummary,
+  ProjectModelEntry,
+} from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
@@ -18,6 +22,20 @@ import {
   ProjectPickerModalComponent,
   ProjectPickerMode,
 } from './components/project-picker-modal.component';
+
+export interface ProjectModelCardView {
+  entry: ProjectModelEntry;
+  summary: ModelSummary | null;
+  displayName: string;
+  catalogName: string;
+  hasCustomName: boolean;
+  gameLabel: string;
+  imageUrl: string;
+  hasNotes: boolean;
+  hasCustomImage: boolean;
+  completedStepCount: number;
+  photoCount: number;
+}
 
 @Component({
   selector: 'app-project-detail',
@@ -78,15 +96,46 @@ export class ProjectDetailComponent {
     return this.userState.getTargetPhotoCount('project', p.id);
   });
 
-  readonly attachedModels = computed(() => {
+  readonly totalProjectPhotoCount = computed(() => {
+    const p = this.project();
+    if (!p) {
+      return 0;
+    }
+    return this.userState.getProjectTotalPhotoCount(p);
+  });
+
+  readonly totalMiniatures = computed(() => {
+    const p = this.project();
+    if (!p) {
+      return 0;
+    }
+    return this.userState.getProjectTotalMiniatures(p);
+  });
+
+  readonly attachedModels = computed<ProjectModelCardView[]>(() => {
     const p = this.project();
     if (!p) {
       return [];
     }
     const map = this.catalog.modelById();
-    return p.recipeIds
-      .map((id) => map.get(id))
-      .filter((m): m is NonNullable<typeof m> => Boolean(m));
+    return p.models.map((entry) => {
+      const summary = map.get(entry.recipeId) ?? null;
+      const catalogName = summary?.name ?? entry.recipeId;
+      const customName = entry.customName?.trim();
+      return {
+        entry,
+        summary,
+        displayName: customName || catalogName,
+        catalogName,
+        hasCustomName: Boolean(customName && customName !== catalogName),
+        gameLabel: summary?.gameNames.join(', ') ?? '',
+        imageUrl: this.userState.resolveProjectModelImageUrl(entry, summary),
+        hasNotes: entry.notes.trim().length > 0,
+        hasCustomImage: Boolean(entry.featuredImage),
+        completedStepCount: entry.completedStepIds.length,
+        photoCount: entry.photos.length,
+      };
+    });
   });
 
   readonly attachedColors = computed(() => {
@@ -154,8 +203,16 @@ export class ProjectDetailComponent {
     }
   }
 
-  goToModel(id: string): void {
-    this.router.navigate(['/models', id]);
+  goToProjectModel(projectId: string, entryId: string): void {
+    this.router.navigate(['/projects', projectId, 'models', entryId]);
+  }
+
+  adjustModelQuantity(projectId: string, entry: ProjectModelEntry, delta: number): void {
+    this.userState.adjustProjectModelQuantity(projectId, entry.id, delta);
+  }
+
+  duplicateModelEntry(projectId: string, entryId: string): void {
+    this.userState.duplicateProjectModel(projectId, entryId);
   }
 
   goToColor(id: string): void {

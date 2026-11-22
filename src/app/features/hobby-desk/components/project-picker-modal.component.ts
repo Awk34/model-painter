@@ -69,6 +69,22 @@ export class ProjectPickerModalComponent {
     return list.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 40);
   });
 
+  readonly modelCountByRecipeId = computed(() => {
+    const counts = new Map<string, number>();
+    for (const entry of this.project().models) {
+      counts.set(entry.recipeId, (counts.get(entry.recipeId) ?? 0) + 1);
+    }
+    return counts;
+  });
+
+  getModelCount(recipeId: string): number {
+    return this.modelCountByRecipeId().get(recipeId) ?? 0;
+  }
+
+  addModel(recipeId: string, modelImageLocal?: string): void {
+    this.userState.addModelToProject(this.project().id, recipeId, { modelImageLocal });
+  }
+
   selectThumbnail(localPath: string, remoteUrl?: string): void {
     this.userState.setProjectThumbnail(this.project().id, localPath, remoteUrl);
     this.close();

@@ -6,7 +6,7 @@ service firebase.storage {
     }
 
     function isValidTargetType(targetType) {
-      return targetType in ['model', 'project'];
+      return targetType in ['model', 'project', 'project_model'];
     }
 
     function isValidPathSegments(targetId, fileName) {

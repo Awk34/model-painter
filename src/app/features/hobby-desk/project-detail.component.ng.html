@@ -60,11 +60,16 @@
         }
 
         <div class="hero-meta">
-          <span>{{ proj.recipeIds.length }} / {{ userState.limits.MAX_MODELS_PER_PROJECT }} Model Guides</span>
+          <span>
+            {{ proj.models.length }} / {{ userState.limits.MAX_MODELS_PER_PROJECT }} Model{{ proj.models.length === 1 ? '' : 's' }}
+            @if (totalMiniatures() > proj.models.length) {
+              ({{ totalMiniatures() }} total minis)
+            }
+          </span>
           <span>•</span>
           <span>{{ proj.colorIds.length }} / {{ userState.limits.MAX_COLORS_PER_PROJECT }} Color Guides</span>
           <span>•</span>
-          <span>{{ projectPhotoCount() }} Photos</span>
+          <span>{{ totalProjectPhotoCount() }} Photos</span>
           <span>•</span>
           <span>{{ proj.notes.length }} / {{ userState.limits.MAX_NOTES_PER_PROJECT }} Notes</span>
           <span>•</span>
@@ -93,7 +98,9 @@
           (click)="modelsExpanded.set(!modelsExpanded())"
         >
           <span class="section-chevron" [class.expanded]="modelsExpanded()">▸</span>
-          <h2>🛡 Models ({{ attachedModels().length }})</h2>
+          <h2>
+            🛡 Models ({{ attachedModels().length }}@if (totalMiniatures() > attachedModels().length) { • {{ totalMiniatures() }} minis})
+          </h2>
         </button>
         <button
           type="button"
@@ -108,23 +115,83 @@
         <div class="section-content">
           @if (attachedModels().length > 0) {
             <div class="cards-grid">
-              @for (m of attachedModels(); track m.id) {
-                <div class="attached-card studio-card interactive" (click)="goToModel(m.id)">
+              @for (item of attachedModels(); track item.entry.id) {
+                <div
+                  class="attached-card studio-card interactive"
+                  (click)="goToProjectModel(proj.id, item.entry.id)"
+                >
                   <div class="attached-img-wrap">
-                    <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
+                    <img [src]="item.imageUrl" [alt]="item.displayName" />
+                    @if (item.entry.quantity > 1) {
+                      <span
+                        class="qty-corner-badge"
+                        [attr.aria-label]="'Quantity ' + item.entry.quantity"
+                      >
+                        ×{{ item.entry.quantity }}
+                      </span>
+                    }
                   </div>
                   <div class="attached-body">
-                    <h4>{{ m.name }}</h4>
-                    <p>{{ m.gameNames.join(', ') }}</p>
+                    <h4>{{ item.displayName }}</h4>
+                    @if (item.hasCustomName) {
+                      <p class="catalog-subtitle">{{ item.catalogName }}</p>
+                    }
+                    @if (item.gameLabel) {
+                      <p>{{ item.gameLabel }}</p>
+                    }
+                    @if (item.hasNotes || item.completedStepCount > 0 || item.photoCount > 0) {
+                      <div class="model-meta-pills">
+                        @if (item.completedStepCount > 0) {
+                          <span class="mini-pill progress-pill">✓ {{ item.completedStepCount }} steps</span>
+                        }
+                        @if (item.hasNotes) {
+                          <span class="mini-pill">📝 Notes</span>
+                        }
+                        @if (item.photoCount > 0) {
+                          <span class="mini-pill">📷 {{ item.photoCount }}</span>
+                        }
+                      </div>
+                    }
                   </div>
-                  <div class="attached-footer" (click)="$event.stopPropagation()">
-                    <button
-                      type="button"
-                      class="btn btn-ghost btn-sm danger-text"
-                      (click)="userState.removeRecipeFromProject(proj.id, m.id)"
-                    >
-                      Remove
-                    </button>
+                  <div class="attached-footer model-card-footer" (click)="$event.stopPropagation()">
+                    <div class="card-qty-stepper" aria-label="Model quantity">
+                      <button
+                        type="button"
+                        class="qty-step-btn"
+                        aria-label="Decrease quantity"
+                        [disabled]="item.entry.quantity <= 1"
+                        (click)="adjustModelQuantity(proj.id, item.entry, -1)"
+                      >
+                        −
+                      </button>
+                      <span class="qty-step-val">×{{ item.entry.quantity }}</span>
+                      <button
+                        type="button"
+                        class="qty-step-btn"
+                        aria-label="Increase quantity"
+                        [disabled]="item.entry.quantity >= userState.limits.MAX_MODEL_QUANTITY"
+                        (click)="adjustModelQuantity(proj.id, item.entry, 1)"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div class="card-footer-actions">
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        title="Duplicate as separate model entry"
+                        (click)="duplicateModelEntry(proj.id, item.entry.id)"
+                      >
+                        ⧉
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm danger-text"
+                        (click)="userState.removeModelFromProject(proj.id, item.entry.id)"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               }

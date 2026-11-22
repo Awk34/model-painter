@@ -6,7 +6,9 @@ import {
   InventoryReadinessResult,
   ModelRecipe,
   StagedReadinessResult,
+  UserProject,
 } from '../../core/models/catalog.models';
+import { USER_LIMITS } from '../../core/config/user-limits.config';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
@@ -86,6 +88,8 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
           useValue: {
             projects: signal([]),
             uploadedPhotos: signal([]),
+            allUploadedPhotos: signal([]),
+            limits: USER_LIMITS,
             isModelOwned: () => false,
             isModelWishlisted: () => false,
             toggleModelInventory: () => {},
@@ -94,6 +98,7 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
             getTargetPhotoCount: () => 0,
             getPhotoQuotaLimit: () => 5,
             getPhotosForTarget: () => [],
+            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
             isOwned: () => false,
             isWishlisted: () => false,
           },
@@ -230,5 +235,123 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
     fixture.detectChanges();
     expect(component.zoomModalOpen()).toBeFalse();
     expect(fixture.nativeElement.querySelector('.zoom-modal-panel')).toBeNull();
+  });
+});
+
+describe('ModelDetailComponent Project-Model Route Mode', () => {
+  it('renders custom label, quantity, notes, and hides official color pins when viewing custom featured image', async () => {
+    const projectSignal = signal<UserProject[]>([
+      {
+        id: 'proj_1',
+        name: 'Iron Hands Spearhead',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-02T00:00:00Z',
+        colorIds: [],
+        notes: [],
+        photos: [],
+        models: [
+          {
+            id: 'pmod_plasma',
+            recipeId: SAMPLE_RECIPE.id,
+            customName: 'Redemptor — Macro Plasma',
+            quantity: 2,
+            notes: 'Magnetize plasma arm',
+            completedStepIds: ['step-1'],
+            featuredImage: {
+              source: 'catalog_model',
+              modelId: 'other-model',
+              localImagePath: '/icons/ic_paint.svg',
+            },
+            photos: [],
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-02T00:00:00Z',
+          },
+        ],
+      },
+    ]);
+
+    TestBed.configureTestingModule({
+      imports: [ModelDetailComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ projectId: 'proj_1', entryId: 'pmod_plasma' })),
+          },
+        },
+        {
+          provide: CatalogService,
+          useValue: {
+            modelById: signal(new Map()),
+            models: signal([]),
+            getModelRecipe: jasmine.createSpy('getModelRecipe').and.resolveTo(SAMPLE_RECIPE),
+          },
+        },
+        {
+          provide: UserStateService,
+          useValue: {
+            projects: projectSignal,
+            uploadedPhotos: signal([]),
+            allUploadedPhotos: signal([]),
+            limits: USER_LIMITS,
+            isModelOwned: () => false,
+            isModelWishlisted: () => false,
+            toggleModelInventory: () => {},
+            toggleModelWishlist: () => {},
+            addManyToWishlist: () => {},
+            getTargetPhotoCount: () => 0,
+            getPhotoQuotaLimit: () => 5,
+            getPhotosForTarget: () => [],
+            resolveProjectModelImageUrl: () => '/icons/ic_paint.svg',
+            getProjectModelCompletedStepIds: () => ['step-1'],
+            updateProjectModel: jasmine.createSpy('updateProjectModel'),
+            setProjectModelQuantity: jasmine.createSpy('setProjectModelQuantity'),
+            setProjectModelFeaturedImage: jasmine.createSpy('setProjectModelFeaturedImage'),
+            isOwned: () => false,
+            isWishlisted: () => false,
+          },
+        },
+        {
+          provide: UserMediaService,
+          useValue: {
+            resolvePhotoUrl: () => '/icons/ic_models.svg',
+          },
+        },
+        {
+          provide: InventoryMatchService,
+          useValue: {
+            evaluateStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ImageService,
+          useValue: {
+            resolve: (localPath?: string | null, remoteUrl?: string | null) =>
+              localPath || remoteUrl || '/icons/ic_models.svg',
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ModelDetailComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.isProjectMode()).toBeTrue();
+    expect(comp.viewingCustomFeatured()).toBeTrue();
+    expect(comp.canShowColorPins()).toBeFalse();
+    expect(comp.activeImageUrl()).toBe('/icons/ic_paint.svg');
+    expect(fixture.nativeElement.textContent).toContain('Redemptor — Macro Plasma');
+    expect(fixture.nativeElement.querySelectorAll('.color-pin').length).toBe(0);
+
+    // Switching to Official Angle 1 restores official color pins
+    comp.selectOfficialAngleView(0);
+    fixture.detectChanges();
+    expect(comp.viewingCustomFeatured()).toBeFalse();
+    expect(comp.canShowColorPins()).toBeTrue();
+    expect(fixture.nativeElement.querySelectorAll('.color-pin').length).toBe(2);
   });
 });

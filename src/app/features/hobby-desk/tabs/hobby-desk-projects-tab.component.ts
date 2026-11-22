@@ -43,10 +43,19 @@ export class HobbyDeskProjectsTabComponent {
 
     return list.map((project) => {
       const staged = this.readinessService.evaluateProjectStagedReadiness(project);
+      const entryCount = project.models.length;
+      const totalMiniatures = this.userState.getProjectTotalMiniatures
+        ? this.userState.getProjectTotalMiniatures(project)
+        : project.models.reduce((sum, m) => sum + Math.max(1, m.quantity || 1), 0);
+      const photoCount = this.userState.getProjectTotalPhotoCount
+        ? this.userState.getProjectTotalPhotoCount(project)
+        : this.userState.getTargetPhotoCount('project', project.id);
       return {
         project,
+        entryCount,
+        totalMiniatures,
         coverUrl: this.userState.resolveProjectCoverUrl(project),
-        photoCount: this.userState.getTargetPhotoCount('project', project.id),
+        photoCount,
         staged: staged.overall.totalRequired > 0 ? staged : null,
       };
     });

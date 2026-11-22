@@ -43,7 +43,12 @@
           <div class="project-body">
             <h3 class="project-title">{{ card.project.name }}</h3>
             <div class="project-counts">
-              <span>{{ card.project.recipeIds.length }} Models</span>
+              <span>
+                {{ card.entryCount }} Model{{ card.entryCount === 1 ? '' : 's' }}
+                @if (card.totalMiniatures > card.entryCount) {
+                  ({{ card.totalMiniatures }} minis)
+                }
+              </span>
               <span>•</span>
               <span>{{ card.project.colorIds.length }} Colors</span>
               <span>•</span>

@@ -31,15 +31,15 @@ export class AccountSettingsPanelComponent {
   readonly authError = signal<string | null>(null);
 
   readonly showcasePhotoCount = computed(
-    () => this.userState.uploadedPhotos().filter((p) => p.kind === 'showcase').length
+    () => this.userState.allUploadedPhotos().filter((p) => p.kind === 'showcase').length
   );
 
   readonly referencePhotoCount = computed(
-    () => this.userState.uploadedPhotos().filter((p) => p.kind === 'reference').length
+    () => this.userState.allUploadedPhotos().filter((p) => p.kind === 'reference').length
   );
 
   readonly totalUploadedBytesLabel = computed(() => {
-    const total = this.userState.uploadedPhotos().reduce((acc, p) => acc + p.sizeBytes, 0);
+    const total = this.userState.allUploadedPhotos().reduce((acc, p) => acc + p.sizeBytes, 0);
     return formatBytes(total);
   });
 

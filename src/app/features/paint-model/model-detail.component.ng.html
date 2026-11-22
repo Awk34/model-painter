@@ -1,7 +1,15 @@
 <div class="detail-page">
   <!-- Top Bar -->
   <div class="top-bar">
-    <a routerLink="/models" class="btn btn-ghost btn-sm">← Back to Paint A Model</a>
+    @if (isProjectMode() && project(); as proj) {
+      <a [routerLink]="['/projects', proj.id]" class="btn btn-ghost btn-sm">
+        ← Back to {{ proj.name }}
+      </a>
+    } @else if (isProjectMode()) {
+      <a routerLink="/hobby-desk" class="btn btn-ghost btn-sm">← Back to Hobby Desk</a>
+    } @else {
+      <a routerLink="/models" class="btn btn-ghost btn-sm">← Back to Paint A Model</a>
+    }
 
     @if (recipe(); as r) {
       <div class="top-actions">
@@ -41,316 +49,88 @@
             ★ Wishlist All {{ readiness().missingCount }} Missing Paints
           </button>
         }
-        <button type="button" class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
-          + Add Model to Project
-        </button>
+        @if (!isProjectMode()) {
+          <button type="button" class="btn btn-secondary btn-sm" (click)="showProjectModal.set(true)">
+            + Add Model to Project
+          </button>
+        }
       </div>
     }
   </div>
 
-  @let r = recipe();
-  @if (loading()) {
-    <div class="loading-card studio-card">
-      <p>Loading model recipe & interactive color points...</p>
-    </div>
-  } @else if (r) {
-    <div class="hero-split">
-      <!-- Left Column: High-Res Image Viewer with Interactive (x,y) Color Point Pins -->
-      <div class="viewer-panel studio-card">
-        <div class="main-img-stage">
-          <div class="img-overlay-box">
-            <img [src]="activeImageUrl()" [alt]="r.name" class="stage-img" />
-
-            <button
-              type="button"
-              class="photo-zoom-btn"
-              aria-label="Zoom into model photo"
-              title="Zoom into photo details (without color pins)"
-              (click)="openZoomModal()"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.35" y2="16.35" />
-                <line x1="11" y1="8" x2="11" y2="14" />
-                <line x1="8" y1="11" x2="14" y2="11" />
-              </svg>
-            </button>
-
-            @if (selectedImageIndex() === 0 && showPins() && r.colorPoints.length) {
-              @for (cp of r.colorPoints; track cp.id) {
-                <button
-                  type="button"
-                  class="color-pin"
-                  [class.active]="selectedColorPointId() === cp.id"
-                  [style.left.%]="cp.point.x * 100"
-                  [style.top.%]="cp.point.y * 100"
-                  [style.background]="cp.hex"
-                  [title]="cp.name"
-                  (click)="selectColorPoint(cp.id)"
-                >
-                  <span class="pin-ring"></span>
-                </button>
-              }
-            }
-          </div>
-        </div>
-
-        <div class="viewer-controls">
-          @if (r.images.length > 1) {
-            <div class="angle-thumbs">
-              @for (imgUrl of r.images; track $index; let idx = $index) {
-                <button
-                  type="button"
-                  class="angle-thumb"
-                  [class.active]="selectedImageIndex() === idx"
-                  (click)="selectedImageIndex.set(idx)"
-                >
-                  <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
-                </button>
-              }
-            </div>
-          }
-
-          @if (r.colorPoints.length) {
-            <button
-              type="button"
-              class="btn btn-sm btn-ghost"
-              (click)="showPins.set(!showPins())"
-            >
-              {{ showPins() ? '👁 Hide Color Pins' : '👁 Show Color Pins' }} ({{ r.colorPoints.length }})
-            </button>
-          }
-        </div>
-      </div>
-
-      <!-- Right Column: Model Metadata, Readiness & "Colors On This Model" -->
-      <div class="meta-panel studio-card">
-        <div class="badge-row">
-          <app-paint-brand-badge [paint]="r" suffix="Guide" />
-          @for (g of r.games; track g.id) {
-            <span class="badge game-badge">{{ g.name }}</span>
-          }
-        </div>
-
-        <h1 class="model-title">{{ r.name }}</h1>
-
-        @if (r.factions.length) {
-          <p class="factions-line">{{ formatFactions(r) }}</p>
-        }
-
-        <app-stage-readiness-bars
-          [staged]="stagedReadiness()"
-          [activeStage]="activeStageKey()"
-          heading="Can I Paint This? — Readiness by Detail Level"
-          hint="Click a stage below to filter painting steps"
-          (stageClick)="onStageBarClick($event)"
-          (wishlistMissing)="userState.addManyToWishlist($event)"
-        />
-
-        @if (r.colorPoints.length) {
-          <div class="colors-on-model">
-            <h3>Colors On This Model ({{ r.colorPoints.length }})</h3>
-            <p class="hint">Click a pin on the miniature or a color below to inspect or open its Color Guide.</p>
-
-            <div class="cp-list">
-              @for (cp of r.colorPoints; track cp.id) {
-                <div
-                  class="cp-card"
-                  [class.active]="selectedColorPointId() === cp.id"
-                  (click)="selectColorPoint(cp.id)"
-                >
-                  <app-paint-swatch [paint]="cp" />
-                  <div class="cp-info">
-                    <strong>{{ cp.name }}</strong>
-                    <span>Normalized Pin ({{ (cp.point.x * 100) | number:'1.0-0' }}%, {{ (cp.point.y * 100) | number:'1.0-0' }}%)</span>
-                  </div>
-                  @if (cp.colorId) {
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-secondary"
-                      (click)="$event.stopPropagation(); goToColor(cp.colorId)"
-                    >
-                      Open Guide →
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- User Uploaded Painted Photos & Private Reference Photos -->
-    <section class="project-section studio-card">
-      <div class="section-header-bar">
-        <button
-          type="button"
-          class="section-toggle-btn"
-          [attr.aria-expanded]="userPhotosExpanded()"
-          (click)="userPhotosExpanded.set(!userPhotosExpanded())"
-        >
-          <span class="section-chevron" [class.expanded]="userPhotosExpanded()">▸</span>
-          <h2>📷 My Painted Photos & Private References ({{ modelPhotoCount() }})</h2>
-        </button>
-      </div>
-
-      @if (userPhotosExpanded()) {
-        <div class="section-content user-photos-content">
-          <app-user-photo-gallery
-            targetType="model"
-            [targetId]="r.id"
-            kind="showcase"
-            heading="My Painted Model Photos"
-            description="Upload photos of your own painted version or work-in-progress stages of this miniature."
-          />
-
-          <hr class="section-divider" />
-
-          <app-user-photo-gallery
-            targetType="model"
-            [targetId]="r.id"
-            kind="reference"
-            heading="Private Model Reference Photos"
-            description="Private inspiration, alternative color schemes, or reference closeups for painting this model."
-          />
-        </div>
+  @if (isProjectMode() && (!project() || !projectModelEntry())) {
+    <div class="empty-box studio-card">
+      <h3>Project Model Not Found</h3>
+      <p>This model entry could not be found in the selected project.</p>
+      @if (project(); as proj) {
+        <a [routerLink]="['/projects', proj.id]" class="btn btn-gold">Return to {{ proj.name }}</a>
+      } @else {
+        <a routerLink="/hobby-desk" class="btn btn-gold">Return to Hobby Desk</a>
       }
-    </section>
-
-    @if (r.paintingAreas.length) {
-      <app-model-painting-steps
-        [modelId]="r.id"
-        [paintingAreas]="r.paintingAreas"
-        [readiness]="readiness()"
-        [(stageFilter)]="stageFilter"
-      />
+    </div>
+  } @else {
+    @if (isProjectMode() && project(); as proj) {
+      @if (projectModelEntry(); as entry) {
+        <app-project-model-workspace-bar
+          [project]="proj"
+          [entry]="entry"
+          [recipe]="recipe()"
+          (openFeaturedImagePicker)="showFeaturedImageModal.set(true)"
+          (duplicateRequested)="duplicateCurrentProjectModel()"
+          (removeRequested)="removeCurrentProjectModel()"
+        />
+      }
     }
 
-    <app-add-to-project-modal
-      [open]="showProjectModal()"
-      itemType="model"
-      [itemId]="r.id"
-      [itemName]="r.name"
-      [thumbnailUrl]="r.images[0]"
-      [localThumbnailPath]="r.localImagePaths[0]"
-      (closed)="showProjectModal.set(false)"
-    />
+    @let r = recipe();
+    @if (loading()) {
+      <div class="loading-card studio-card">
+        <p>Loading model recipe & interactive color points...</p>
+      </div>
+    } @else if (r) {
+      <div class="hero-split">
+        <!-- Left Column: High-Res Image Viewer with Interactive (x,y) Color Point Pins -->
+        <div class="viewer-panel studio-card">
+          <div class="main-img-stage">
+            <div class="img-overlay-box">
+              <img [src]="activeImageUrl()" [alt]="projectModelEntry()?.customName || r.name" class="stage-img" />
 
-    @if (zoomModalOpen()) {
-      <div
-        class="modal-backdrop zoom-modal-backdrop"
-        role="dialog"
-        aria-modal="true"
-        [attr.aria-label]="r.name + ' photo zoom viewer'"
-        (click)="closeZoomModal()"
-      >
-        <div class="modal-panel zoom-modal-panel" (click)="$event.stopPropagation()">
-          <div class="modal-header zoom-modal-header">
-            <div class="zoom-title-group">
-              <h2>{{ r.name }}</h2>
-              <span class="zoom-hint">Scroll or use controls to zoom • Drag to pan • Double-click to toggle zoom</span>
-            </div>
-
-            <div class="zoom-toolbar">
-              @if (r.colorPoints.length) {
-                <button
-                  type="button"
-                  class="btn btn-sm zoom-pins-toggle-btn"
-                  [class.btn-gold]="showZoomPins()"
-                  [class.btn-ghost]="!showZoomPins()"
-                  [attr.aria-pressed]="showZoomPins()"
-                  (click)="toggleZoomPins()"
+              <button
+                type="button"
+                class="photo-zoom-btn"
+                aria-label="Zoom into model photo"
+                title="Zoom into photo details (without color pins)"
+                (click)="openZoomModal()"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
                 >
-                  {{ showZoomPins() ? '👁 Hide Orbs' : '👁 Show Orbs' }} ({{ r.colorPoints.length }})
-                </button>
-              }
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                aria-label="Zoom out"
-                [disabled]="zoomScale() <= 1"
-                (click)="zoomOut()"
-              >
-                −
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="21" y1="21" x2="16.35" y2="16.35" />
+                  <line x1="11" y1="8" x2="11" y2="14" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
               </button>
-              <span class="zoom-readout-pill">{{ (zoomScale() * 100) | number:'1.0-0' }}%</span>
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                aria-label="Zoom in"
-                [disabled]="zoomScale() >= 4"
-                (click)="zoomIn()"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost btn-sm"
-                aria-label="Reset zoom and pan"
-                (click)="resetZoom()"
-              >
-                1× Fit
-              </button>
-              <button
-                type="button"
-                class="close-btn"
-                aria-label="Close zoom view"
-                title="Close (Esc)"
-                (click)="closeZoomModal()"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
 
-          <div
-            class="zoom-stage"
-            [class.can-pan]="zoomScale() > 1"
-            [class.is-panning]="isPanning()"
-            (wheel)="onZoomWheel($event)"
-            (dblclick)="toggleQuickZoom()"
-            (pointerdown)="onPanStart($event)"
-            (pointermove)="onPanMove($event)"
-            (pointerup)="onPanEnd($event)"
-            (pointercancel)="onPanEnd($event)"
-          >
-            <div
-              class="zoom-canvas-box"
-              [style.transform]="'translate3d(' + panX() + 'px, ' + panY() + 'px, 0) scale(' + zoomScale() + ')'"
-              [style.--pin-scale]="1 / zoomScale()"
-            >
-              <img
-                [src]="activeImageUrl()"
-                [alt]="r.name + ' zoomed detail view'"
-                class="zoom-stage-img"
-                draggable="false"
-              />
-
-              @if (selectedImageIndex() === 0 && showZoomPins() && r.colorPoints.length) {
+              @if (canShowColorPins() && showPins()) {
                 @for (cp of r.colorPoints; track cp.id) {
                   <button
                     type="button"
-                    class="color-pin zoom-color-pin"
+                    class="color-pin"
                     [class.active]="selectedColorPointId() === cp.id"
                     [style.left.%]="cp.point.x * 100"
                     [style.top.%]="cp.point.y * 100"
                     [style.background]="cp.hex"
                     [title]="cp.name"
-                    [attr.aria-label]="cp.name"
-                    (pointerdown)="$event.stopPropagation()"
-                    (dblclick)="$event.stopPropagation()"
-                    (click)="$event.stopPropagation(); selectColorPoint(cp.id)"
+                    (click)="selectColorPoint(cp.id)"
                   >
                     <span class="pin-ring"></span>
                   </button>
@@ -359,25 +139,372 @@
             </div>
           </div>
 
-          @if (r.images.length > 1) {
-            <div class="zoom-modal-footer">
+          <div class="viewer-controls">
+            @if (hasCustomOverlayFeatured() || r.images.length > 1) {
               <div class="angle-thumbs">
+                @if (hasCustomOverlayFeatured() && customFeaturedUrl(); as featUrl) {
+                  <button
+                    type="button"
+                    class="angle-thumb featured-angle-thumb"
+                    [class.active]="viewingCustomFeatured()"
+                    title="Custom Featured Image"
+                    aria-label="View custom featured image"
+                    (click)="selectCustomFeaturedView()"
+                  >
+                    <img [src]="featUrl" alt="" />
+                    <span class="thumb-star" aria-hidden="true">★</span>
+                  </button>
+                }
                 @for (imgUrl of r.images; track $index; let idx = $index) {
                   <button
                     type="button"
                     class="angle-thumb"
-                    [class.active]="selectedImageIndex() === idx"
-                    [attr.aria-label]="'View angle ' + (idx + 1)"
-                    (click)="selectZoomAngle(idx)"
+                    [class.active]="!viewingCustomFeatured() && selectedImageIndex() === idx"
+                    [attr.aria-label]="'View official angle ' + (idx + 1)"
+                    (click)="selectOfficialAngleView(idx)"
                   >
                     <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
                   </button>
+                }
+              </div>
+            }
+
+            @if (canShowColorPins()) {
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost"
+                (click)="showPins.set(!showPins())"
+              >
+                {{ showPins() ? '👁 Hide Color Pins' : '👁 Show Color Pins' }} ({{ r.colorPoints.length }})
+              </button>
+            } @else if (viewingCustomFeatured() && r.colorPoints.length) {
+              <button
+                type="button"
+                class="btn btn-sm btn-ghost"
+                (click)="selectOfficialAngleView(0)"
+              >
+                👁 Switch to Official Angle for Color Pins
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Right Column: Model Metadata, Readiness & "Colors On This Model" -->
+        <div class="meta-panel studio-card">
+          <div class="badge-row">
+            <app-paint-brand-badge [paint]="r" suffix="Guide" />
+            @for (g of r.games; track g.id) {
+              <span class="badge game-badge">{{ g.name }}</span>
+            }
+          </div>
+
+          @if (!isProjectMode()) {
+            <h1 class="model-title">{{ r.name }}</h1>
+          } @else {
+            <h2 class="model-subtitle-heading">{{ r.name }} — Painting Guide</h2>
+          }
+
+          @if (r.factions.length) {
+            <p class="factions-line">{{ formatFactions(r) }}</p>
+          }
+
+          <app-stage-readiness-bars
+            [staged]="stagedReadiness()"
+            [activeStage]="activeStageKey()"
+            heading="Can I Paint This? — Readiness by Detail Level"
+            hint="Click a stage below to filter painting steps"
+            (stageClick)="onStageBarClick($event)"
+            (wishlistMissing)="userState.addManyToWishlist($event)"
+          />
+
+          @if (r.colorPoints.length) {
+            <div class="colors-on-model">
+              <h3>Colors On This Model ({{ r.colorPoints.length }})</h3>
+              <p class="hint">Click a pin on the miniature or a color below to inspect or open its Color Guide.</p>
+
+              <div class="cp-list">
+                @for (cp of r.colorPoints; track cp.id) {
+                  <div
+                    class="cp-card"
+                    [class.active]="selectedColorPointId() === cp.id"
+                    (click)="selectColorPoint(cp.id)"
+                  >
+                    <app-paint-swatch [paint]="cp" />
+                    <div class="cp-info">
+                      <strong>{{ cp.name }}</strong>
+                      <span>Normalized Pin ({{ (cp.point.x * 100) | number:'1.0-0' }}%, {{ (cp.point.y * 100) | number:'1.0-0' }}%)</span>
+                    </div>
+                    @if (cp.colorId) {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-secondary"
+                        (click)="$event.stopPropagation(); goToColor(cp.colorId)"
+                      >
+                        Open Guide →
+                      </button>
+                    }
+                  </div>
                 }
               </div>
             </div>
           }
         </div>
       </div>
+
+      <!-- User Uploaded Painted Photos & Private Reference Photos -->
+      <section class="project-section studio-card">
+        <div class="section-header-bar">
+          <button
+            type="button"
+            class="section-toggle-btn"
+            [attr.aria-expanded]="userPhotosExpanded()"
+            (click)="userPhotosExpanded.set(!userPhotosExpanded())"
+          >
+            <span class="section-chevron" [class.expanded]="userPhotosExpanded()">▸</span>
+            <h2>
+              📷
+              {{ isProjectMode() ? 'This Model Entry\'s Photos & Private References' : 'My Painted Photos & Private References' }}
+              ({{ modelPhotoCount() }})
+            </h2>
+          </button>
+        </div>
+
+        @if (userPhotosExpanded()) {
+          <div class="section-content user-photos-content">
+            @if (isProjectMode() && project(); as proj) {
+              @if (projectModelEntry(); as entry) {
+                <app-user-photo-gallery
+                  targetType="project_model"
+                  [targetId]="entry.id"
+                  [projectId]="proj.id"
+                  kind="showcase"
+                  heading="My Painted Photos (This Project Entry)"
+                  description="Upload photos specific to this model instance in your project. Click 'Set Featured' to use any photo as its featured image."
+                  [allowSetCover]="true"
+                  coverButtonLabel="Set Featured"
+                  activeCoverBadgeLabel="★ Featured"
+                  [activeCoverPhotoId]="featuredUploadedPhotoId()"
+                  (selectCover)="onSelectFeaturedUploadedPhoto($event)"
+                />
+
+                <hr class="section-divider" />
+
+                <app-user-photo-gallery
+                  targetType="project_model"
+                  [targetId]="entry.id"
+                  [projectId]="proj.id"
+                  kind="reference"
+                  heading="Private Reference Photos (This Project Entry)"
+                  description="Private inspiration, alternative color schemes, or loadout reference shots stored exclusively with this project model."
+                  [allowSetCover]="true"
+                  coverButtonLabel="Set Featured"
+                  activeCoverBadgeLabel="★ Featured"
+                  [activeCoverPhotoId]="featuredUploadedPhotoId()"
+                  (selectCover)="onSelectFeaturedUploadedPhoto($event)"
+                />
+              }
+            } @else {
+              <app-user-photo-gallery
+                targetType="model"
+                [targetId]="r.id"
+                kind="showcase"
+                heading="My Painted Model Photos"
+                description="Upload photos of your own painted version or work-in-progress stages of this miniature."
+              />
+
+              <hr class="section-divider" />
+
+              <app-user-photo-gallery
+                targetType="model"
+                [targetId]="r.id"
+                kind="reference"
+                heading="Private Model Reference Photos"
+                description="Private inspiration, alternative color schemes, or reference closeups for painting this model."
+              />
+            }
+          </div>
+        }
+      </section>
+
+      @if (r.paintingAreas.length) {
+        <app-model-painting-steps
+          [modelId]="r.id"
+          [projectId]="projectId() ?? undefined"
+          [projectModelId]="entryId() ?? undefined"
+          [paintingAreas]="r.paintingAreas"
+          [readiness]="readiness()"
+          [(stageFilter)]="stageFilter"
+        />
+      }
+
+      @if (!isProjectMode()) {
+        <app-add-to-project-modal
+          [open]="showProjectModal()"
+          itemType="model"
+          [itemId]="r.id"
+          [itemName]="r.name"
+          [thumbnailUrl]="r.images[0]"
+          [localThumbnailPath]="r.localImagePaths[0]"
+          (closed)="showProjectModal.set(false)"
+        />
+      }
+
+      @if (isProjectMode() && project(); as proj) {
+        @if (projectModelEntry(); as entry) {
+          <app-project-model-featured-image-modal
+            [open]="showFeaturedImageModal()"
+            [project]="proj"
+            [entry]="entry"
+            [recipe]="r"
+            (closed)="showFeaturedImageModal.set(false)"
+          />
+        }
+      }
+
+      @if (zoomModalOpen()) {
+        <div
+          class="modal-backdrop zoom-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          [attr.aria-label]="r.name + ' photo zoom viewer'"
+          (click)="closeZoomModal()"
+        >
+          <div class="modal-panel zoom-modal-panel" (click)="$event.stopPropagation()">
+            <div class="modal-header zoom-modal-header">
+              <div class="zoom-title-group">
+                <h2>{{ projectModelEntry()?.customName || r.name }}</h2>
+                <span class="zoom-hint">Scroll or use controls to zoom • Drag to pan • Double-click to toggle zoom</span>
+              </div>
+
+              <div class="zoom-toolbar">
+                @if (canShowColorPins()) {
+                  <button
+                    type="button"
+                    class="btn btn-sm zoom-pins-toggle-btn"
+                    [class.btn-gold]="showZoomPins()"
+                    [class.btn-ghost]="!showZoomPins()"
+                    [attr.aria-pressed]="showZoomPins()"
+                    (click)="toggleZoomPins()"
+                  >
+                    {{ showZoomPins() ? '👁 Hide Orbs' : '👁 Show Orbs' }} ({{ r.colorPoints.length }})
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  aria-label="Zoom out"
+                  [disabled]="zoomScale() <= 1"
+                  (click)="zoomOut()"
+                >
+                  −
+                </button>
+                <span class="zoom-readout-pill">{{ (zoomScale() * 100) | number:'1.0-0' }}%</span>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  aria-label="Zoom in"
+                  [disabled]="zoomScale() >= 4"
+                  (click)="zoomIn()"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  aria-label="Reset zoom and pan"
+                  (click)="resetZoom()"
+                >
+                  1× Fit
+                </button>
+                <button
+                  type="button"
+                  class="close-btn"
+                  aria-label="Close zoom view"
+                  title="Close (Esc)"
+                  (click)="closeZoomModal()"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="zoom-stage"
+              [class.can-pan]="zoomScale() > 1"
+              [class.is-panning]="isPanning()"
+              (wheel)="onZoomWheel($event)"
+              (dblclick)="toggleQuickZoom()"
+              (pointerdown)="onPanStart($event)"
+              (pointermove)="onPanMove($event)"
+              (pointerup)="onPanEnd($event)"
+              (pointercancel)="onPanEnd($event)"
+            >
+              <div
+                class="zoom-canvas-box"
+                [style.transform]="'translate3d(' + panX() + 'px, ' + panY() + 'px, 0) scale(' + zoomScale() + ')'"
+                [style.--pin-scale]="1 / zoomScale()"
+              >
+                <img
+                  [src]="activeImageUrl()"
+                  [alt]="(projectModelEntry()?.customName || r.name) + ' zoomed detail view'"
+                  class="zoom-stage-img"
+                  draggable="false"
+                />
+
+                @if (canShowColorPins() && showZoomPins()) {
+                  @for (cp of r.colorPoints; track cp.id) {
+                    <button
+                      type="button"
+                      class="color-pin zoom-color-pin"
+                      [class.active]="selectedColorPointId() === cp.id"
+                      [style.left.%]="cp.point.x * 100"
+                      [style.top.%]="cp.point.y * 100"
+                      [style.background]="cp.hex"
+                      [title]="cp.name"
+                      [attr.aria-label]="cp.name"
+                      (pointerdown)="$event.stopPropagation()"
+                      (dblclick)="$event.stopPropagation()"
+                      (click)="$event.stopPropagation(); selectColorPoint(cp.id)"
+                    >
+                      <span class="pin-ring"></span>
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+
+            @if (hasCustomOverlayFeatured() || r.images.length > 1) {
+              <div class="zoom-modal-footer">
+                <div class="angle-thumbs">
+                  @if (hasCustomOverlayFeatured() && customFeaturedUrl(); as featUrl) {
+                    <button
+                      type="button"
+                      class="angle-thumb featured-angle-thumb"
+                      [class.active]="viewingCustomFeatured()"
+                      aria-label="View custom featured image"
+                      (click)="selectCustomFeaturedView()"
+                    >
+                      <img [src]="featUrl" alt="" />
+                      <span class="thumb-star" aria-hidden="true">★</span>
+                    </button>
+                  }
+                  @for (imgUrl of r.images; track $index; let idx = $index) {
+                    <button
+                      type="button"
+                      class="angle-thumb"
+                      [class.active]="!viewingCustomFeatured() && selectedImageIndex() === idx"
+                      [attr.aria-label]="'View angle ' + (idx + 1)"
+                      (click)="selectZoomAngle(idx)"
+                    >
+                      <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
     }
   }
 </div>

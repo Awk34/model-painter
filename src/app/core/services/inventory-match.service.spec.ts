@@ -287,7 +287,28 @@ describe('InventoryMatchService', () => {
     });
 
     const staged = service.evaluateProjectStagedReadiness({
-      recipeIds: ['m1'],
+      models: [
+        {
+          id: 'pmod_1',
+          recipeId: 'm1',
+          quantity: 1,
+          notes: '',
+          completedStepIds: [],
+          photos: [],
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'pmod_2',
+          recipeId: 'm1',
+          quantity: 2,
+          notes: 'Second variant',
+          completedStepIds: [],
+          photos: [],
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
       colorIds: ['c1'],
     });
 

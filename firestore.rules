@@ -30,9 +30,27 @@ rules_version = '2';
 //   - customPaints: list<map> (optional, size <= 200) - user-created 3rd-party paints
 //   - customCompatibilityOverrides: map<string, list<string>> (optional, size <= 500) - paint equivalence map
 //   - modelProgress: map<string, list<string>> (optional, size <= 500) - completed painting step/area IDs per model
-//   - projects: list<map> (optional, size <= 50) - user hobby projects
+//   - projects: list<map> (optional legacy field, size <= 50; removable via `deleteField()` during migration)
 //   - uploadedPhotos: list<map> (optional, size <= 250) - user-uploaded showcase & private reference photo metadata
 //   - preferences: map (optional, size <= 10) - user UI & substitution preferences
+//
+// Subcollection: users/{userId}/projects
+// Document ID: {projectId} (must match `id` field, 1..120 chars)
+// Schema (`UserProject` self-contained document):
+//   - id: string (required, immutable, == projectId, 1..120 chars)
+//   - name: string (required, 1..200 chars)
+//   - thumbnailUrl: string | null (optional, <= 2048 chars)
+//   - localThumbnailPath: string | null (optional, <= 512 chars)
+//   - coverPhotoId: string | null (optional, <= 120 chars)
+//   - createdAt: string (required, immutable on update, 1..64 chars)
+//   - updatedAt: string (required, 1..64 chars)
+//   - colorIds: list<string> (required, size <= 100, each 1..200 chars)
+//   - notes: list<map> (required, size <= 50) - `UserProjectNote` entries with `components` (size <= 100)
+//   - photos: list<map> (required, size <= 18) - `UserUploadedPhoto` entries scoped to `targetType == 'project'` & `targetId == projectId`
+//   - models: list<map> (required, size <= 100) - `ProjectModelEntry` items with `quantity` (int 1..999),
+//       `notes` (string <= 5000), `completedStepIds` (list <= 200), optional `featuredImage`,
+//       `photos` (list <= 13 scoped to `targetType == 'project_model'` & `targetId == entry.id`),
+//       and optional `configurations` (list <= 30)
 //
 // ===============================================================
 
@@ -70,6 +88,21 @@ service cloud.firestore {
       return data is map && data.keys().hasOnly(fields);
     }
 
+    // Validate a required non-empty string within maximum length
+    function isReqStr(val, maxLen) {
+      return val is string && val != '' && val.size() <= maxLen;
+    }
+
+    // Validate an optional nullable string within maximum length
+    function isOptStr(val, maxLen) {
+      return val == null || (val is string && val.size() <= maxLen);
+    }
+
+    // Validate an optional nullable positive image dimension (1..32768)
+    function isOptDim(val) {
+      return val == null || (val is int && val > 0 && val <= 32768);
+    }
+
     // Validate that a value is a list within maximum size bounds
     function isValidList(val, maxSize) {
       return val is list && val.size() <= maxSize;
@@ -81,14 +114,15 @@ service cloud.firestore {
         && (
           items.size() == 0
           || (
-            items[0] is string
-            && items[0].size() > 0
-            && items[0].size() <= 200
-            && items[items.size() - 1] is string
-            && items[items.size() - 1].size() > 0
-            && items[items.size() - 1].size() <= 200
+            isReqStr(items[0], 200)
+            && (items.size() == 1 || isReqStr(items[items.size() - 1], 200))
           )
         );
+    }
+
+    // Validate a single non-empty, non-traversal Cloud Storage path segment
+    function isSafeStorageSegment(seg) {
+      return seg.size() <= 120 && !(seg in ['', '.', '..']);
     }
 
     // Validate split segments of a user-scoped Cloud Storage object path
@@ -97,15 +131,9 @@ service cloud.firestore {
         && parts[0] == 'users'
         && parts[1] == userId
         && parts[2] in ['showcase', 'private_references']
-        && parts[3] in ['model', 'project']
-        && parts[4].size() > 0
-        && parts[4].size() <= 120
-        && parts[4] != '.'
-        && parts[4] != '..'
-        && parts[5].size() > 0
-        && parts[5].size() <= 120
-        && parts[5] != '.'
-        && parts[5] != '..';
+        && parts[3] in ['model', 'project', 'project_model']
+        && isSafeStorageSegment(parts[4])
+        && isSafeStorageSegment(parts[5]);
     }
 
     // Validate that a Cloud Storage object path is strictly scoped to `users/{userId}/...`
@@ -120,8 +148,8 @@ service cloud.firestore {
     // Domain Validators (Used in BOTH create and update)
     // ===============================================================
 
-    // Validate a UserUploadedPhoto entry (spot-checked on list boundaries)
-    function isValidUploadedPhoto(photo, userId) {
+    // Core UserUploadedPhoto field validation (shared by account-level and project-scoped photos)
+    function isValidUploadedPhotoCore(photo, userId) {
       return hasOnlyAllowedFields(photo, [
           'id',
           'targetType',
@@ -137,19 +165,43 @@ service cloud.firestore {
           'createdAt',
           'storagePath'
         ])
-        && (!('id' in photo) || (photo.id is string && photo.id.size() > 0 && photo.id.size() <= 120))
-        && (!('targetType' in photo) || (photo.targetType in ['model', 'project']))
-        && (!('targetId' in photo) || (photo.targetId is string && photo.targetId.size() > 0 && photo.targetId.size() <= 200))
-        && (!('kind' in photo) || (photo.kind in ['showcase', 'reference']))
-        && (!('isPrivate' in photo) || (photo.isPrivate is bool && (!('kind' in photo) || photo.kind != 'reference' || photo.isPrivate == true)))
-        && (!('fileName' in photo) || (photo.fileName is string && photo.fileName.size() > 0 && photo.fileName.size() <= 255))
-        && (!('mimeType' in photo) || (photo.mimeType in ['image/jpeg', 'image/png', 'image/webp']))
-        && (!('sizeBytes' in photo) || (photo.sizeBytes is number && photo.sizeBytes > 0 && photo.sizeBytes <= 5 * 1024 * 1024))
-        && (!('width' in photo) || photo.width == null || (photo.width is number && photo.width > 0 && photo.width <= 32768))
-        && (!('height' in photo) || photo.height == null || (photo.height is number && photo.height > 0 && photo.height <= 32768))
-        && (!('caption' in photo) || photo.caption == null || (photo.caption is string && photo.caption.size() <= 140))
-        && (!('createdAt' in photo) || (photo.createdAt is string && photo.createdAt.size() > 0 && photo.createdAt.size() <= 64))
-        && (!('storagePath' in photo) || photo.storagePath == null || isScopedStoragePath(photo.storagePath, userId));
+        && photo.keys().hasAll([
+          'id',
+          'targetType',
+          'targetId',
+          'kind',
+          'isPrivate',
+          'fileName',
+          'mimeType',
+          'sizeBytes',
+          'createdAt'
+        ])
+        && isReqStr(photo.id, 120)
+        && photo.kind in ['showcase', 'reference']
+        && photo.isPrivate is bool
+        && (photo.kind != 'reference' || photo.isPrivate)
+        && isReqStr(photo.fileName, 255)
+        && photo.mimeType in ['image/jpeg', 'image/png', 'image/webp']
+        && photo.sizeBytes is int && photo.sizeBytes > 0 && photo.sizeBytes <= 5242880
+        && isOptDim(photo.get('width', null))
+        && isOptDim(photo.get('height', null))
+        && isOptStr(photo.get('caption', null), 140)
+        && isReqStr(photo.createdAt, 64)
+        && (photo.get('storagePath', null) == null || isScopedStoragePath(photo.storagePath, userId));
+    }
+
+    // Validate a UserUploadedPhoto entry (generic targetType / targetId bounds)
+    function isValidUploadedPhoto(photo, userId) {
+      return isValidUploadedPhotoCore(photo, userId)
+        && photo.targetType in ['model', 'project', 'project_model']
+        && isReqStr(photo.targetId, 200);
+    }
+
+    // Validate a UserUploadedPhoto entry bound to a specific targetType & targetId
+    function isValidScopedUploadedPhoto(photo, userId, expectedType, expectedTargetId) {
+      return isValidUploadedPhotoCore(photo, userId)
+        && photo.targetType == expectedType
+        && photo.targetId == expectedTargetId;
     }
 
     function isValidUploadedPhotosList(photos, userId) {
@@ -158,23 +210,25 @@ service cloud.firestore {
           photos.size() == 0
           || (
             isValidUploadedPhoto(photos[0], userId)
-            && isValidUploadedPhoto(photos[photos.size() - 1], userId)
+            && (photos.size() == 1 || isValidUploadedPhoto(photos[photos.size() - 1], userId))
           )
         );
     }
 
-    // Validate a UserProject entry (spot-checked on list boundaries)
+    // Validate a legacy embedded UserProject entry on `/users/{userId}` (backward compatibility)
     function isValidProject(proj) {
       return proj is map
         && proj.size() <= 20
-        && (!('id' in proj) || (proj.id is string && proj.id.size() > 0 && proj.id.size() <= 120))
-        && (!('name' in proj) || (proj.name is string && proj.name.size() > 0 && proj.name.size() <= 200))
+        && (!('id' in proj) || isReqStr(proj.id, 120))
+        && (!('name' in proj) || isReqStr(proj.name, 200))
         && (!('recipeIds' in proj) || isValidList(proj.recipeIds, 100))
+        && (!('models' in proj) || isValidList(proj.models, 100))
         && (!('colorIds' in proj) || isValidList(proj.colorIds, 100))
         && (!('notes' in proj) || isValidList(proj.notes, 50))
-        && (!('coverPhotoId' in proj) || proj.coverPhotoId == null || (proj.coverPhotoId is string && proj.coverPhotoId.size() <= 120))
-        && (!('thumbnailUrl' in proj) || proj.thumbnailUrl == null || (proj.thumbnailUrl is string && proj.thumbnailUrl.size() <= 2048))
-        && (!('localThumbnailPath' in proj) || proj.localThumbnailPath == null || (proj.localThumbnailPath is string && proj.localThumbnailPath.size() <= 512))
+        && (!('photos' in proj) || isValidList(proj.photos, 18))
+        && isOptStr(proj.get('coverPhotoId', null), 120)
+        && isOptStr(proj.get('thumbnailUrl', null), 2048)
+        && isOptStr(proj.get('localThumbnailPath', null), 512)
         && (!('createdAt' in proj) || (proj.createdAt is string && proj.createdAt.size() <= 64))
         && (!('updatedAt' in proj) || (proj.updatedAt is string && proj.updatedAt.size() <= 64));
     }
@@ -185,7 +239,7 @@ service cloud.firestore {
           projects.size() == 0
           || (
             isValidProject(projects[0])
-            && isValidProject(projects[projects.size() - 1])
+            && (projects.size() == 1 || isValidProject(projects[projects.size() - 1]))
           )
         );
     }
@@ -194,11 +248,11 @@ service cloud.firestore {
     function isValidCustomPaint(paint) {
       return paint is map
         && paint.size() <= 15
-        && (!('id' in paint) || (paint.id is string && paint.id.size() > 0 && paint.id.size() <= 120))
+        && (!('id' in paint) || isReqStr(paint.id, 120))
         && (!('brand' in paint) || (paint.brand is string && paint.brand.size() <= 120))
         && (!('range' in paint) || (paint.range is string && paint.range.size() <= 120))
-        && (!('code' in paint) || paint.code == null || (paint.code is string && paint.code.size() <= 64))
-        && (!('name' in paint) || (paint.name is string && paint.name.size() > 0 && paint.name.size() <= 120))
+        && isOptStr(paint.get('code', null), 64)
+        && (!('name' in paint) || isReqStr(paint.name, 120))
         && (!('category' in paint) || (paint.category is string && paint.category.size() <= 64))
         && (!('hex' in paint) || (paint.hex is string && paint.hex.size() <= 16))
         && (!('citadelMatches' in paint) || isValidList(paint.citadelMatches, 20))
@@ -211,7 +265,7 @@ service cloud.firestore {
           paints.size() == 0
           || (
             isValidCustomPaint(paints[0])
-            && isValidCustomPaint(paints[paints.size() - 1])
+            && (paints.size() == 1 || isValidCustomPaint(paints[paints.size() - 1]))
           )
         );
     }
@@ -244,7 +298,7 @@ service cloud.firestore {
         ])
         && data.keys().size() >= 1
         && (!('schemaVersion' in data) || (data.schemaVersion is number && data.schemaVersion >= 1 && data.schemaVersion <= 1000))
-        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() > 0 && data.updatedAt.size() <= 64))
+        && (!('updatedAt' in data) || isReqStr(data.updatedAt, 64))
         && (!('inventoryPaintIds' in data) || isValidStringIdList(data.inventoryPaintIds, 1000))
         && (!('wishlistPaintIds' in data) || isValidStringIdList(data.wishlistPaintIds, 500))
         && (!('inventoryModelIds' in data) || isValidStringIdList(data.inventoryModelIds, 2000))
@@ -255,6 +309,221 @@ service cloud.firestore {
         && (!('projects' in data) || isValidProjectsList(data.projects))
         && (!('uploadedPhotos' in data) || isValidUploadedPhotosList(data.uploadedPhotos, userId))
         && (!('preferences' in data) || isValidPreferences(data.preferences));
+    }
+
+    // ===============================================================
+    // Project Subcollection Validators (`/users/{userId}/projects/{projectId}`)
+    // ===============================================================
+
+    // Validate a single UserProjectNoteComponent entry
+    function isValidNoteComponent(comp) {
+      return hasOnlyAllowedFields(comp, ['id', 'type', 'value', 'checked'])
+        && comp.keys().hasAll(['type', 'value'])
+        && isOptStr(comp.get('id', null), 120)
+        && comp.type in ['text', 'checkbox']
+        && comp.value is string && comp.value.size() <= 2000
+        && (!('checked' in comp) || comp.checked is bool);
+    }
+
+    // Validate note components list (first & last on single-note docs; balanced boundary on multi-note docs for CEL budget)
+    function isValidNoteComponentsList(comps, checkFirst, checkLast) {
+      return isValidList(comps, 100)
+        && (
+          comps.size() == 0
+          || (
+            (!checkFirst || isValidNoteComponent(comps[0]))
+            && (!checkLast || (checkFirst && comps.size() == 1) || isValidNoteComponent(comps[comps.size() - 1]))
+          )
+        );
+    }
+
+    // Validate a UserProjectNote entry
+    function isValidProjectNote(note, checkFirstComp, checkLastComp) {
+      return hasOnlyAllowedFields(note, ['id', 'title', 'createdAt', 'updatedAt', 'components'])
+        && note.keys().hasAll(['id', 'title', 'createdAt', 'updatedAt', 'components'])
+        && isReqStr(note.id, 120)
+        && isReqStr(note.title, 200)
+        && isReqStr(note.createdAt, 64)
+        && isReqStr(note.updatedAt, 64)
+        && isValidNoteComponentsList(note.components, checkFirstComp, checkLastComp);
+    }
+
+    function isValidProjectNotesList(notes) {
+      return isValidList(notes, 50)
+        && (
+          notes.size() == 0
+          || (notes.size() == 1 && isValidProjectNote(notes[0], true, true))
+          || (
+            notes.size() > 1
+            && isValidProjectNote(notes[0], true, false)
+            && isValidProjectNote(notes[notes.size() - 1], false, true)
+          )
+        );
+    }
+
+    // Validate project-level photos list (first & last, strictly scoped to this project)
+    function isValidProjectPhotosList(photos, userId, projectId) {
+      return isValidList(photos, 18)
+        && (
+          photos.size() == 0
+          || (
+            isValidScopedUploadedPhoto(photos[0], userId, 'project', projectId)
+            && (photos.size() == 1 || isValidScopedUploadedPhoto(photos[photos.size() - 1], userId, 'project', projectId))
+          )
+        );
+    }
+
+    // Validate ProjectModelFeaturedImage discriminated union
+    function isValidFeaturedImage(fi) {
+      return fi is map
+        && 'source' in fi
+        && (
+          (
+            fi.source == 'uploaded_photo'
+            && fi.keys().hasOnly(['source', 'photoId'])
+            && 'photoId' in fi
+            && isReqStr(fi.photoId, 120)
+          )
+          || (
+            fi.source == 'catalog_angle'
+            && fi.keys().hasOnly(['source', 'imageIndex', 'localImagePath', 'imageUrl'])
+            && 'imageIndex' in fi
+            && fi.imageIndex is int && fi.imageIndex >= 0 && fi.imageIndex <= 50
+            && isOptStr(fi.get('localImagePath', null), 512)
+            && isOptStr(fi.get('imageUrl', null), 2048)
+          )
+          || (
+            fi.source == 'catalog_model'
+            && fi.keys().hasOnly(['source', 'modelId', 'localImagePath', 'imageUrl'])
+            && 'modelId' in fi
+            && isReqStr(fi.modelId, 200)
+            && isOptStr(fi.get('localImagePath', null), 512)
+            && isOptStr(fi.get('imageUrl', null), 2048)
+          )
+        );
+    }
+
+    // Validate a single ProjectModelConfiguration entry
+    function isValidModelConfiguration(cfg) {
+      return hasOnlyAllowedFields(cfg, ['id', 'slot', 'option', 'optionId', 'notes'])
+        && cfg.keys().hasAll(['id', 'slot', 'option'])
+        && isReqStr(cfg.id, 120)
+        && isReqStr(cfg.slot, 120)
+        && isReqStr(cfg.option, 200)
+        && isOptStr(cfg.get('optionId', null), 200)
+        && isOptStr(cfg.get('notes', null), 500);
+    }
+
+    function isValidModelConfigurationsList(configs, checkFirst, checkLast) {
+      return isValidList(configs, 30)
+        && (
+          configs.size() == 0
+          || (
+            (!checkFirst || isValidModelConfiguration(configs[0]))
+            && (!checkLast || (checkFirst && configs.size() == 1) || isValidModelConfiguration(configs[configs.size() - 1]))
+          )
+        );
+    }
+
+    function isValidModelPhotosList(photos, userId, entryId, checkFirst, checkLast) {
+      return isValidList(photos, 13)
+        && (
+          photos.size() == 0
+          || (
+            (!checkFirst || isValidScopedUploadedPhoto(photos[0], userId, 'project_model', entryId))
+            && (!checkLast || (checkFirst && photos.size() == 1) || isValidScopedUploadedPhoto(photos[photos.size() - 1], userId, 'project_model', entryId))
+          )
+        );
+    }
+
+    // Validate a ProjectModelEntry item inside a project document
+    function isValidProjectModelEntry(entry, userId, checkFirstNested, checkLastNested) {
+      return hasOnlyAllowedFields(entry, [
+          'id',
+          'recipeId',
+          'customName',
+          'quantity',
+          'notes',
+          'completedStepIds',
+          'featuredImage',
+          'photos',
+          'configurations',
+          'createdAt',
+          'updatedAt'
+        ])
+        && entry.keys().hasAll([
+          'id',
+          'recipeId',
+          'quantity',
+          'notes',
+          'completedStepIds',
+          'photos',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isReqStr(entry.id, 120)
+        && isReqStr(entry.recipeId, 200)
+        && isOptStr(entry.get('customName', null), 120)
+        && entry.quantity is int && entry.quantity >= 1 && entry.quantity <= 999
+        && entry.notes is string && entry.notes.size() <= 5000
+        && isValidStringIdList(entry.completedStepIds, 200)
+        && (entry.get('featuredImage', null) == null || isValidFeaturedImage(entry.featuredImage))
+        && isValidModelPhotosList(entry.photos, userId, entry.id, checkFirstNested, checkLastNested)
+        && (!('configurations' in entry) || isValidModelConfigurationsList(entry.configurations, checkFirstNested, checkLastNested))
+        && isReqStr(entry.createdAt, 64)
+        && isReqStr(entry.updatedAt, 64);
+    }
+
+    function isValidProjectModelsList(models, userId) {
+      return isValidList(models, 100)
+        && (
+          models.size() == 0
+          || (models.size() == 1 && isValidProjectModelEntry(models[0], userId, true, true))
+          || (
+            models.size() > 1
+            && isValidProjectModelEntry(models[0], userId, true, false)
+            && isValidProjectModelEntry(models[models.size() - 1], userId, false, true)
+          )
+        );
+    }
+
+    // Validate a self-contained UserProject document in `/users/{userId}/projects/{projectId}`
+    function isValidProjectDoc(proj, userId, projectId) {
+      return hasOnlyAllowedFields(proj, [
+          'id',
+          'name',
+          'thumbnailUrl',
+          'localThumbnailPath',
+          'coverPhotoId',
+          'createdAt',
+          'updatedAt',
+          'models',
+          'colorIds',
+          'notes',
+          'photos'
+        ])
+        && proj.keys().hasAll([
+          'id',
+          'name',
+          'createdAt',
+          'updatedAt',
+          'models',
+          'colorIds',
+          'notes',
+          'photos'
+        ])
+        && isReqStr(proj.id, 120)
+        && proj.id == projectId
+        && isReqStr(proj.name, 200)
+        && isOptStr(proj.get('thumbnailUrl', null), 2048)
+        && isOptStr(proj.get('localThumbnailPath', null), 512)
+        && isOptStr(proj.get('coverPhotoId', null), 120)
+        && isReqStr(proj.createdAt, 64)
+        && isReqStr(proj.updatedAt, 64)
+        && isValidStringIdList(proj.colorIds, 100)
+        && isValidProjectNotesList(proj.notes)
+        && isValidProjectPhotosList(proj.photos, userId, projectId)
+        && isValidProjectModelsList(proj.models, userId);
     }
 
     // ===============================================================
@@ -299,7 +568,7 @@ service cloud.firestore {
     }
 
     // ===============================================================
-    // Per-User Cloud Sync Document (`/users/{userId}`)
+    // Per-User Cloud Sync Document (`/users/{userId}`) & Projects Subcollection
     // ===============================================================
 
     match /users/{userId} {
@@ -311,6 +580,18 @@ service cloud.firestore {
         && uidNotModified()
         && isValidUserAccountState(request.resource.data, userId);
       allow delete: if isOwner(userId);
+
+      // Self-contained user project documents (`/users/{userId}/projects/{projectId}`)
+      match /projects/{projectId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidProjectDoc(request.resource.data, userId, projectId);
+        allow update: if isOwner(userId)
+          && isValidProjectDoc(request.resource.data, userId, projectId)
+          && request.resource.data.id == resource.data.id
+          && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+        allow delete: if isOwner(userId);
+      }
     }
 
     // ===============================================================

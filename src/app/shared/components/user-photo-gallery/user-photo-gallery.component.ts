@@ -28,11 +28,14 @@ export class UserPhotoGalleryComponent {
 
   readonly targetType = input.required<UserPhotoTargetType>();
   readonly targetId = input.required<string>();
+  readonly projectId = input<string | undefined>(undefined);
   readonly kind = input.required<UserPhotoKind>();
   readonly heading = input<string>('');
   readonly description = input<string>('');
   readonly allowSetCover = input<boolean>(false);
   readonly activeCoverPhotoId = input<string | undefined>(undefined);
+  readonly coverButtonLabel = input<string>('Set Cover');
+  readonly activeCoverBadgeLabel = input<string>('★ Cover');
 
   readonly selectCover = output<string | undefined>();
 
@@ -59,7 +62,16 @@ export class UserPhotoGalleryComponent {
   );
 
   readonly photos = computed(() =>
-    this.userState.getPhotosForTarget(this.targetType(), this.targetId(), this.kind())
+    this.userState.getPhotosForTarget(
+      this.targetType(),
+      this.targetId(),
+      this.kind(),
+      this.projectId()
+    )
+  );
+
+  readonly totalAccountPhotoCount = computed(
+    () => (this.userState.allUploadedPhotos?.() ?? this.userState.uploadedPhotos()).length
   );
 
   readonly remainingInSection = computed(() =>
@@ -67,7 +79,7 @@ export class UserPhotoGalleryComponent {
   );
 
   readonly remainingInAccount = computed(() =>
-    Math.max(0, USER_LIMITS.MAX_TOTAL_USER_PHOTOS - this.userState.uploadedPhotos().length)
+    Math.max(0, USER_LIMITS.MAX_TOTAL_USER_PHOTOS - this.totalAccountPhotoCount())
   );
 
   readonly isAtLimit = computed(
@@ -128,6 +140,7 @@ export class UserPhotoGalleryComponent {
         files,
         targetType: this.targetType(),
         targetId: this.targetId(),
+        projectId: this.projectId(),
         kind: this.kind(),
         caption: this.captionDraft(),
       });

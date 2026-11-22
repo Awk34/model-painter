@@ -84,18 +84,31 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
         name: 'Zeta Terminators',
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-02-01T00:00:00Z',
-        recipeIds: ['m1'],
+        models: [
+          {
+            id: 'pmod_1',
+            recipeId: 'm1',
+            quantity: 5,
+            notes: '',
+            completedStepIds: [],
+            photos: [],
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-02-01T00:00:00Z',
+          },
+        ],
         colorIds: [],
         notes: [],
+        photos: [],
       },
       {
         id: 'p-alpha',
         name: 'Alpha Intercessors',
         createdAt: '2026-02-01T00:00:00Z',
         updatedAt: '2026-01-15T00:00:00Z',
-        recipeIds: [],
+        models: [],
         colorIds: [],
         notes: [],
+        photos: [],
       },
     ]);
 

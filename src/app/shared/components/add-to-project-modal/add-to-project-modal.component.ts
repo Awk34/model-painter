@@ -24,11 +24,22 @@ export class AddToProjectModalComponent {
 
   readonly newProjectName = signal('');
 
-  isAlreadyInProject(project: UserProject): boolean {
-    if (this.itemType() === 'model') {
-      return project.recipeIds.includes(this.itemId());
+  getModelEntryCountInProject(project: UserProject): number {
+    if (this.itemType() !== 'model') {
+      return 0;
     }
-    return project.colorIds.includes(this.itemId());
+    return project.models.filter((m) => m.recipeId === this.itemId()).length;
+  }
+
+  getActionLabel(project: UserProject): string {
+    if (this.itemType() === 'model') {
+      const count = this.getModelEntryCountInProject(project);
+      if (count > 0) {
+        return `${count} in project • + Add Another`;
+      }
+      return '+ Add to Project';
+    }
+    return project.colorIds.includes(this.itemId()) ? '✓ Already Added' : '+ Add to Project';
   }
 
   addToExistingProject(projectId: string): void {
@@ -54,7 +65,9 @@ export class AddToProjectModalComponent {
 
   private attachItem(projectId: string): void {
     if (this.itemType() === 'model') {
-      this.userState.addRecipeToProject(projectId, this.itemId(), this.localThumbnailPath());
+      this.userState.addModelToProject(projectId, this.itemId(), {
+        modelImageLocal: this.localThumbnailPath(),
+      });
       return;
     }
     this.userState.addColorToProject(projectId, this.itemId());
