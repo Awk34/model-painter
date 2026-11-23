@@ -281,6 +281,7 @@
                   heading="My Painted Photos (This Project Entry)"
                   description="Upload photos specific to this model instance in your project. Click 'Set Featured' to use any photo as its featured image."
                   [allowSetCover]="true"
+                  [allowGlobalPaste]="!showFeaturedImageModal() && !zoomModalOpen()"
                   coverButtonLabel="Set Featured"
                   activeCoverBadgeLabel="★ Featured"
                   [activeCoverPhotoId]="featuredUploadedPhotoId()"
@@ -310,6 +311,7 @@
                 kind="showcase"
                 heading="My Painted Model Photos"
                 description="Upload photos of your own painted version or work-in-progress stages of this miniature."
+                [allowGlobalPaste]="!showProjectModal() && !zoomModalOpen()"
               />
 
               <hr class="section-divider" />

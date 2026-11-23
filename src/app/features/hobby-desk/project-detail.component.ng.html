@@ -244,6 +244,7 @@
             heading="My Painted Project Photos"
             description="Upload photos of your finished squad, army display, or work-in-progress miniatures. Click 'Set Cover' on any photo to use it as this project's cover."
             [allowSetCover]="true"
+            [allowGlobalPaste]="true"
             [activeCoverPhotoId]="proj.coverPhotoId"
             (selectCover)="onSelectCoverPhoto(proj.id, $event)"
           />

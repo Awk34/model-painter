@@ -84,8 +84,17 @@
               [disabled]="uploading()"
               (change)="onQuickUploadFile($event)"
             />
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              [disabled]="uploading()"
+              aria-label="Paste image from clipboard and set as featured"
+              (click)="onPasteButtonClick()"
+            >
+              📋 Paste Image
+            </button>
             <span class="upload-hint">
-              {{ limits.ALLOWED_IMAGE_EXTENSIONS_LABEL }} • up to {{ limits.MAX_RAW_INPUT_FILE_SIZE_MB }} MB
+              {{ limits.ALLOWED_IMAGE_EXTENSIONS_LABEL }} • up to {{ limits.MAX_RAW_INPUT_FILE_SIZE_MB }} MB • or press Ctrl+V
             </span>
           </div>
 

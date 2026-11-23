@@ -12,6 +12,10 @@ import { ImageService } from '../../../core/services/image.service';
 import { UserMediaService } from '../../../core/services/user-media.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { matchesModelSearch } from '../../../core/utils/catalog-filter.util';
+import {
+  extractClipboardImageFiles,
+  readClipboardImageFiles,
+} from '../../../core/utils/clipboard-image.util';
 
 export type FeaturedImagePickerTab = 'angles' | 'uploaded' | 'catalog';
 
@@ -23,6 +27,7 @@ export type FeaturedImagePickerTab = 'angles' | 'uploaded' | 'catalog';
   styleUrl: './project-model-featured-image-modal.component.css',
   host: {
     '(document:keydown.escape)': 'onEscape()',
+    '(document:paste)': 'onDocumentPaste($event)',
   },
 })
 export class ProjectModelFeaturedImageModalComponent {
@@ -141,6 +146,37 @@ export class ProjectModelFeaturedImageModalComponent {
     if (!file) {
       return;
     }
+    await this.uploadAndSetFeatured(file);
+  }
+
+  async onDocumentPaste(event: ClipboardEvent): Promise<void> {
+    if (!this.open() || this.uploading() || event.defaultPrevented) {
+      return;
+    }
+    const files = extractClipboardImageFiles(event);
+    if (files.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.activeTab.set('uploaded');
+    await this.uploadAndSetFeatured(files[0]);
+  }
+
+  async onPasteButtonClick(): Promise<void> {
+    if (this.uploading()) {
+      return;
+    }
+    this.uploadError.set(null);
+    const result = await readClipboardImageFiles();
+    if (result.files.length > 0) {
+      await this.uploadAndSetFeatured(result.files[0]);
+    } else if (result.error) {
+      this.uploadError.set(result.error);
+    }
+  }
+
+  private async uploadAndSetFeatured(file: File): Promise<void> {
     this.uploading.set(true);
     this.uploadError.set(null);
     try {

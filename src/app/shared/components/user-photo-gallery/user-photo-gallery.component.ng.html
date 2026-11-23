@@ -1,4 +1,8 @@
-<div class="photo-gallery-block" [class.private-ref-block]="isReference()">
+<div
+  class="photo-gallery-block"
+  [class.private-ref-block]="isReference()"
+  (paste)="onPaste($event)"
+>
   <div class="gallery-header">
     <div class="gallery-title-group">
       @if (heading()) {
@@ -27,6 +31,8 @@
   @if (!isAtLimit()) {
     <div
       class="upload-dropzone"
+      tabindex="0"
+      aria-label="Photo upload area. Drag and drop images here, or press Ctrl+V to paste from clipboard."
       [class.drag-active]="dragActive()"
       (dragover)="onDragOver($event)"
       (dragleave)="onDragLeave($event)"
@@ -46,31 +52,42 @@
           />
         </div>
 
-        <label
-          [for]="inputId()"
-          class="btn"
-          [class.btn-gold]="!isReference()"
-          [class.btn-secondary]="isReference()"
-          [class.disabled-btn]="uploading()"
-        >
-          @if (uploading()) {
-            <span>Uploading...</span>
-          } @else {
-            <span>{{ isReference() ? '+ Upload Reference Photo' : '+ Upload Photo' }}</span>
-          }
-        </label>
-        <input
-          [id]="inputId()"
-          type="file"
-          class="sr-only"
-          multiple
-          [accept]="acceptAttr"
-          [disabled]="uploading()"
-          (change)="onFileInputChange($event)"
-        />
+        <div class="upload-action-btns">
+          <label
+            [for]="inputId()"
+            class="btn"
+            [class.btn-gold]="!isReference()"
+            [class.btn-secondary]="isReference()"
+            [class.disabled-btn]="uploading()"
+          >
+            @if (uploading()) {
+              <span>Uploading...</span>
+            } @else {
+              <span>{{ isReference() ? '+ Upload Reference Photo' : '+ Upload Photo' }}</span>
+            }
+          </label>
+          <input
+            [id]="inputId()"
+            type="file"
+            class="sr-only"
+            multiple
+            [accept]="acceptAttr"
+            [disabled]="uploading()"
+            (change)="onFileInputChange($event)"
+          />
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="uploading()"
+            aria-label="Paste image from clipboard"
+            (click)="onPasteButtonClick()"
+          >
+            📋 Paste
+          </button>
+        </div>
       </div>
       <span class="drop-hint">
-        Or drag & drop {{ limits.ALLOWED_IMAGE_EXTENSIONS_LABEL }} files here ({{ remainingInSection() }} slot{{ remainingInSection() === 1 ? '' : 's' }} remaining)
+        Or drag & drop, click here & press Ctrl+V, or use Paste ({{ remainingInSection() }} slot{{ remainingInSection() === 1 ? '' : 's' }} remaining)
       </span>
     </div>
   } @else {

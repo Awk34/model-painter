@@ -77,10 +77,23 @@
   background: var(--gold-soft);
 }
 
+.upload-dropzone:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+  border-color: var(--gold-bright);
+}
+
 .upload-controls-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
+}
+
+.upload-action-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
 }
 

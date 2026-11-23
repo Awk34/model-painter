@@ -9,6 +9,12 @@ import {
 } from '../../../core/models/catalog.models';
 import { UserMediaService } from '../../../core/services/user-media.service';
 import { UserStateService } from '../../../core/services/user-state.service';
+import {
+  extractClipboardImageFiles,
+  hasOpenModalDialog,
+  isEditableElement,
+  readClipboardImageFiles,
+} from '../../../core/utils/clipboard-image.util';
 
 @Component({
   selector: 'app-user-photo-gallery',
@@ -18,6 +24,7 @@ import { UserStateService } from '../../../core/services/user-state.service';
   styleUrl: './user-photo-gallery.component.css',
   host: {
     '(document:keydown.escape)': 'closeLightbox()',
+    '(document:paste)': 'onDocumentPaste($event)',
   },
 })
 export class UserPhotoGalleryComponent {
@@ -36,6 +43,7 @@ export class UserPhotoGalleryComponent {
   readonly activeCoverPhotoId = input<string | undefined>(undefined);
   readonly coverButtonLabel = input<string>('Set Cover');
   readonly activeCoverBadgeLabel = input<string>('★ Cover');
+  readonly allowGlobalPaste = input<boolean>(false);
 
   readonly selectCover = output<string | undefined>();
 
@@ -127,6 +135,52 @@ export class UserPhotoGalleryComponent {
     const files = Array.from(event.dataTransfer?.files ?? []);
     if (files.length > 0) {
       await this.handleFiles(files);
+    }
+  }
+
+  async onPaste(event: ClipboardEvent): Promise<void> {
+    const files = extractClipboardImageFiles(event);
+    if (files.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.isAtLimit() || this.uploading()) {
+      return;
+    }
+    await this.handleFiles(files);
+  }
+
+  async onDocumentPaste(event: ClipboardEvent): Promise<void> {
+    if (
+      !this.allowGlobalPaste() ||
+      event.defaultPrevented ||
+      this.isAtLimit() ||
+      this.uploading() ||
+      this.lightboxIndex() !== null ||
+      isEditableElement(event.target) ||
+      hasOpenModalDialog()
+    ) {
+      return;
+    }
+    const files = extractClipboardImageFiles(event);
+    if (files.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    await this.handleFiles(files);
+  }
+
+  async onPasteButtonClick(): Promise<void> {
+    if (this.isAtLimit() || this.uploading()) {
+      return;
+    }
+    this.errorMessages.set([]);
+    const result = await readClipboardImageFiles();
+    if (result.files.length > 0) {
+      await this.handleFiles(result.files);
+    } else if (result.error) {
+      this.errorMessages.set([result.error]);
     }
   }
 
