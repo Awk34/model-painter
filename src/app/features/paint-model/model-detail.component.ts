@@ -13,10 +13,12 @@ import {
   ModelRecipe,
   ProjectModelEntry,
   UserProject,
+  UserUploadedPhoto,
 } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { AddToProjectModalComponent } from '../../shared/components/add-to-project-modal/add-to-project-modal.component';
 import { PaintBrandBadgeComponent } from '../../shared/components/paint-brand-badge/paint-brand-badge.component';
@@ -71,6 +73,7 @@ export class ModelDetailComponent {
   readonly userState = inject(UserStateService);
   readonly readinessService = inject(InventoryMatchService);
   readonly img = inject(ImageService);
+  readonly media = inject(UserMediaService);
 
   /** Route params: standalone `/models/:id` OR project-scoped `/projects/:projectId/models/:entryId` */
   readonly standaloneModelId = signal<string | null>(null);
@@ -81,6 +84,7 @@ export class ModelDetailComponent {
   readonly recipe = signal<ModelRecipe | null>(null);
   readonly selectedImageIndex = signal(0);
   readonly viewingCustomFeatured = signal(false);
+  readonly selectedUserPhotoId = signal<string | null>(null);
   readonly showPins = signal(true);
   readonly selectedColorPointId = signal<string | null>(null);
   readonly stageFilter = signal<ModelStageFilter>('all');
@@ -150,6 +154,47 @@ export class ModelDetailComponent {
     return this.userState.resolveProjectModelImageUrl(entry, null, this.recipe());
   });
 
+  readonly userModelPhotos = computed<UserUploadedPhoto[]>(() => {
+    const p = this.project();
+    const entry = this.projectModelEntry();
+    if (p && entry) {
+      return [
+        ...this.userState.getPhotosForTarget('project_model', entry.id, 'showcase', p.id),
+        ...this.userState.getPhotosForTarget('project_model', entry.id, 'reference', p.id),
+      ];
+    }
+    const r = this.recipe();
+    if (!r) {
+      return [];
+    }
+    return [
+      ...this.userState.getPhotosForTarget('model', r.id, 'showcase'),
+      ...this.userState.getPhotosForTarget('model', r.id, 'reference'),
+    ];
+  });
+
+  readonly userThumbPhotos = computed<UserUploadedPhoto[]>(() => {
+    const featuredId = this.hasCustomOverlayFeatured() ? this.featuredUploadedPhotoId() : undefined;
+    const all = this.userModelPhotos();
+    return featuredId ? all.filter((ph) => ph.id !== featuredId) : all;
+  });
+
+  readonly selectedUserPhoto = computed<UserUploadedPhoto | null>(() => {
+    const id = this.selectedUserPhotoId();
+    if (!id) {
+      return null;
+    }
+    return this.userModelPhotos().find((ph) => ph.id === id) ?? null;
+  });
+
+  readonly hasThumbnailStrip = computed<boolean>(() =>
+    Boolean(
+      this.hasCustomOverlayFeatured() ||
+        (this.recipe()?.images.length ?? 0) > 1 ||
+        this.userThumbPhotos().length > 0
+    )
+  );
+
   readonly modelPhotoCount = computed(() => {
     const p = this.project();
     const entry = this.projectModelEntry();
@@ -164,6 +209,10 @@ export class ModelDetailComponent {
   });
 
   readonly activeImageUrl = computed(() => {
+    const userPhoto = this.selectedUserPhoto();
+    if (userPhoto) {
+      return this.media.resolvePhotoUrl(userPhoto);
+    }
     if (this.viewingCustomFeatured()) {
       const customUrl = this.customFeaturedUrl();
       if (customUrl) {
@@ -181,7 +230,11 @@ export class ModelDetailComponent {
   readonly canShowColorPins = computed(() => {
     const r = this.recipe();
     return Boolean(
-      r && !this.viewingCustomFeatured() && this.selectedImageIndex() === 0 && r.colorPoints.length
+      r &&
+        !this.viewingCustomFeatured() &&
+        !this.selectedUserPhoto() &&
+        this.selectedImageIndex() === 0 &&
+        r.colorPoints.length
     );
   });
 
@@ -245,6 +298,7 @@ export class ModelDetailComponent {
       this.standaloneModelId.set(pid && eid ? null : standaloneId);
       this.zoomModalOpen.set(false);
       this.showFeaturedImageModal.set(false);
+      this.selectedUserPhotoId.set(null);
       this.isPanning.set(false);
       this.activePointerId = null;
       this.lastFeaturedSignature = null;
@@ -280,6 +334,7 @@ export class ModelDetailComponent {
       this.lastFeaturedSignature = sig;
 
       const fi = entry.featuredImage;
+      this.selectedUserPhotoId.set(null);
       if (fi?.source === 'uploaded_photo' || fi?.source === 'catalog_model') {
         this.viewingCustomFeatured.set(true);
       } else if (fi?.source === 'catalog_angle') {
@@ -297,6 +352,7 @@ export class ModelDetailComponent {
     if (!this.isProjectMode()) {
       this.selectedImageIndex.set(0);
       this.viewingCustomFeatured.set(false);
+      this.selectedUserPhotoId.set(null);
     }
     const data = await this.catalog.getModelRecipe(recipeId);
     if (this.activeRecipeId() !== recipeId) {
@@ -314,12 +370,20 @@ export class ModelDetailComponent {
 
   selectCustomFeaturedView(): void {
     this.viewingCustomFeatured.set(true);
+    this.selectedUserPhotoId.set(null);
     this.resetPan();
   }
 
   selectOfficialAngleView(index: number): void {
     this.viewingCustomFeatured.set(false);
+    this.selectedUserPhotoId.set(null);
     this.selectedImageIndex.set(index);
+    this.resetPan();
+  }
+
+  selectUserPhotoView(photoId: string): void {
+    this.viewingCustomFeatured.set(false);
+    this.selectedUserPhotoId.set(photoId);
     this.resetPan();
   }
 

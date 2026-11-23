@@ -139,14 +139,14 @@
             </div>
           </div>
 
-          <div class="viewer-controls">
-            @if (hasCustomOverlayFeatured() || r.images.length > 1) {
-              <div class="angle-thumbs">
+          @if (hasThumbnailStrip()) {
+            <div class="viewer-controls">
+              <div class="angle-thumbs" role="group" aria-label="Model photos">
                 @if (hasCustomOverlayFeatured() && customFeaturedUrl(); as featUrl) {
                   <button
                     type="button"
                     class="angle-thumb featured-angle-thumb"
-                    [class.active]="viewingCustomFeatured()"
+                    [class.active]="viewingCustomFeatured() && !selectedUserPhoto()"
                     title="Custom Featured Image"
                     aria-label="View custom featured image"
                     (click)="selectCustomFeaturedView()"
@@ -159,34 +159,32 @@
                   <button
                     type="button"
                     class="angle-thumb"
-                    [class.active]="!viewingCustomFeatured() && selectedImageIndex() === idx"
+                    [class.active]="!viewingCustomFeatured() && !selectedUserPhoto() && selectedImageIndex() === idx"
                     [attr.aria-label]="'View official angle ' + (idx + 1)"
                     (click)="selectOfficialAngleView(idx)"
                   >
                     <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
                   </button>
                 }
+                @for (ph of userThumbPhotos(); track ph.id) {
+                  <button
+                    type="button"
+                    class="angle-thumb user-angle-thumb"
+                    [class.ref-angle-thumb]="ph.kind === 'reference'"
+                    [class.active]="selectedUserPhoto()?.id === ph.id"
+                    [title]="ph.caption || ph.fileName"
+                    [attr.aria-label]="'View ' + (ph.kind === 'reference' ? 'private reference photo: ' : 'my photo: ') + (ph.caption || ph.fileName)"
+                    (click)="selectUserPhotoView(ph.id)"
+                  >
+                    <img [src]="media.resolvePhotoUrl(ph)" alt="" />
+                    @if (ph.kind === 'reference') {
+                      <span class="thumb-lock" aria-hidden="true">🔒</span>
+                    }
+                  </button>
+                }
               </div>
-            }
-
-            @if (canShowColorPins()) {
-              <button
-                type="button"
-                class="btn btn-sm btn-ghost"
-                (click)="showPins.set(!showPins())"
-              >
-                {{ showPins() ? '👁 Hide Color Pins' : '👁 Show Color Pins' }} ({{ r.colorPoints.length }})
-              </button>
-            } @else if (viewingCustomFeatured() && r.colorPoints.length) {
-              <button
-                type="button"
-                class="btn btn-sm btn-ghost"
-                (click)="selectOfficialAngleView(0)"
-              >
-                👁 Switch to Official Angle for Color Pins
-              </button>
-            }
-          </div>
+            </div>
+          }
         </div>
 
         <!-- Right Column: Model Metadata, Readiness & "Colors On This Model" -->
@@ -475,14 +473,14 @@
               </div>
             </div>
 
-            @if (hasCustomOverlayFeatured() || r.images.length > 1) {
+            @if (hasThumbnailStrip()) {
               <div class="zoom-modal-footer">
-                <div class="angle-thumbs">
+                <div class="angle-thumbs" role="group" aria-label="Model photos">
                   @if (hasCustomOverlayFeatured() && customFeaturedUrl(); as featUrl) {
                     <button
                       type="button"
                       class="angle-thumb featured-angle-thumb"
-                      [class.active]="viewingCustomFeatured()"
+                      [class.active]="viewingCustomFeatured() && !selectedUserPhoto()"
                       aria-label="View custom featured image"
                       (click)="selectCustomFeaturedView()"
                     >
@@ -494,11 +492,27 @@
                     <button
                       type="button"
                       class="angle-thumb"
-                      [class.active]="!viewingCustomFeatured() && selectedImageIndex() === idx"
+                      [class.active]="!viewingCustomFeatured() && !selectedUserPhoto() && selectedImageIndex() === idx"
                       [attr.aria-label]="'View angle ' + (idx + 1)"
                       (click)="selectOfficialAngleView(idx)"
                     >
                       <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
+                    </button>
+                  }
+                  @for (ph of userThumbPhotos(); track ph.id) {
+                    <button
+                      type="button"
+                      class="angle-thumb user-angle-thumb"
+                      [class.ref-angle-thumb]="ph.kind === 'reference'"
+                      [class.active]="selectedUserPhoto()?.id === ph.id"
+                      [title]="ph.caption || ph.fileName"
+                      [attr.aria-label]="'View ' + (ph.kind === 'reference' ? 'private reference photo: ' : 'my photo: ') + (ph.caption || ph.fileName)"
+                      (click)="selectUserPhotoView(ph.id)"
+                    >
+                      <img [src]="media.resolvePhotoUrl(ph)" alt="" />
+                      @if (ph.kind === 'reference') {
+                        <span class="thumb-lock" aria-hidden="true">🔒</span>
+                      }
                     </button>
                   }
                 </div>

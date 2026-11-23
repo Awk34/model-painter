@@ -130,35 +130,69 @@
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 2px;
 }
 
 .angle-thumb {
   position: relative;
-  width: 54px;
-  height: 54px;
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
   border-radius: var(--radius-xs);
   border: 2px solid var(--border-subtle);
   background: var(--bg-void);
   padding: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.angle-thumb:hover,
+.angle-thumb:focus-visible {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  outline: none;
 }
 
 .angle-thumb.active {
   border-color: var(--gold-bright);
 }
 
-.featured-angle-thumb .thumb-star {
+.user-angle-thumb {
+  padding: 0;
+}
+
+.ref-angle-thumb {
+  border-color: rgba(158, 91, 214, 0.55);
+}
+
+.ref-angle-thumb.active {
+  border-color: var(--gold-bright);
+}
+
+.featured-angle-thumb .thumb-star,
+.ref-angle-thumb .thumb-lock {
   position: absolute;
   top: 2px;
   right: 3px;
-  font-size: 0.65rem;
-  color: var(--gold-bright);
+  font-size: 0.62rem;
+  line-height: 1;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.featured-angle-thumb .thumb-star {
+  color: var(--gold-bright);
 }
 
 .angle-thumb img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.user-angle-thumb img {
+  object-fit: cover;
 }
 
 .meta-panel {

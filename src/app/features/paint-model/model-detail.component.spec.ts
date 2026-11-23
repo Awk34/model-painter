@@ -355,3 +355,127 @@ describe('ModelDetailComponent Project-Model Route Mode', () => {
     expect(fixture.nativeElement.querySelectorAll('.color-pin').length).toBe(2);
   });
 });
+
+describe('ModelDetailComponent User Photo Thumbnails', () => {
+  it('shows clickable thumbnails for user showcase and reference photos under the main photo even when recipe has only 1 official image', async () => {
+    const singleImageRecipe: ModelRecipe = {
+      ...SAMPLE_RECIPE,
+      images: ['/icons/ic_models.svg'],
+      localImagePaths: ['/icons/ic_models.svg'],
+    };
+
+    const showcasePhoto = {
+      id: 'ph_showcase_1',
+      targetType: 'model' as const,
+      targetId: singleImageRecipe.id,
+      kind: 'showcase' as const,
+      fileName: 'dante-wip.png',
+      caption: 'Gold armor WIP',
+      mimeType: 'image/png' as const,
+      sizeBytes: 1024,
+      createdAt: '2026-11-23T00:00:00Z',
+    };
+
+    const refPhoto = {
+      id: 'ph_ref_1',
+      targetType: 'model' as const,
+      targetId: singleImageRecipe.id,
+      kind: 'reference' as const,
+      fileName: 'nmm-ref.png',
+      mimeType: 'image/png' as const,
+      sizeBytes: 2048,
+      createdAt: '2026-11-23T00:01:00Z',
+    };
+
+    TestBed.configureTestingModule({
+      imports: [ModelDetailComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ id: singleImageRecipe.id })),
+          },
+        },
+        {
+          provide: CatalogService,
+          useValue: {
+            modelById: signal(new Map()),
+            getModelRecipe: jasmine.createSpy('getModelRecipe').and.resolveTo(singleImageRecipe),
+          },
+        },
+        {
+          provide: UserStateService,
+          useValue: {
+            projects: signal([]),
+            uploadedPhotos: signal([showcasePhoto, refPhoto]),
+            allUploadedPhotos: signal([showcasePhoto, refPhoto]),
+            limits: USER_LIMITS,
+            isModelOwned: () => false,
+            isModelWishlisted: () => false,
+            toggleModelInventory: () => {},
+            toggleModelWishlist: () => {},
+            addManyToWishlist: () => {},
+            getTargetPhotoCount: () => 2,
+            getPhotoQuotaLimit: () => 8,
+            getPhotosForTarget: (_t: string, _id: string, kind: string) =>
+              kind === 'showcase' ? [showcasePhoto] : [refPhoto],
+            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
+            isOwned: () => false,
+            isWishlisted: () => false,
+          },
+        },
+        {
+          provide: UserMediaService,
+          useValue: {
+            resolvePhotoUrl: (ph: { id: string }) => `blob:test/${ph.id}`,
+          },
+        },
+        {
+          provide: InventoryMatchService,
+          useValue: {
+            evaluateStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ImageService,
+          useValue: {
+            resolve: (localPath?: string | null, remoteUrl?: string | null) =>
+              localPath || remoteUrl || '/icons/ic_models.svg',
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ModelDetailComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const thumbs = fixture.nativeElement.querySelectorAll(
+      '.viewer-controls .angle-thumb'
+    ) as NodeListOf<HTMLButtonElement>;
+    // 1 official angle + 1 showcase photo + 1 private reference photo
+    expect(thumbs.length).toBe(3);
+
+    const userThumbs = fixture.nativeElement.querySelectorAll(
+      '.viewer-controls .user-angle-thumb'
+    ) as NodeListOf<HTMLButtonElement>;
+    expect(userThumbs.length).toBe(2);
+    expect(userThumbs[1].classList.contains('ref-angle-thumb')).toBeTrue();
+
+    // Clicking the user showcase thumbnail displays it in the main stage and hides official color pins
+    userThumbs[0].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.activeImageUrl()).toBe('blob:test/ph_showcase_1');
+    expect(fixture.componentInstance.canShowColorPins()).toBeFalse();
+    expect(fixture.nativeElement.querySelectorAll('.color-pin').length).toBe(0);
+
+    // Clicking back on the official thumbnail restores the official image & color pins
+    thumbs[0].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.activeImageUrl()).toBe('/icons/ic_models.svg');
+    expect(fixture.componentInstance.canShowColorPins()).toBeTrue();
+    expect(fixture.nativeElement.querySelectorAll('.color-pin').length).toBe(2);
+  });
+});
