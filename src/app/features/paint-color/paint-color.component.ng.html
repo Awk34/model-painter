@@ -6,7 +6,7 @@
       <div>
         <h1>Paint A Color</h1>
         <p class="subtitle">
-          Explore {{ catalog.colors().length }} color & basing guides across {{ catalog.colorGroups().length }} color families, complete with Base, Detail, and Artificer finish showcases.
+          Explore {{ catalog.colors().length }} color &amp; basing guides across {{ catalog.colorGroups().length }} color families, complete with Base, Detail, and Artificer finish showcases.
         </p>
       </div>
     </div>
@@ -24,12 +24,13 @@
           (ngModelChange)="onlyBasing.set($event)"
         />
         <app-icon name="bases" class="base-ic" />
-        <span>Only show guides for painting bases (17 Basing Guides)</span>
+        <span>Only show guides for painting bases ({{ basingGuideCount() }} Basing Guides)</span>
       </label>
     </div>
 
     <div class="chip-bar">
       <button
+        type="button"
         class="chip"
         [class.active]="!selectedGroup()"
         (click)="selectedGroup.set(null)"
@@ -39,6 +40,7 @@
 
       @for (grp of catalog.colorGroups(); track grp.id) {
         <button
+          type="button"
           class="chip"
           [class.active]="selectedGroup() === grp.name"
           (click)="selectedGroup.set(grp.name)"
@@ -55,8 +57,10 @@
   <!-- Search, Range & Readiness Filter Bar -->
   <section class="filters-bar studio-card">
     <div class="search-input-wrap">
+      <label for="paint-color-search" class="sr-only">Search color guides</label>
       <input
-        type="text"
+        id="paint-color-search"
+        type="search"
         class="input-control"
         placeholder="Search colors by name, shade, or family (e.g., Ultramarine Blue, Pale Skin, Lava Base)..."
         [ngModel]="searchQuery()"
@@ -65,7 +69,9 @@
     </div>
 
     <div class="filter-controls">
+      <label for="paint-color-stage" class="sr-only">Target finish stage</label>
       <select
+        id="paint-color-stage"
         class="input-control filter-select"
         [ngModel]="targetStage()"
         (ngModelChange)="targetStage.set($event)"
@@ -76,7 +82,9 @@
         <option value="artificer">Target: 3. Artificer Finish</option>
       </select>
 
+      <label for="paint-color-readiness" class="sr-only">Readiness filter</label>
       <select
+        id="paint-color-readiness"
         class="input-control filter-select"
         [ngModel]="readinessFilter()"
         (ngModelChange)="readinessFilter.set($event)"
@@ -87,7 +95,9 @@
         <option value="sortReady">Sort by Highest Match % (Target Finish)</option>
       </select>
 
+      <label for="paint-color-range" class="sr-only">Paint range filter</label>
       <select
+        id="paint-color-range"
         class="input-control filter-select"
         [ngModel]="rangeFilter()"
         (ngModelChange)="rangeFilter.set($event)"
@@ -99,7 +109,7 @@
     </div>
   </section>
 
-  <div class="results-meta">
+  <div class="results-meta" aria-live="polite" aria-atomic="true">
     <span>Showing <strong>{{ filteredColors().length }}</strong> matching color guides</span>
   </div>
 
@@ -107,9 +117,9 @@
   @if (filteredColors().length > 0) {
     <div class="colors-grid">
       @for (item of filteredColors(); track item.color.id) {
-        <div
+        <a
           class="color-card studio-card interactive"
-          (click)="openColor(item.color.id)"
+          [routerLink]="['/colors', item.color.id]"
         >
           <div class="color-preview-box">
             @if (item.color.localImagePath || item.color.imageUrl) {
@@ -136,7 +146,7 @@
           </div>
 
           <div class="color-card-body">
-            <h3 class="color-name">{{ item.color.name }}</h3>
+            <h2 class="color-name">{{ item.color.name }}</h2>
             <p class="color-groups">
               {{ item.color.colorGroups.join(' • ') }} • {{ item.color.requiredPaintIds.length }} Paints
             </p>
@@ -146,13 +156,13 @@
               [activeStage]="targetStage()"
             />
           </div>
-        </div>
+        </a>
       }
     </div>
   } @else {
     <div class="empty-state studio-card">
-      <h3>No Color Guides Match Your Filters</h3>
-      <button class="btn btn-gold" (click)="resetFilters()">Reset Filters</button>
+      <h2>No Color Guides Match Your Filters</h2>
+      <button type="button" class="btn btn-gold" (click)="resetFilters()">Reset Filters</button>
     </div>
   }
 </div>

@@ -1,6 +1,7 @@
 import {
   createPastedFileName,
   extractClipboardImageFiles,
+  hasOpenModalDialog,
   isEditableElement,
   readClipboardImageFiles,
 } from './clipboard-image.util';
@@ -144,5 +145,35 @@ describe('clipboard-image.util', () => {
         value: originalClipboard,
       });
     }
+  });
+
+  it('detects open native <dialog> and ARIA dialogs in hasOpenModalDialog()', () => {
+    expect(hasOpenModalDialog()).toBeFalse();
+
+    const nativeDialog = document.createElement('dialog');
+    document.body.appendChild(nativeDialog);
+    try {
+      expect(hasOpenModalDialog()).toBeFalse();
+      nativeDialog.showModal();
+      expect(hasOpenModalDialog()).toBeTrue();
+      nativeDialog.close();
+      expect(hasOpenModalDialog()).toBeFalse();
+
+      nativeDialog.setAttribute('open', '');
+      expect(hasOpenModalDialog()).toBeTrue();
+    } finally {
+      nativeDialog.remove();
+    }
+
+    const ariaDialog = document.createElement('div');
+    ariaDialog.setAttribute('role', 'dialog');
+    ariaDialog.setAttribute('aria-modal', 'true');
+    document.body.appendChild(ariaDialog);
+    try {
+      expect(hasOpenModalDialog()).toBeTrue();
+    } finally {
+      ariaDialog.remove();
+    }
+    expect(hasOpenModalDialog()).toBeFalse();
   });
 });

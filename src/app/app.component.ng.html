@@ -1,7 +1,9 @@
 <div class="app-shell">
+  <a href="#main-content" class="skip-link" (click)="skipToMain($event)">Skip to main content</a>
+
   <!-- Desktop Left Navigation Sidebar -->
   <aside class="sidebar">
-    <div class="brand-box" routerLink="/hobby-desk">
+    <a class="brand-box" routerLink="/hobby-desk">
       <div class="brand-crest">
         <img src="/logo.svg" alt="Model Painter logo" class="crest-img" />
       </div>
@@ -9,12 +11,13 @@
         <span class="brand-main">Model Painter</span>
         <span class="brand-sub">Miniature painting companion</span>
       </div>
-    </div>
+    </a>
 
-    <nav class="side-nav">
+    <nav class="side-nav" aria-label="Primary navigation">
       <a
         routerLink="/hobby-desk"
         routerLinkActive="active"
+        ariaCurrentWhenActive="page"
         class="nav-link"
       >
         <app-icon name="hobby_desk" class="nav-ic" />
@@ -27,6 +30,7 @@
       <a
         routerLink="/models"
         routerLinkActive="active"
+        ariaCurrentWhenActive="page"
         class="nav-link"
       >
         <app-icon name="models" class="nav-ic" />
@@ -37,6 +41,7 @@
       <a
         routerLink="/colors"
         routerLinkActive="active"
+        ariaCurrentWhenActive="page"
         class="nav-link"
       >
         <app-icon name="color" class="nav-ic" />
@@ -47,6 +52,7 @@
       <a
         routerLink="/search"
         routerLinkActive="active"
+        ariaCurrentWhenActive="page"
         class="nav-link"
       >
         <app-icon name="search" class="nav-ic" />
@@ -73,10 +79,6 @@
         <span>Model Wishlist</span>
         <strong class="wish-txt">{{ userState.state().wishlistModelIds.length }}</strong>
       </div>
-      <!-- <div class="stat-line">
-        <span>3rd-Party Brands</span>
-        <strong>{{ catalog.thirdPartyBrands().length }}</strong>
-      </div> -->
       @if (catalog.syncStatus() !== CatalogSyncStatus.UpToDate) {
         <div class="stat-line">
           <span>Catalog Cache</span>
@@ -88,10 +90,11 @@
     </div>
 
     <!-- User Account Widget at Bottom of Left Nav -->
-    <div
+    <a
       class="sidebar-user-widget studio-card"
       routerLink="/account"
       routerLinkActive="active"
+      ariaCurrentWhenActive="page"
     >
       @if (userState.currentUser(); as user) {
         @if (avatarUrl(); as url) {
@@ -119,24 +122,20 @@
           <span class="user-guest-label">Guest</span>
           <span class="user-sub">Local Mode</span>
         </div>
-        <a
-          routerLink="/account"
-          class="btn btn-gold btn-sm sign-in-btn"
-          (click)="$event.stopPropagation()"
-        >
+        <span class="btn btn-gold btn-sm sign-in-btn">
           Sign In
-        </a>
+        </span>
       }
-    </div>
+    </a>
   </aside>
 
   <!-- Main Viewport -->
-  <main class="main-viewport">
+  <main #mainContent id="main-content" tabindex="-1" class="main-viewport">
     @if (catalog.loading() && catalog.models().length === 0) {
       <div class="boot-loader">
         <img src="/logo.svg" alt="" class="pulse-ic" />
-        <h2>Hydrating Paint Catalog...</h2>
-        <p>Loading 4,531 Model Guides, 596 Colors, 487 Paints & 145 Cross-Brand Equivalents</p>
+        <h1>Hydrating Paint Catalog...</h1>
+        <p>Loading miniature recipes, color guides, paints &amp; cross-brand equivalents...</p>
       </div>
     } @else {
       <router-outlet></router-outlet>
@@ -144,24 +143,24 @@
   </main>
 
   <!-- Mobile Bottom Nav Bar -->
-  <nav class="mobile-bottom-nav">
-    <a routerLink="/hobby-desk" routerLinkActive="active" class="mob-tab">
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a routerLink="/hobby-desk" routerLinkActive="active" ariaCurrentWhenActive="page" class="mob-tab">
       <app-icon name="hobby_desk" class="mob-ic" />
       <span>Hobby Desk</span>
     </a>
-    <a routerLink="/models" routerLinkActive="active" class="mob-tab">
+    <a routerLink="/models" routerLinkActive="active" ariaCurrentWhenActive="page" class="mob-tab">
       <app-icon name="models" class="mob-ic" />
       <span>Paint Model</span>
     </a>
-    <a routerLink="/colors" routerLinkActive="active" class="mob-tab">
+    <a routerLink="/colors" routerLinkActive="active" ariaCurrentWhenActive="page" class="mob-tab">
       <app-icon name="color" class="mob-ic" />
       <span>Paint Color</span>
     </a>
-    <a routerLink="/search" routerLinkActive="active" class="mob-tab">
+    <a routerLink="/search" routerLinkActive="active" ariaCurrentWhenActive="page" class="mob-tab">
       <app-icon name="search" class="mob-ic" />
       <span>Search</span>
     </a>
-    <a routerLink="/account" routerLinkActive="active" class="mob-tab">
+    <a routerLink="/account" routerLinkActive="active" ariaCurrentWhenActive="page" class="mob-tab">
       <app-icon name="profile" class="mob-ic" />
       <span>Account</span>
     </a>
@@ -199,4 +198,3 @@
     </div>
   </div>
 </div>
-

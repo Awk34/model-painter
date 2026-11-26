@@ -1,51 +1,67 @@
-@if (open()) {
-  <div
-    class="modal-backdrop"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Choose featured image for project model"
-    (click)="close()"
-  >
-    <div class="modal-panel featured-picker-panel" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Choose Featured Image</h3>
-        <button type="button" class="close-btn" aria-label="Close" (click)="close()">✕</button>
-      </div>
-
+<app-modal-dialog
+  [open]="open()"
+  title="Choose Featured Image"
+  size="lg"
+  style="--dialog-max-width: min(780px, calc(100vw - 24px)); --dialog-max-height: 86dvh"
+  closeLabel="Close featured image picker"
+  (closed)="close()"
+>
+  @if (open()) {
+    <div class="featured-picker-shell">
       <div class="picker-tabs" role="tablist" aria-label="Featured image sources">
         <button
+          #tabBtn
+          id="tab-featured-angles"
           type="button"
           role="tab"
           class="picker-tab-btn"
+          aria-controls="panel-featured-angles"
           [class.active]="activeTab() === 'angles'"
           [attr.aria-selected]="activeTab() === 'angles'"
+          [tabindex]="activeTab() === 'angles' ? 0 : -1"
           (click)="activeTab.set('angles')"
+          (keydown)="onTabKeyDown($event, 'angles')"
         >
           Official Angles ({{ officialAngles().length }})
         </button>
         <button
+          #tabBtn
+          id="tab-featured-uploaded"
           type="button"
           role="tab"
           class="picker-tab-btn"
+          aria-controls="panel-featured-uploaded"
           [class.active]="activeTab() === 'uploaded'"
           [attr.aria-selected]="activeTab() === 'uploaded'"
+          [tabindex]="activeTab() === 'uploaded' ? 0 : -1"
           (click)="activeTab.set('uploaded')"
+          (keydown)="onTabKeyDown($event, 'uploaded')"
         >
           My Photos ({{ entryPhotos().length }})
         </button>
         <button
+          #tabBtn
+          id="tab-featured-catalog"
           type="button"
           role="tab"
           class="picker-tab-btn"
+          aria-controls="panel-featured-catalog"
           [class.active]="activeTab() === 'catalog'"
           [attr.aria-selected]="activeTab() === 'catalog'"
+          [tabindex]="activeTab() === 'catalog' ? 0 : -1"
           (click)="activeTab.set('catalog')"
+          (keydown)="onTabKeyDown($event, 'catalog')"
         >
           Other Catalog Models
         </button>
       </div>
 
-      <div class="modal-body">
+      <div
+        class="modal-body"
+        role="tabpanel"
+        [id]="'panel-featured-' + activeTab()"
+        [attr.aria-labelledby]="'tab-featured-' + activeTab()"
+      >
         @if (activeTab() === 'angles') {
           @if (officialAngles().length > 0) {
             <div class="image-choice-grid">
@@ -130,8 +146,12 @@
             </p>
           }
         } @else {
+          <label for="featured-catalog-search" class="sr-only">
+            Search catalog miniature artwork
+          </label>
           <input
-            type="text"
+            id="featured-catalog-search"
+            type="search"
             class="input-control search-field"
             placeholder="Search any catalog miniature artwork (e.g., for kitbashes or proxies)..."
             [ngModel]="catalogSearch()"
@@ -172,5 +192,5 @@
         <button type="button" class="btn btn-ghost btn-sm" (click)="close()">Close</button>
       </div>
     </div>
-  </div>
-}
+  }
+</app-modal-dialog>

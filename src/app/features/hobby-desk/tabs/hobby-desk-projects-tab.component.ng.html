@@ -1,8 +1,10 @@
 <section class="tab-content">
   <div class="toolbar-row">
     <div class="search-box">
+      <label for="desk-projects-search" class="sr-only">Search your projects</label>
       <input
-        type="text"
+        id="desk-projects-search"
+        type="search"
         class="input-control"
         placeholder="Search your projects..."
         [ngModel]="projectSearch()"
@@ -11,7 +13,9 @@
     </div>
 
     <div class="toolbar-right">
+      <label for="desk-projects-sort" class="sr-only">Sort projects</label>
       <select
+        id="desk-projects-sort"
         class="input-control sort-select"
         [ngModel]="projectSort()"
         (ngModelChange)="projectSort.set($event)"
@@ -32,16 +36,24 @@
     </div>
   </div>
 
+  <p class="sr-only" aria-live="polite" aria-atomic="true">
+    Showing {{ filteredProjectCards().length }} projects
+  </p>
+
   @if (filteredProjectCards().length > 0) {
     <div class="projects-grid">
       @for (card of filteredProjectCards(); track card.project.id) {
-        <div class="project-card studio-card interactive" (click)="openProject(card.project.id)">
+        <div class="project-card studio-card interactive">
           <div class="project-thumb-wrap">
             <img [src]="card.coverUrl" [alt]="card.project.name" class="project-thumb" />
           </div>
 
           <div class="project-body">
-            <h3 class="project-title">{{ card.project.name }}</h3>
+            <h2 class="project-title">
+              <a [routerLink]="['/projects', card.project.id]" class="card-stretched-link">
+                {{ card.project.name }}
+              </a>
+            </h2>
             <div class="project-counts">
               <span>
                 {{ card.entryCount }} Model{{ card.entryCount === 1 ? '' : 's' }}
@@ -64,7 +76,7 @@
             }
           </div>
 
-          <div class="project-footer" (click)="$event.stopPropagation()">
+          <div class="project-footer">
             <button
               type="button"
               class="btn btn-sm btn-ghost"
@@ -88,9 +100,9 @@
   } @else {
     <div class="empty-state studio-card">
       <app-icon name="project" class="empty-ic" />
-      <h3>No Projects Yet</h3>
+      <h2>No Projects Yet</h2>
       <p>
-        Create a hobby project to group model recipes, color guides, painting checklists, and see an automatic rollup of required & missing paints.
+        Create a hobby project to group model recipes, color guides, painting checklists, and see an automatic rollup of required &amp; missing paints.
       </p>
       <div class="empty-btn-row">
         <button type="button" class="btn btn-gold" (click)="openNewProjectModal()">
@@ -105,41 +117,34 @@
 </section>
 
 <!-- Modal: Create New Project -->
-@if (showNewProjectModal()) {
-  <div class="modal-backdrop" (click)="closeNewProjectModal()">
-    <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Create New Hobby Project</h3>
-        <button
-          type="button"
-          class="close-btn"
-          aria-label="Close"
-          (click)="closeNewProjectModal()"
-        >
-          ✕
+<app-modal-dialog
+  [open]="showNewProjectModal()"
+  title="Create New Hobby Project"
+  size="sm"
+  closeLabel="Close create project dialog"
+  (closed)="closeNewProjectModal()"
+>
+  @if (showNewProjectModal()) {
+    <form class="modal-body" (ngSubmit)="createNewProject()">
+      <label class="field-label" for="new-hobby-project-name">Project Name</label>
+      <input
+        id="new-hobby-project-name"
+        name="newProjectName"
+        type="text"
+        class="input-control"
+        placeholder="e.g., Ultramarines 2nd Company, Spearhead Box..."
+        [ngModel]="newProjectName()"
+        (ngModelChange)="newProjectName.set($event)"
+        autofocus
+      />
+      <div class="modal-footer-btns">
+        <button type="button" class="btn btn-ghost" (click)="closeNewProjectModal()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-gold">
+          Create Project
         </button>
       </div>
-      <div class="modal-body">
-        <label class="field-label" for="new-hobby-project-name">Project Name</label>
-        <input
-          id="new-hobby-project-name"
-          type="text"
-          class="input-control"
-          placeholder="e.g., Ultramarines 2nd Company, Spearhead Box..."
-          [ngModel]="newProjectName()"
-          (ngModelChange)="newProjectName.set($event)"
-          (keyup.enter)="createNewProject()"
-        />
-        <div class="modal-footer-btns">
-          <button type="button" class="btn btn-ghost" (click)="closeNewProjectModal()">
-            Cancel
-          </button>
-          <button type="button" class="btn btn-gold" (click)="createNewProject()">
-            Create Project
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-}
-
+    </form>
+  }
+</app-modal-dialog>

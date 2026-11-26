@@ -1,0 +1,103 @@
+:host {
+  display: contents;
+}
+
+dialog.app-dialog {
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-modal);
+  width: var(--dialog-width, calc(100vw - 24px));
+  max-width: var(--dialog-max-width, min(820px, calc(100vw - 24px)));
+  height: var(--dialog-height, auto);
+  max-height: var(--dialog-max-height, 90dvh);
+  overflow: hidden;
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+dialog.app-dialog.size-sm {
+  --dialog-max-width: min(520px, calc(100vw - 24px));
+}
+
+dialog.app-dialog.size-md {
+  --dialog-max-width: min(640px, calc(100vw - 24px));
+}
+
+dialog.app-dialog.size-lg {
+  --dialog-max-width: min(820px, calc(100vw - 24px));
+}
+
+dialog.app-dialog.size-xl {
+  --dialog-max-width: min(960px, calc(100vw - 24px));
+}
+
+dialog.app-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transition-duration: 0.16s;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: scale(1);
+
+    @starting-style {
+      transform: scale(0.97);
+    }
+  }
+}
+
+dialog.app-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog.app-dialog::backdrop {
+  background-color: rgba(6, 7, 10, 0);
+  backdrop-filter: blur(0px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+  transition-property: background-color, backdrop-filter, display, overlay;
+  transition-duration: 0s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+dialog.app-dialog[open]::backdrop {
+  background-color: rgba(6, 7, 10, 0.78);
+  backdrop-filter: blur(6px);
+  transition-duration: 0.16s;
+
+  @starting-style {
+    background-color: rgba(6, 7, 10, 0);
+    backdrop-filter: blur(0px);
+  }
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--gold-bright);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.app-dialog[open],
+  dialog.app-dialog[open]::backdrop {
+    transition-duration: 0.1s;
+  }
+}
+
+@media (forced-colors: active) {
+  dialog.app-dialog {
+    border: 2px solid CanvasText;
+  }
+}

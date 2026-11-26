@@ -21,8 +21,10 @@
 
     <div class="toolbar-row converter-toolbar">
       <div class="search-box">
+        <label for="converter-search" class="sr-only">Search paints for equivalents</label>
         <input
-          type="text"
+          id="converter-search"
+          type="search"
           class="input-control"
           placeholder="Search any Citadel or 3rd-party paint to find equivalents..."
           [ngModel]="converterSearch()"
@@ -32,7 +34,9 @@
 
       @if (converterMode() === 'cross-brand') {
         <div class="toolbar-right">
+          <label for="converter-brand-filter" class="sr-only">Filter by 3rd-party brand</label>
           <select
+            id="converter-brand-filter"
             class="input-control filter-select"
             [ngModel]="converterTargetBrand()"
             (ngModelChange)="converterTargetBrand.set($event)"

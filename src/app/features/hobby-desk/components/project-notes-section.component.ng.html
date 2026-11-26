@@ -7,7 +7,7 @@
       (click)="expanded.set(!expanded())"
     >
       <span class="section-chevron" [class.expanded]="expanded()">▸</span>
-      <h2>📝 Notes & Checklists ({{ project().notes.length }})</h2>
+      <h2>📝 Notes &amp; Checklists ({{ project().notes.length }})</h2>
     </button>
     <button type="button" class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
       + New Note / Checklist
@@ -21,7 +21,7 @@
           @for (note of project().notes; track note.id) {
             <div class="note-card studio-card">
               <div class="note-header">
-                <h4>{{ note.title }}</h4>
+                <h3>{{ note.title }}</h3>
                 <div class="note-actions">
                   <button type="button" class="btn btn-ghost btn-sm" (click)="openNoteEditor(note)">
                     ✎ Edit
@@ -68,84 +68,110 @@
   }
 </section>
 
-<!-- Modal: Block Note & Checklist Editor (with CDK Drag & Drop) -->
-@if (editingNoteOpen()) {
-  <div class="modal-backdrop" (click)="closeNoteEditor()">
-    <div class="modal-panel note-editor-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>{{ editingNoteId() ? 'Edit Project Note' : 'New Project Note' }}</h3>
-        <button
-          type="button"
-          class="close-btn"
-          aria-label="Close"
-          (click)="closeNoteEditor()"
-        >
-          ✕
-        </button>
-      </div>
-      <div class="modal-body">
-        <label class="field-label" for="project-note-title">Note Title</label>
-        <input
-          id="project-note-title"
-          type="text"
-          class="input-control"
-          placeholder="e.g., Batch Painting Checklist, Basing Recipe..."
-          [ngModel]="noteTitleDraft()"
-          (ngModelChange)="noteTitleDraft.set($event)"
-        />
+<!-- Modal: Block Note & Checklist Editor (with CDK Drag & Drop + Keyboard Reorder) -->
+<app-modal-dialog
+  [open]="editingNoteOpen()"
+  [title]="editingNoteId() ? 'Edit Project Note' : 'New Project Note'"
+  size="md"
+  closeLabel="Close note editor"
+  (closed)="closeNoteEditor()"
+>
+  @if (editingNoteOpen()) {
+    <form class="modal-body" (ngSubmit)="saveNote()">
+      <label class="field-label" for="project-note-title">Note Title</label>
+      <input
+        id="project-note-title"
+        name="noteTitleDraft"
+        type="text"
+        class="input-control"
+        placeholder="e.g., Batch Painting Checklist, Basing Recipe..."
+        [ngModel]="noteTitleDraft()"
+        (ngModelChange)="noteTitleDraft.set($event)"
+        autofocus
+      />
 
-        <div class="blocks-toolbar">
-          <span class="field-label">Blocks (Drag handle ☰ to reorder):</span>
-          <div class="blocks-btn-group">
-            <button type="button" class="btn btn-secondary btn-sm" (click)="addNoteBlock('text')">
-              + Text Paragraph
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" (click)="addNoteBlock('checkbox')">
-              ☑ + Checklist Item
-            </button>
-          </div>
+      <div class="blocks-toolbar">
+        <span class="field-label">Blocks (Drag ☰ or use ↑/↓ buttons to reorder):</span>
+        <div class="blocks-btn-group">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="addNoteBlock('text')">
+            + Text Paragraph
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="addNoteBlock('checkbox')">
+            ☑ + Checklist Item
+          </button>
         </div>
+      </div>
 
-        <div cdkDropList class="blocks-list" (cdkDropListDropped)="dropNoteBlock($event)">
-          @for (block of noteBlocksDraft(); track block.id ?? idx; let idx = $index) {
-            <div class="block-item" cdkDrag>
-              <span class="drag-handle" cdkDragHandle title="Drag to reorder">☰</span>
-              @if (block.type === 'checkbox') {
-                <input
-                  type="checkbox"
-                  [ngModel]="block.checked ?? false"
-                  (ngModelChange)="updateBlockChecked(idx, $event)"
-                />
-              } @else {
-                <span class="block-tag">TXT</span>
-              }
-              <input
-                type="text"
-                class="input-control"
-                [placeholder]="block.type === 'checkbox' ? 'Checklist step...' : 'Note text...'"
-                [ngModel]="block.value"
-                (ngModelChange)="updateBlockValue(idx, $event)"
-              />
+      <div cdkDropList class="blocks-list" (cdkDropListDropped)="dropNoteBlock($event)">
+        @for (
+          block of noteBlocksDraft();
+          track block.id ?? idx;
+          let idx = $index;
+          let first = $first;
+          let last = $last
+        ) {
+          <div class="block-item" cdkDrag>
+            <span class="drag-handle" cdkDragHandle aria-hidden="true" title="Drag to reorder">☰</span>
+            <div class="block-reorder-btns">
               <button
                 type="button"
-                class="btn btn-ghost btn-sm danger-text"
-                aria-label="Remove block"
-                (click)="removeNoteBlock(idx)"
+                class="btn btn-ghost btn-sm block-move-btn"
+                [disabled]="first"
+                [attr.aria-label]="'Move block ' + (idx + 1) + ' up'"
+                title="Move up"
+                (click)="moveNoteBlock(idx, -1)"
               >
-                ✕
+                ↑
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm block-move-btn"
+                [disabled]="last"
+                [attr.aria-label]="'Move block ' + (idx + 1) + ' down'"
+                title="Move down"
+                (click)="moveNoteBlock(idx, 1)"
+              >
+                ↓
               </button>
             </div>
-          }
-        </div>
-
-        <div class="modal-footer-btns">
-          <button type="button" class="btn btn-ghost" (click)="closeNoteEditor()">
-            Cancel
-          </button>
-          <button type="button" class="btn btn-gold" (click)="saveNote()">Save Note</button>
-        </div>
+            @if (block.type === 'checkbox') {
+              <input
+                type="checkbox"
+                [ngModelOptions]="{ standalone: true }"
+                [attr.aria-label]="'Checklist item ' + (idx + 1) + ' completed'"
+                [ngModel]="block.checked ?? false"
+                (ngModelChange)="updateBlockChecked(idx, $event)"
+              />
+            } @else {
+              <span class="block-tag">TXT</span>
+            }
+            <input
+              type="text"
+              class="input-control"
+              [ngModelOptions]="{ standalone: true }"
+              [attr.aria-label]="block.type === 'checkbox' ? 'Checklist step ' + (idx + 1) : 'Note paragraph ' + (idx + 1)"
+              [placeholder]="block.type === 'checkbox' ? 'Checklist step...' : 'Note text...'"
+              [ngModel]="block.value"
+              (ngModelChange)="updateBlockValue(idx, $event)"
+            />
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm danger-text"
+              [attr.aria-label]="'Remove block ' + (idx + 1)"
+              (click)="removeNoteBlock(idx)"
+            >
+              ✕
+            </button>
+          </div>
+        }
       </div>
-    </div>
-  </div>
-}
 
+      <div class="modal-footer-btns">
+        <button type="button" class="btn btn-ghost" (click)="closeNoteEditor()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-gold">Save Note</button>
+      </div>
+    </form>
+  }
+</app-modal-dialog>

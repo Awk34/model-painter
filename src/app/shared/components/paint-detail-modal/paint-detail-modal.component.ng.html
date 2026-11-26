@@ -1,6 +1,12 @@
-@if (activePaintId(); as pid) {
-  <div class="modal-backdrop" (click)="close()">
-    <div class="modal-panel paint-modal" (click)="$event.stopPropagation()">
+<app-modal-dialog
+  [open]="activePaintId() !== null"
+  [ariaLabelledBy]="activePaintId() ? 'paint-detail-modal-title' : null"
+  size="lg"
+  style="--dialog-max-width: min(780px, calc(100vw - 24px))"
+  (closed)="close()"
+>
+  @if (activePaintId(); as pid) {
+    <div class="paint-modal-shell">
       <!-- Header -->
       <div class="modal-header">
         <div class="paint-header-main">
@@ -22,7 +28,7 @@
                 <span class="badge category-badge">{{ cp.category }}</span>
                 <span class="hex-pill">{{ getPaintRepresentativeHex(cp) }}</span>
               </div>
-              <h2 class="paint-title">{{ cp.name }}</h2>
+              <h2 id="paint-detail-modal-title" class="paint-title">{{ cp.name }}</h2>
             </div>
           } @else {
             @if (thirdPartyPaint(); as tp) {
@@ -38,18 +44,27 @@
                   }
                   <span class="hex-pill">{{ tp.hex }}</span>
                 </div>
-                <h2 class="paint-title">{{ tp.name }}</h2>
+                <h2 id="paint-detail-modal-title" class="paint-title">{{ tp.name }}</h2>
               </div>
             }
           }
         </div>
 
-        <button class="close-btn" (click)="close()" title="Close">✕</button>
+        <button
+          type="button"
+          class="close-btn"
+          aria-label="Close paint details"
+          title="Close"
+          (click)="close()"
+        >
+          ✕
+        </button>
       </div>
 
       <!-- Action Bar -->
       <div class="action-bar">
         <button
+          type="button"
           class="btn"
           [class.btn-owned]="userState.isOwned(pid)"
           [class.btn-secondary]="!userState.isOwned(pid)"
@@ -59,6 +74,7 @@
         </button>
 
         <button
+          type="button"
           class="btn"
           [class.btn-wishlist]="userState.isWishlisted(pid)"
           [class.btn-secondary]="!userState.isWishlisted(pid)"
@@ -80,6 +96,7 @@
             <div class="pentad-strip">
               @for (step of citadelPaint()!.warhammerProRange!; track step.id; let idx = $index) {
                 <button
+                  type="button"
                   class="pentad-step"
                   [class.current]="step.id === pid"
                   (click)="selectPaint(step.id)"
@@ -105,7 +122,7 @@
             <div class="equiv-grid">
               @for (eq of officialCitadelEquivalents(); track eq.id) {
                 <div class="equiv-card studio-card">
-                  <button class="equiv-main" (click)="selectPaint(eq.id)">
+                  <button type="button" class="equiv-main" (click)="selectPaint(eq.id)">
                     <app-paint-swatch [paint]="eq.paint" [hex]="eq.hex" />
                     <div class="equiv-info">
                       <span class="equiv-name">{{ eq.name }}</span>
@@ -113,6 +130,7 @@
                     </div>
                   </button>
                   <button
+                    type="button"
                     class="btn btn-sm"
                     [class.btn-owned]="userState.isOwned(eq.id)"
                     [class.btn-ghost]="!userState.isOwned(eq.id)"
@@ -142,7 +160,7 @@
               <div class="equiv-grid">
                 @for (m of crossBrandMatches(); track m.thirdPartyPaintId) {
                   <div class="equiv-card studio-card">
-                    <button class="equiv-main" (click)="selectPaint(m.thirdPartyPaintId)">
+                    <button type="button" class="equiv-main" (click)="selectPaint(m.thirdPartyPaintId)">
                       <app-paint-swatch
                         [paint]="resolveThirdPartySwatch(m.thirdPartyPaintId, m.category)"
                         [hex]="m.hex"
@@ -159,6 +177,7 @@
                       </div>
                     </button>
                     <button
+                      type="button"
                       class="btn btn-sm"
                       [class.btn-owned]="userState.isOwned(m.thirdPartyPaintId)"
                       [class.btn-ghost]="!userState.isOwned(m.thirdPartyPaintId)"
@@ -175,9 +194,12 @@
 
             <!-- Custom Override Linker -->
             <div class="override-box">
-              <label class="override-label">Link Custom or 3rd-Party Equivalent Override:</label>
+              <label for="paint-override-select" class="override-label">
+                Link Custom or 3rd-Party Equivalent Override:
+              </label>
               <div class="override-controls">
                 <select
+                  id="paint-override-select"
                   class="input-control"
                   [ngModel]="selectedOverridePaintId()"
                   (ngModelChange)="selectedOverridePaintId.set($event)"
@@ -188,6 +210,7 @@
                   }
                 </select>
                 <button
+                  type="button"
                   class="btn btn-secondary"
                   [disabled]="!selectedOverridePaintId()"
                   (click)="addCustomLink(pid)"
@@ -206,7 +229,7 @@
             <div class="equiv-grid">
               @for (cm of tp.citadelMatches; track cm.citadelPaintId) {
                 <div class="equiv-card studio-card">
-                  <button class="equiv-main" (click)="selectPaint(cm.citadelPaintId)">
+                  <button type="button" class="equiv-main" (click)="selectPaint(cm.citadelPaintId)">
                     <app-paint-swatch
                       [paint]="resolveCitadelSwatch(cm.citadelPaintId, cm.citadelCategory)"
                       [hex]="cm.citadelHex"
@@ -222,6 +245,7 @@
                     </div>
                   </button>
                   <button
+                    type="button"
                     class="btn btn-sm"
                     [class.btn-owned]="userState.isOwned(cm.citadelPaintId)"
                     [class.btn-ghost]="!userState.isOwned(cm.citadelPaintId)"
@@ -244,7 +268,7 @@
             @if (colorsUsingPaint().length > 0) {
               <div class="reverse-chip-list">
                 @for (col of colorsUsingPaint().slice(0, 24); track col.id) {
-                  <button class="reverse-chip" (click)="goToColor(col.id)">
+                  <button type="button" class="reverse-chip" (click)="goToColor(col.id)">
                     <span class="mini-dot" [style.background]="col.hex"></span>
                     <span>{{ col.name }}</span>
                   </button>
@@ -262,7 +286,11 @@
             @if (modelsUsingPaint().length > 0) {
               <div class="reverse-models-grid">
                 @for (mod of modelsUsingPaint().slice(0, 12); track mod.id) {
-                  <button class="reverse-model-card studio-card interactive" (click)="goToModel(mod.id)">
+                  <button
+                    type="button"
+                    class="reverse-model-card studio-card interactive"
+                    (click)="goToModel(mod.id)"
+                  >
                     <img
                       [src]="img.resolve(mod.localPrimaryImage, mod.primaryImage)"
                       [alt]="mod.name"
@@ -279,5 +307,5 @@
         }
       </div>
     </div>
-  </div>
-}
+  }
+</app-modal-dialog>

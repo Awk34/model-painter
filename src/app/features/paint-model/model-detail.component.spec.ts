@@ -236,6 +236,40 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
     expect(component.zoomModalOpen()).toBeFalse();
     expect(fixture.nativeElement.querySelector('.zoom-modal-panel')).toBeNull();
   });
+
+  it('opens zoom modal inside native <dialog>, supports keyboard zoom/pan shortcuts, and uses non-nested .cp-card links', async () => {
+    const fixture = await createComponentFixture();
+    const component = fixture.componentInstance;
+    const root = fixture.nativeElement as HTMLElement;
+
+    const cpCards = root.querySelectorAll('.cp-card');
+    expect(cpCards.length).toBe(2);
+    expect(root.querySelectorAll('.cp-card button a, .cp-card a button, .cp-card button button').length).toBe(0);
+    expect(root.querySelector('.colors-on-model h2')?.textContent).toContain('Colors On This Model');
+
+    component.openZoomModal();
+    fixture.detectChanges();
+
+    const dialog = root.querySelector('app-modal-dialog.zoom-modal-dialog dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeTrue();
+    expect(dialog.matches(':modal')).toBeTrue();
+    expect(dialog.getAttribute('aria-labelledby')).toBe('zoom-modal-title');
+
+    // Keyboard zoom & pan
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true }));
+    expect(component.zoomScale()).toBe(2.5);
+
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(component.panX()).toBe(32);
+
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(component.panY()).toBe(32);
+
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: '0', bubbles: true }));
+    expect(component.zoomScale()).toBe(1);
+    expect(component.panX()).toBe(0);
+    expect(component.panY()).toBe(0);
+  });
 });
 
 describe('ModelDetailComponent Project-Model Route Mode', () => {

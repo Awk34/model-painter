@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { UserUploadedPhoto } from '../../../core/models/catalog.models';
 import { UserMediaService } from '../../../core/services/user-media.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { UserPhotoGalleryComponent } from './user-photo-gallery.component';
@@ -35,12 +36,14 @@ function createPasteEvent(files: File[], target?: EventTarget): ClipboardEvent {
 
 describe('UserPhotoGalleryComponent clipboard paste', () => {
   let uploadPhotosSpy: jasmine.Spy;
+  let photosSignal: ReturnType<typeof signal<UserUploadedPhoto[]>>;
 
   beforeEach(async () => {
     uploadPhotosSpy = jasmine.createSpy('uploadPhotos').and.resolveTo({
       uploaded: [],
       errors: [],
     });
+    photosSignal = signal<UserUploadedPhoto[]>([]);
 
     await TestBed.configureTestingModule({
       imports: [UserPhotoGalleryComponent],
@@ -50,7 +53,7 @@ describe('UserPhotoGalleryComponent clipboard paste', () => {
           useValue: {
             allUploadedPhotos: signal([]),
             getPhotoQuotaLimit: () => 8,
-            getPhotosForTarget: () => [],
+            getPhotosForTarget: () => photosSignal(),
             uploadPhotos: uploadPhotosSpy,
             updatePhotoCaption: jasmine.createSpy('updatePhotoCaption'),
             deleteUserPhoto: jasmine.createSpy('deleteUserPhoto'),
@@ -190,5 +193,73 @@ describe('UserPhotoGalleryComponent clipboard paste', () => {
       relatedTarget: null,
     } as unknown as DragEvent);
     expect(fixture.componentInstance.dragActive()).toBeFalse();
+  });
+
+  it('opens lightbox in a native <dialog>, navigates with ArrowLeft/ArrowRight, renders <time>, and blocks document paste when a <dialog open> is present', async () => {
+    photosSignal.set([
+      {
+        id: 'ph1',
+        targetType: 'model',
+        targetId: 'model-1',
+        kind: 'showcase',
+        fileName: 'front.png',
+        mimeType: 'image/png',
+        sizeBytes: 1024,
+        storagePath: 'p/ph1.png',
+        caption: 'Front View',
+        createdAt: '2026-11-01T12:00:00Z',
+        isPrivate: false,
+      },
+      {
+        id: 'ph2',
+        targetType: 'model',
+        targetId: 'model-1',
+        kind: 'showcase',
+        fileName: 'back.png',
+        mimeType: 'image/png',
+        sizeBytes: 2048,
+        storagePath: 'p/ph2.png',
+        caption: 'Back View',
+        createdAt: '2026-11-02T12:00:00Z',
+        isPrivate: false,
+      },
+    ]);
+
+    const fixture = createComponent(true);
+    const root = fixture.nativeElement as HTMLElement;
+
+    const timeEls = root.querySelectorAll('time');
+    expect(timeEls.length).toBe(2);
+    expect(timeEls[0].getAttribute('datetime')).toBe('2026-11-01T12:00:00Z');
+
+    fixture.componentInstance.openLightbox(0);
+    fixture.detectChanges();
+
+    const dialog = root.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeTrue();
+    expect(dialog.matches(':modal')).toBeTrue();
+    const labelledBy = dialog.getAttribute('aria-labelledby');
+    expect(labelledBy).toBeTruthy();
+    expect(root.querySelector(`#${labelledBy}`)?.tagName).toBe('H2');
+    expect(root.querySelector(`#${labelledBy}`)?.textContent?.trim()).toBe('Front View');
+
+    // Global paste must be ignored while native <dialog open> is active
+    const png = new File([new Uint8Array([1, 2, 3])], 'image.png', { type: 'image/png' });
+    await fixture.componentInstance.onDocumentPaste(createPasteEvent([png], document.body));
+    expect(uploadPhotosSpy).not.toHaveBeenCalled();
+
+    // ArrowRight / ArrowLeft keyboard navigation
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.lightboxIndex()).toBe(1);
+    expect(root.querySelector(`#${labelledBy}`)?.textContent?.trim()).toBe('Back View');
+
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.lightboxIndex()).toBe(0);
+
+    fixture.componentInstance.closeLightbox();
+    fixture.detectChanges();
+    expect(dialog.open).toBeFalse();
   });
 });

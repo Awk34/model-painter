@@ -130,6 +130,8 @@
                     [style.top.%]="cp.point.y * 100"
                     [style.background]="cp.hex"
                     [title]="cp.name"
+                    [attr.aria-label]="'Inspect color point: ' + cp.name"
+                    [attr.aria-pressed]="selectedColorPointId() === cp.id"
                     (click)="selectColorPoint(cp.id)"
                   >
                     <span class="pin-ring"></span>
@@ -217,7 +219,7 @@
 
           @if (r.colorPoints.length) {
             <div class="colors-on-model">
-              <h3>Colors On This Model ({{ r.colorPoints.length }})</h3>
+              <h2>Colors On This Model ({{ r.colorPoints.length }})</h2>
               <p class="hint">Click a pin on the miniature or a color below to inspect or open its Color Guide.</p>
 
               <div class="cp-list">
@@ -225,21 +227,26 @@
                   <div
                     class="cp-card"
                     [class.active]="selectedColorPointId() === cp.id"
-                    (click)="selectColorPoint(cp.id)"
                   >
-                    <app-paint-swatch [paint]="cp" />
-                    <div class="cp-info">
-                      <strong>{{ cp.name }}</strong>
-                      <span>Normalized Pin ({{ (cp.point.x * 100) | number:'1.0-0' }}%, {{ (cp.point.y * 100) | number:'1.0-0' }}%)</span>
-                    </div>
+                    <button
+                      type="button"
+                      class="cp-select-btn"
+                      [attr.aria-pressed]="selectedColorPointId() === cp.id"
+                      (click)="selectColorPoint(cp.id)"
+                    >
+                      <app-paint-swatch [paint]="cp" />
+                      <span class="cp-info">
+                        <strong>{{ cp.name }}</strong>
+                        <span>Normalized Pin ({{ (cp.point.x * 100) | number:'1.0-0' }}%, {{ (cp.point.y * 100) | number:'1.0-0' }}%)</span>
+                      </span>
+                    </button>
                     @if (cp.colorId) {
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-secondary"
-                        (click)="$event.stopPropagation(); goToColor(cp.colorId)"
+                      <a
+                        [routerLink]="['/colors', cp.colorId]"
+                        class="btn btn-sm btn-secondary cp-guide-link"
                       >
                         Open Guide →
-                      </button>
+                      </a>
                     }
                   </div>
                 }
@@ -361,19 +368,19 @@
         }
       }
 
-      @if (zoomModalOpen()) {
-        <div
-          class="modal-backdrop zoom-modal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          [attr.aria-label]="r.name + ' photo zoom viewer'"
-          (click)="closeZoomModal()"
-        >
-          <div class="modal-panel zoom-modal-panel" (click)="$event.stopPropagation()">
+      <app-modal-dialog
+        class="zoom-modal-dialog"
+        [open]="zoomModalOpen()"
+        [ariaLabelledBy]="zoomModalOpen() ? 'zoom-modal-title' : null"
+        size="xl"
+        (closed)="closeZoomModal()"
+      >
+        @if (zoomModalOpen()) {
+          <div class="zoom-modal-panel">
             <div class="modal-header zoom-modal-header">
               <div class="zoom-title-group">
-                <h2>{{ projectModelEntry()?.customName || r.name }}</h2>
-                <span class="zoom-hint">Scroll or use controls to zoom • Drag to pan • Double-click to toggle zoom</span>
+                <h2 id="zoom-modal-title">{{ projectModelEntry()?.customName || r.name }}</h2>
+                <span class="zoom-hint">Scroll or +/− to zoom • Drag or Arrow keys to pan • 0 to reset • Double-click to toggle zoom</span>
               </div>
 
               <div class="zoom-toolbar">
@@ -421,6 +428,7 @@
                   class="close-btn"
                   aria-label="Close zoom view"
                   title="Close (Esc)"
+                  autofocus
                   (click)="closeZoomModal()"
                 >
                   ✕
@@ -430,6 +438,9 @@
 
             <div
               class="zoom-stage"
+              tabindex="0"
+              role="region"
+              aria-label="Zoomable model image. Use arrow keys to pan, plus and minus to zoom, 0 to reset."
               [class.can-pan]="zoomScale() > 1"
               [class.is-panning]="isPanning()"
               (wheel)="onZoomWheel($event)"
@@ -519,8 +530,8 @@
               </div>
             }
           </div>
-        </div>
-      }
+        }
+      </app-modal-dialog>
     } @else if (loadError()) {
       <div class="empty-box studio-card" role="alert">
         <h1>Model Guide Unavailable</h1>

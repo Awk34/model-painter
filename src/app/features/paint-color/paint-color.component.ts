@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { FinishStageKey } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
@@ -20,7 +20,6 @@ export class PaintColorComponent {
   readonly catalog = inject(CatalogService);
   readonly readinessService = inject(InventoryMatchService);
   readonly img = inject(ImageService);
-  private readonly router = inject(Router);
 
   readonly selectedGroup = signal<string | null>(null);
   readonly onlyBasing = signal<boolean>(false);
@@ -28,6 +27,10 @@ export class PaintColorComponent {
   readonly rangeFilter = signal<'all' | 'warhammer_colour' | 'warhammer_pro'>('all');
   readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing1' | 'sortReady'>('all');
+
+  readonly basingGuideCount = computed(
+    () => this.catalog.colors().filter((c) => c.guideType === 'basing').length
+  );
 
   readonly filteredColors = computed(() => {
     const grp = this.selectedGroup();
@@ -80,9 +83,5 @@ export class PaintColorComponent {
     this.rangeFilter.set('all');
     this.targetStage.set('base');
     this.readinessFilter.set('all');
-  }
-
-  openColor(id: string): void {
-    this.router.navigate(['/colors', id]);
   }
 }

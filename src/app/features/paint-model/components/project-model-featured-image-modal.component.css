@@ -1,9 +1,9 @@
-.featured-picker-panel {
-  max-width: 780px;
-  width: min(94vw, 780px);
-  max-height: 86dvh;
+.featured-picker-shell {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .picker-tabs {

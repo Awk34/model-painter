@@ -79,9 +79,11 @@
   gap: 14px;
 }
 .result-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
 }
 .c-swatch-bar {
   height: 64px;
@@ -108,11 +110,21 @@
   font-size: 0.85rem;
   flex: 1;
 }
+.r-body h3 {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  margin: 0;
+}
 .r-body span {
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
 .r-actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;

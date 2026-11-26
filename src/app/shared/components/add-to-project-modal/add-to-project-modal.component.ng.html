@@ -1,46 +1,47 @@
-@if (open()) {
-  <div class="modal-backdrop" (click)="close()">
-    <div class="modal-panel add-project-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Add "{{ itemName() }}" to Project</h3>
-        <button type="button" class="close-btn" aria-label="Close" (click)="close()">✕</button>
-      </div>
-      <div class="modal-body">
-        @if (userState.projects().length > 0) {
-          <div class="proj-list">
-            @for (p of userState.projects(); track p.id) {
-              <button
-                type="button"
-                class="proj-pick-btn studio-card"
-                (click)="addToExistingProject(p.id)"
-              >
-                <strong>{{ p.name }}</strong>
-                <span>{{ getActionLabel(p) }}</span>
-              </button>
-            }
-          </div>
-          <hr class="divider" />
-        }
-
-        <label class="field-label" for="new-proj-item-name">
-          Or Create a New Project with This {{ itemType() === 'model' ? 'Model' : 'Color' }}:
-        </label>
-        <div class="create-proj-row">
-          <input
-            id="new-proj-item-name"
-            type="text"
-            class="input-control"
-            placeholder="New project name..."
-            [ngModel]="newProjectName()"
-            (ngModelChange)="newProjectName.set($event)"
-            (keyup.enter)="createProjectWithItem()"
-          />
-          <button type="button" class="btn btn-gold" (click)="createProjectWithItem()">
-            Create & Add
-          </button>
+<app-modal-dialog
+  [open]="open()"
+  [title]="modalTitle()"
+  size="sm"
+  style="--dialog-max-width: min(480px, calc(100vw - 24px))"
+  closeLabel="Close add to project dialog"
+  (closed)="close()"
+>
+  @if (open()) {
+    <div class="modal-body">
+      @if (userState.projects().length > 0) {
+        <div class="proj-list">
+          @for (p of userState.projects(); track p.id) {
+            <button
+              type="button"
+              class="proj-pick-btn studio-card"
+              (click)="addToExistingProject(p.id)"
+            >
+              <strong>{{ p.name }}</strong>
+              <span>{{ getActionLabel(p) }}</span>
+            </button>
+          }
         </div>
-      </div>
-    </div>
-  </div>
-}
+        <hr class="divider" />
+      }
 
+      <label class="field-label" for="new-proj-item-name">
+        Or Create a New Project with This {{ itemType() === 'model' ? 'Model' : 'Color' }}:
+      </label>
+      <form class="create-proj-row" (ngSubmit)="createProjectWithItem()">
+        <input
+          id="new-proj-item-name"
+          name="newProjectName"
+          type="text"
+          class="input-control"
+          placeholder="New project name..."
+          [ngModel]="newProjectName()"
+          (ngModelChange)="newProjectName.set($event)"
+          autofocus
+        />
+        <button type="submit" class="btn btn-gold">
+          Create &amp; Add
+        </button>
+      </form>
+    </div>
+  }
+</app-modal-dialog>

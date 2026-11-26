@@ -68,10 +68,14 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
 
     const rows = fixture.nativeElement.querySelectorAll('.stage-ready-row');
     expect(rows.length).toBe(3);
-    rows[1].click();
+    expect(rows[1].querySelectorAll('button button, a button, button a').length).toBe(0);
+
+    const stageBtn: HTMLButtonElement | null = rows[1].querySelector('.stage-ready-btn');
+    expect(stageBtn).not.toBeNull();
+    stageBtn?.click();
     expect(clickedStage).toBe('detail');
 
-    const wishlistBtn: HTMLButtonElement | null = rows[1].querySelector('button');
+    const wishlistBtn: HTMLButtonElement | null = rows[1].querySelector('.stage-wish-btn');
     expect(wishlistBtn).not.toBeNull();
     wishlistBtn?.click();
     expect(wishlistedIds).toEqual(['p4']);

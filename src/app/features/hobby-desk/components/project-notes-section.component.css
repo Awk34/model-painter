@@ -2,10 +2,6 @@
   display: block;
 }
 
-.note-editor-modal {
-  max-width: 640px;
-}
-
 .notes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
@@ -25,6 +21,10 @@
   align-items: center;
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 8px;
+}
+
+.note-header h3 {
+  font-size: 1.05rem;
 }
 
 .note-actions {
@@ -95,6 +95,18 @@
   cursor: grab;
   color: var(--text-muted);
   padding: 0 4px;
+}
+
+.block-reorder-btns {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.block-move-btn {
+  padding: 2px 6px;
+  min-width: 26px;
+  min-height: 26px;
 }
 
 .block-tag {

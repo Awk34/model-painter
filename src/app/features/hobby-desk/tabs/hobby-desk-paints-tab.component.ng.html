@@ -34,8 +34,10 @@
 
   <div class="toolbar-row">
     <div class="search-box">
+      <label for="desk-paints-search" class="sr-only">Search paints</label>
       <input
-        type="text"
+        id="desk-paints-search"
+        type="search"
         class="input-control"
         placeholder="Search by paint name, hex code, brand, or SKU..."
         [ngModel]="paintSearch()"
@@ -44,7 +46,9 @@
     </div>
 
     <div class="toolbar-right">
+      <label for="desk-paints-brand" class="sr-only">Filter paints by brand</label>
       <select
+        id="desk-paints-brand"
         class="input-control filter-select"
         [ngModel]="selectedBrandFilter()"
         (ngModelChange)="selectedBrandFilter.set($event)"
@@ -57,7 +61,9 @@
         }
       </select>
 
+      <label for="desk-paints-category" class="sr-only">Filter paints by category</label>
       <select
+        id="desk-paints-category"
         class="input-control filter-select"
         [ngModel]="selectedCategoryFilter()"
         (ngModelChange)="selectedCategoryFilter.set($event)"
@@ -69,6 +75,10 @@
       </select>
     </div>
   </div>
+
+  <p class="sr-only" aria-live="polite" aria-atomic="true">
+    Showing {{ filteredPaints().length }} matching paints
+  </p>
 
   @if (filteredPaints().length > 0) {
     <div class="paints-grid">
@@ -122,7 +132,7 @@
     </div>
   } @else {
     <div class="empty-state studio-card">
-      <h3>No Matching Paints</h3>
+      <h2>No Matching Paints</h2>
       <p>
         @if (subMode() === 'inventory') {
           Your Inventory has no paints matching the current filters. Switch to "All Paints Catalogue" to add pots you own, or import your My Warhammer account.
@@ -142,110 +152,109 @@
 </section>
 
 <!-- Modal: Add Custom 3rd-Party Paint -->
-@if (showCustomPaintModal()) {
-  @let form = customPaintForm();
-  <div class="modal-backdrop" (click)="closeCustomPaintModal()">
-    <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Add Custom 3rd-Party Paint</h3>
-        <button
-          type="button"
-          class="close-btn"
-          aria-label="Close"
-          (click)="closeCustomPaintModal()"
+<app-modal-dialog
+  [open]="showCustomPaintModal()"
+  title="Add Custom 3rd-Party Paint"
+  size="sm"
+  closeLabel="Close custom paint dialog"
+  (closed)="closeCustomPaintModal()"
+>
+  @if (showCustomPaintModal()) {
+    @let form = customPaintForm();
+    <form class="modal-body" (ngSubmit)="saveCustomPaint()">
+      <div class="form-grid">
+        <div>
+          <label class="field-label" for="custom-paint-brand">Brand</label>
+          <input
+            id="custom-paint-brand"
+            name="brand"
+            type="text"
+            class="input-control"
+            placeholder="e.g., The Army Painter, Scale75, Kimera..."
+            [ngModel]="form.brand"
+            (ngModelChange)="patchCustomPaintForm({ brand: $event })"
+            autofocus
+          />
+        </div>
+        <div>
+          <label class="field-label" for="custom-paint-range">Range</label>
+          <input
+            id="custom-paint-range"
+            name="range"
+            type="text"
+            class="input-control"
+            placeholder="e.g., Warpaints Fanatic, Speedpaint 2.0..."
+            [ngModel]="form.range"
+            (ngModelChange)="patchCustomPaintForm({ range: $event })"
+          />
+        </div>
+        <div>
+          <label class="field-label" for="custom-paint-name">Paint Name</label>
+          <input
+            id="custom-paint-name"
+            name="name"
+            type="text"
+            class="input-control"
+            placeholder="e.g., Matt Black"
+            [ngModel]="form.name"
+            (ngModelChange)="patchCustomPaintForm({ name: $event })"
+          />
+        </div>
+        <div>
+          <label class="field-label" for="custom-paint-category">Category &amp; Hex Swatch</label>
+          <div class="category-swatch-row">
+            <select
+              id="custom-paint-category"
+              name="category"
+              class="input-control"
+              [ngModel]="form.category"
+              (ngModelChange)="patchCustomPaintForm({ category: $event })"
+            >
+              <option value="Base">Base</option>
+              <option value="Layer">Layer</option>
+              <option value="Shade">Shade / Wash</option>
+              <option value="Contrast">Contrast / Speedpaint</option>
+              <option value="Metallic">Metallic</option>
+              <option value="Technical">Technical / Effect</option>
+            </select>
+            <input
+              type="color"
+              name="hex"
+              class="color-picker"
+              aria-label="Custom paint hex color"
+              [ngModel]="form.hex"
+              (ngModelChange)="patchCustomPaintForm({ hex: $event })"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="equiv-field-wrap">
+        <label class="field-label" for="custom-paint-citadel-eq">
+          Equivalent Citadel Paint (Optional)
+        </label>
+        <select
+          id="custom-paint-citadel-eq"
+          name="citadelPaintId"
+          class="input-control"
+          [ngModel]="form.citadelPaintId"
+          (ngModelChange)="patchCustomPaintForm({ citadelPaintId: $event })"
         >
-          ✕
+          <option value="">-- None / Standalone --</option>
+          @for (cp of catalog.paints(); track cp.id) {
+            <option [value]="cp.id">{{ cp.name }} ({{ cp.category }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="modal-footer-btns">
+        <button type="button" class="btn btn-ghost" (click)="closeCustomPaintModal()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-gold">
+          Save &amp; Add to Inventory
         </button>
       </div>
-      <div class="modal-body">
-        <div class="form-grid">
-          <div>
-            <label class="field-label" for="custom-paint-brand">Brand</label>
-            <input
-              id="custom-paint-brand"
-              type="text"
-              class="input-control"
-              placeholder="e.g., The Army Painter, Scale75, Kimera..."
-              [ngModel]="form.brand"
-              (ngModelChange)="patchCustomPaintForm({ brand: $event })"
-            />
-          </div>
-          <div>
-            <label class="field-label" for="custom-paint-range">Range</label>
-            <input
-              id="custom-paint-range"
-              type="text"
-              class="input-control"
-              placeholder="e.g., Warpaints Fanatic, Speedpaint 2.0..."
-              [ngModel]="form.range"
-              (ngModelChange)="patchCustomPaintForm({ range: $event })"
-            />
-          </div>
-          <div>
-            <label class="field-label" for="custom-paint-name">Paint Name</label>
-            <input
-              id="custom-paint-name"
-              type="text"
-              class="input-control"
-              placeholder="e.g., Matt Black"
-              [ngModel]="form.name"
-              (ngModelChange)="patchCustomPaintForm({ name: $event })"
-            />
-          </div>
-          <div>
-            <label class="field-label" for="custom-paint-category">Category & Hex Swatch</label>
-            <div class="category-swatch-row">
-              <select
-                id="custom-paint-category"
-                class="input-control"
-                [ngModel]="form.category"
-                (ngModelChange)="patchCustomPaintForm({ category: $event })"
-              >
-                <option value="Base">Base</option>
-                <option value="Layer">Layer</option>
-                <option value="Shade">Shade / Wash</option>
-                <option value="Contrast">Contrast / Speedpaint</option>
-                <option value="Metallic">Metallic</option>
-                <option value="Technical">Technical / Effect</option>
-              </select>
-              <input
-                type="color"
-                class="color-picker"
-                aria-label="Custom paint hex color"
-                [ngModel]="form.hex"
-                (ngModelChange)="patchCustomPaintForm({ hex: $event })"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div class="equiv-field-wrap">
-          <label class="field-label" for="custom-paint-citadel-eq">
-            Equivalent Citadel Paint (Optional)
-          </label>
-          <select
-            id="custom-paint-citadel-eq"
-            class="input-control"
-            [ngModel]="form.citadelPaintId"
-            (ngModelChange)="patchCustomPaintForm({ citadelPaintId: $event })"
-          >
-            <option value="">-- None / Standalone --</option>
-            @for (cp of catalog.paints(); track cp.id) {
-              <option [value]="cp.id">{{ cp.name }} ({{ cp.category }})</option>
-            }
-          </select>
-        </div>
-
-        <div class="modal-footer-btns">
-          <button type="button" class="btn btn-ghost" (click)="closeCustomPaintModal()">
-            Cancel
-          </button>
-          <button type="button" class="btn btn-gold" (click)="saveCustomPaint()">
-            Save & Add to Inventory
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-}
-
+    </form>
+  }
+</app-modal-dialog>

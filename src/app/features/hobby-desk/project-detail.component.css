@@ -85,9 +85,9 @@
 }
 
 .attached-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  cursor: pointer;
 }
 
 .attached-img-wrap {
@@ -132,6 +132,11 @@
   gap: 4px;
 }
 
+.attached-body h3 {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
 .attached-body p {
   font-family: var(--font-sans);
   font-size: 0.78rem;
@@ -168,6 +173,8 @@
 }
 
 .attached-footer {
+  position: relative;
+  z-index: 1;
   padding: 8px 12px;
   border-top: 1px solid var(--border-subtle);
   display: flex;

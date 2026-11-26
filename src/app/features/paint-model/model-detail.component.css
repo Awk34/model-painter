@@ -259,7 +259,7 @@
   margin-top: 4px;
 }
 
-.colors-on-model h3 {
+.colors-on-model h2 {
   font-size: 1.1rem;
 }
 
@@ -278,6 +278,7 @@
 }
 
 .cp-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -285,7 +286,38 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  cursor: pointer;
+}
+
+.cp-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.cp-select-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.cp-guide-link {
+  position: relative;
+  z-index: 1;
+}
+
+@supports selector(:has(*)) {
+  .cp-card:has(.cp-select-btn:focus-visible) {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 2px;
+  }
+
+  .cp-select-btn:focus-visible {
+    outline: none;
+  }
 }
 
 .cp-card.active {
@@ -311,11 +343,19 @@
 }
 
 /* Zoom Lightbox Modal */
+app-modal-dialog.zoom-modal-dialog {
+  --dialog-width: 95vw;
+  --dialog-max-width: min(1180px, 95vw);
+  --dialog-height: min(88dvh, 920px);
+  --dialog-max-height: 92dvh;
+}
+
 .zoom-modal-panel {
-  max-width: min(1180px, 95vw);
-  width: 95vw;
-  height: min(88dvh, 920px);
-  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .zoom-modal-header {

@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { PaintModalService } from '../../core/services/paint-modal.service';
@@ -25,7 +25,6 @@ export class SearchComponent {
   readonly userState = inject(UserStateService);
   readonly paintModal = inject(PaintModalService);
   readonly img = inject(ImageService);
-  readonly router = inject(Router);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
 
   readonly query = signal<string>('');

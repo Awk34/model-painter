@@ -19,7 +19,7 @@
   max-width: 680px;
 }
 
-.onboarding-text h3 {
+.onboarding-text h2 {
   color: var(--gold-bright);
   font-size: 1.15rem;
   margin-bottom: 4px;
@@ -51,7 +51,7 @@
   min-width: 0;
 }
 
-.settings-card h3 {
+.settings-card h2 {
   font-size: 1.25rem;
 }
 
@@ -266,6 +266,11 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
+}
+
+.bundle-name {
+  overflow-wrap: anywhere;
   min-width: 0;
 }
 

@@ -39,6 +39,7 @@
 }
 
 .stage-ready-row {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -46,8 +47,31 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-xs);
-  cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.stage-ready-btn {
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+}
+
+.stage-ready-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+@supports selector(:has(*)) {
+  .stage-ready-row:has(.stage-ready-btn:focus-visible) {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 2px;
+  }
+
+  .stage-ready-btn:focus-visible {
+    outline: none;
+  }
 }
 
 .stage-ready-row:hover {
@@ -98,6 +122,8 @@
 }
 
 .stage-wish-btn {
+  position: relative;
+  z-index: 1;
   padding: 4px 10px;
   min-block-size: 24px;
   min-inline-size: 24px;

@@ -15,15 +15,15 @@ import {
   isEditableElement,
   readClipboardImageFiles,
 } from '../../../core/utils/clipboard-image.util';
+import { AppModalDialogComponent } from '../modal-dialog/modal-dialog.component';
 
 @Component({
   selector: 'app-user-photo-gallery',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, AppModalDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './user-photo-gallery.component.ng.html',
   styleUrl: './user-photo-gallery.component.css',
   host: {
-    '(document:keydown.escape)': 'closeLightbox()',
     '(document:paste)': 'onDocumentPaste($event)',
   },
 })
@@ -61,6 +61,10 @@ export class UserPhotoGalleryComponent {
 
   readonly captionInputId = computed(
     () => `photo-caption-${this.targetType()}-${this.kind()}-${this.targetId()}`
+  );
+
+  readonly lightboxTitleId = computed(
+    () => `photo-lightbox-title-${this.targetType()}-${this.kind()}-${this.targetId()}`
   );
 
   readonly acceptAttr = USER_LIMITS.ALLOWED_IMAGE_MIME_TYPES.join(',');
@@ -269,5 +273,18 @@ export class UserPhotoGalleryComponent {
       return;
     }
     this.lightboxIndex.set((idx + 1) % len);
+  }
+
+  onLightboxKeyDown(event: KeyboardEvent): void {
+    if (!this.activeLightboxPhoto() || this.photos().length <= 1 || isEditableElement(event.target)) {
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.prevPhoto();
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.nextPhoto();
+    }
   }
 }

@@ -3,19 +3,25 @@
     <div
       class="tier-block"
       [class.highlighted]="activeTier() === tierBlock.key"
-      (click)="activeTier.set(tierBlock.key)"
     >
-      <div class="tier-block-header">
-        <h3>{{ tierBlock.label }}</h3>
-        <span class="tier-sub">
-          {{ tierBlock.steps.length }} Step{{ tierBlock.steps.length === 1 ? '' : 's' }}
-        </span>
-      </div>
+      <h2 class="tier-block-header">
+        <button
+          type="button"
+          class="tier-block-header-btn"
+          [attr.aria-pressed]="activeTier() === tierBlock.key"
+          (click)="activeTier.set(tierBlock.key)"
+        >
+          <span class="tier-title">{{ tierBlock.label }}</span>
+          <span class="tier-sub">
+            {{ tierBlock.steps.length }} Step{{ tierBlock.steps.length === 1 ? '' : 's' }}
+          </span>
+        </button>
+      </h2>
 
       <div class="stage-steps">
         @for (st of tierBlock.steps; track st.id) {
           @if (st.paint; as sp) {
-            <div class="stage-step-row" (click)="$event.stopPropagation()">
+            <div class="stage-step-row">
               <button
                 type="button"
                 class="step-paint-btn"
@@ -60,6 +66,7 @@
                     class="btn btn-sm"
                     [class.btn-wishlist]="userState.isWishlisted(sp.id)"
                     [class.btn-ghost]="!userState.isWishlisted(sp.id)"
+                    [attr.aria-label]="(userState.isWishlisted(sp.id) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + sp.name"
                     (click)="userState.toggleWishlist(sp.id)"
                   >
                     {{ userState.isWishlisted(sp.id) ? '★' : '☆' }}

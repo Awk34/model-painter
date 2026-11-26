@@ -165,4 +165,26 @@ describe('AccountSettingsPanelComponent', () => {
     fixture.detectChanges();
     expect(component.avatarFailed()).toBeFalse();
   });
+
+  it('renders semantic auth form with autocomplete, role="alert" error, <h2>/<h3> headings, and no stale snapshot counts', () => {
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+
+    const emailInput = root.querySelector('#auth-email') as HTMLInputElement;
+    const passwordInput = root.querySelector('#auth-password') as HTMLInputElement;
+    expect(emailInput.getAttribute('autocomplete')).toBe('email');
+    expect(emailInput.labels?.length).toBe(1);
+    expect(passwordInput.getAttribute('autocomplete')).toBe('current-password');
+    expect(passwordInput.labels?.length).toBe(1);
+    expect(root.querySelector('form.auth-form button[type="submit"]')).not.toBeNull();
+
+    component.authError.set('Invalid credentials');
+    fixture.detectChanges();
+    const alertEl = root.querySelector('form.auth-form [role="alert"]');
+    expect(alertEl?.textContent?.trim()).toBe('Invalid credentials');
+
+    const h2s = root.querySelectorAll('h2');
+    expect(h2s.length).toBeGreaterThanOrEqual(6);
+    expect(root.textContent ?? '').not.toContain('64 owned paints');
+  });
 });

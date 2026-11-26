@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { FactionNode, FinishStageKey, GameSystem } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
@@ -23,7 +23,6 @@ export class PaintModelComponent {
   readonly readinessService = inject(InventoryMatchService);
   readonly userState = inject(UserStateService);
   readonly img = inject(ImageService);
-  private readonly router = inject(Router);
 
   readonly selectedGameId = signal<string | null>(null);
   readonly selectedParentFactionId = signal<string | null>(null);
@@ -152,9 +151,5 @@ export class PaintModelComponent {
     this.targetStage.set('base');
     this.readinessFilter.set('all');
     this.visibleLimit.set(60);
-  }
-
-  openModel(id: string): void {
-    this.router.navigate(['/models', id]);
   }
 }

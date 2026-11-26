@@ -213,4 +213,27 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.avatarUrl()).toBe('https://example.invalid/b.png');
   });
+
+  it('renders skip link targeting #main-content, unique nav aria-labels, semantic links, and no stale boot counts', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const skipLink = root.querySelector('a.skip-link[href="#main-content"]') as HTMLAnchorElement | null;
+    const mainEl = root.querySelector('main#main-content[tabindex="-1"]') as HTMLElement | null;
+    expect(skipLink).not.toBeNull();
+    expect(mainEl).not.toBeNull();
+
+    skipLink?.click();
+    expect(document.activeElement).toBe(mainEl);
+
+    const navs = Array.from(root.querySelectorAll('nav'));
+    expect(navs.length).toBe(2);
+    const navLabels = navs.map((n) => n.getAttribute('aria-label'));
+    expect(navLabels[0]).toBeTruthy();
+    expect(navLabels[1]).toBeTruthy();
+    expect(navLabels[0]).not.toBe(navLabels[1]);
+
+    expect(root.querySelectorAll('div[routerLink], div[routerlink]').length).toBe(0);
+    expect(root.querySelector('a.brand-box')).not.toBeNull();
+    expect(root.querySelector('a.sidebar-user-widget')).not.toBeNull();
+    expect(root.textContent ?? '').not.toContain('4,531');
+  });
 });

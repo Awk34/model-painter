@@ -1,0 +1,26 @@
+<dialog
+  #dialogEl
+  [class]="'app-dialog size-' + size()"
+  [attr.closedby]="closeOnBackdrop() ? 'any' : 'closerequest'"
+  [attr.aria-label]="ariaLabel() || null"
+  [attr.aria-labelledby]="resolvedAriaLabelledBy()"
+  (close)="onDialogClose()"
+  (pointerdown)="onDialogPointerDown($event)"
+  (pointerup)="onDialogPointerUp($event)"
+  (pointercancel)="onDialogPointerCancel()"
+>
+  @if (title(); as heading) {
+    <div class="modal-header">
+      <h2 [id]="resolvedTitleId()" class="modal-title">{{ heading }}</h2>
+      <button
+        type="button"
+        class="close-btn"
+        [attr.aria-label]="closeLabel()"
+        (click)="requestClose()"
+      >
+        ✕
+      </button>
+    </div>
+  }
+  <ng-content />
+</dialog>

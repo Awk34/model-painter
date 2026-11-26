@@ -9,9 +9,9 @@
 }
 
 .project-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  cursor: pointer;
 }
 
 .project-thumb-wrap {
@@ -50,6 +50,8 @@
 }
 
 .project-footer {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: flex-end;
   gap: 8px;

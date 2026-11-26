@@ -26,31 +26,35 @@
 
     <!-- Project Hero Banner -->
     <header class="project-hero studio-card">
-      <div
+      <button
+        type="button"
         class="hero-thumb-box"
+        aria-label="Change project thumbnail"
         title="Click to change thumbnail"
         (click)="activePickerModal.set('thumbnail')"
       >
         <img [src]="coverUrl()" [alt]="proj.name" />
-      </div>
+      </button>
 
       <div class="hero-info">
         @if (editingTitle()) {
-          <div class="title-edit-row">
+          <form class="title-edit-row" (ngSubmit)="saveTitle(proj.id)">
+            <label for="project-title-input" class="sr-only">Project name</label>
             <input
+              id="project-title-input"
+              name="titleDraft"
               type="text"
               class="input-control"
               [ngModel]="titleDraft()"
               (ngModelChange)="titleDraft.set($event)"
-              (keyup.enter)="saveTitle(proj.id)"
             />
-            <button type="button" class="btn btn-gold btn-sm" (click)="saveTitle(proj.id)">
+            <button type="submit" class="btn btn-gold btn-sm">
               Save
             </button>
             <button type="button" class="btn btn-ghost btn-sm" (click)="editingTitle.set(false)">
               Cancel
             </button>
-          </div>
+          </form>
         } @else {
           <div class="title-display-row">
             <h1>{{ proj.name }}</h1>
@@ -74,7 +78,7 @@
           <span>•</span>
           <span>{{ proj.notes.length }} / {{ userState.limits.MAX_NOTES_PER_PROJECT }} Notes</span>
           <span>•</span>
-          <span>Updated {{ proj.updatedAt | date:'mediumDate' }}</span>
+          <span>Updated <time [attr.datetime]="proj.updatedAt">{{ proj.updatedAt | date:'mediumDate' }}</time></span>
         </div>
 
         <app-stage-readiness-bars
@@ -117,10 +121,7 @@
           @if (attachedModels().length > 0) {
             <div class="cards-grid">
               @for (item of attachedModels(); track item.entry.id) {
-                <div
-                  class="attached-card studio-card interactive"
-                  (click)="goToProjectModel(proj.id, item.entry.id)"
-                >
+                <div class="attached-card studio-card interactive">
                   <div class="attached-img-wrap">
                     <img [src]="item.imageUrl" [alt]="item.displayName" />
                     @if (item.entry.quantity > 1) {
@@ -133,7 +134,14 @@
                     }
                   </div>
                   <div class="attached-body">
-                    <h4>{{ item.displayName }}</h4>
+                    <h3>
+                      <a
+                        [routerLink]="['/projects', proj.id, 'models', item.entry.id]"
+                        class="card-stretched-link"
+                      >
+                        {{ item.displayName }}
+                      </a>
+                    </h3>
                     @if (item.hasCustomName) {
                       <p class="catalog-subtitle">{{ item.catalogName }}</p>
                     }
@@ -154,8 +162,8 @@
                       </div>
                     }
                   </div>
-                  <div class="attached-footer model-card-footer" (click)="$event.stopPropagation()">
-                    <div class="card-qty-stepper" aria-label="Model quantity">
+                  <div class="attached-footer model-card-footer">
+                    <div class="card-qty-stepper">
                       <button
                         type="button"
                         class="qty-step-btn"
@@ -180,6 +188,7 @@
                       <button
                         type="button"
                         class="btn btn-ghost btn-sm"
+                        [attr.aria-label]="'Duplicate ' + item.displayName"
                         title="Duplicate as separate model entry"
                         (click)="duplicateModelEntry(proj.id, item.entry.id)"
                       >
@@ -188,6 +197,7 @@
                       <button
                         type="button"
                         class="btn btn-ghost btn-sm danger-text"
+                        [attr.aria-label]="'Remove ' + item.displayName"
                         (click)="userState.removeModelFromProject(proj.id, item.entry.id)"
                       >
                         Remove
@@ -245,7 +255,7 @@
             heading="My Painted Project Photos"
             description="Upload photos of your finished squad, army display, or work-in-progress miniatures. Click 'Set Cover' on any photo to use it as this project's cover."
             [allowSetCover]="true"
-            [allowGlobalPaste]="true"
+            [allowGlobalPaste]="!activePickerModal() && !notesEditorOpen()"
             [activeCoverPhotoId]="proj.coverPhotoId"
             (selectCover)="onSelectCoverPhoto(proj.id, $event)"
           />
@@ -289,16 +299,21 @@
           @if (attachedColors().length > 0) {
             <div class="cards-grid">
               @for (c of attachedColors(); track c.id) {
-                <div class="attached-card studio-card interactive" (click)="goToColor(c.id)">
+                <div class="attached-card studio-card interactive">
                   <div class="color-banner" [style.background]="c.hex"></div>
                   <div class="attached-body">
-                    <h4>{{ c.name }}</h4>
+                    <h3>
+                      <a [routerLink]="['/colors', c.id]" class="card-stretched-link">
+                        {{ c.name }}
+                      </a>
+                    </h3>
                     <p>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</p>
                   </div>
-                  <div class="attached-footer" (click)="$event.stopPropagation()">
+                  <div class="attached-footer">
                     <button
                       type="button"
                       class="btn btn-ghost btn-sm danger-text"
+                      [attr.aria-label]="'Remove ' + c.name"
                       (click)="userState.removeColorFromProject(proj.id, c.id)"
                     >
                       Remove
@@ -324,7 +339,11 @@
     </section>
 
     <!-- SECTION 5: PROJECT NOTES & CHECKLISTS -->
-    <app-project-notes-section [project]="proj" [(expanded)]="notesExpanded" />
+    <app-project-notes-section
+      [project]="proj"
+      [(expanded)]="notesExpanded"
+      [(editingNoteOpen)]="notesEditorOpen"
+    />
   </div>
 
   <app-project-picker-modal
@@ -334,7 +353,7 @@
   />
 } @else {
   <div class="empty-box studio-card">
-    <h3>Project Not Found</h3>
+    <h1>Project Not Found</h1>
     <a routerLink="/hobby-desk" class="btn btn-gold">Return to Hobby Desk</a>
   </div>
 }

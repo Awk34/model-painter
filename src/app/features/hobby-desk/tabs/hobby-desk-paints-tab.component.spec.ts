@@ -103,5 +103,19 @@ describe('HobbyDeskPaintsTabComponent custom paint modal draft reset', () => {
       hex: '#3b82f6',
       citadelPaintId: '',
     });
+
+    // Verify native <dialog>, <form>, and labeled toolbar controls
+    const root = fixture.nativeElement as HTMLElement;
+    const searchInput = root.querySelector('#desk-paints-search') as HTMLInputElement;
+    expect(searchInput.type).toBe('search');
+    expect(searchInput.labels?.length).toBe(1);
+    expect(root.querySelector('[aria-live="polite"]')?.textContent).toContain('matching paints');
+
+    comp.openCustomPaintModal();
+    fixture.detectChanges();
+    const dialog = root.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeTrue();
+    expect(dialog.getAttribute('aria-labelledby')).toBeTruthy();
+    expect(dialog.querySelector('form button[type="submit"]')).not.toBeNull();
   });
 });
