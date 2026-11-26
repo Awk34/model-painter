@@ -10,11 +10,12 @@ import {
   getCitadelBrandLabel,
   matchesModelSearch,
 } from '../../core/utils/catalog-filter.util';
+import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint-swatch.component';
 
 @Component({
   selector: 'app-search',
-  imports: [DecimalPipe, FormsModule, RouterModule, PaintSwatchComponent],
+  imports: [DecimalPipe, FormsModule, RouterModule, AppIconComponent, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './search.component.ng.html',
   styleUrl: './search.component.css',

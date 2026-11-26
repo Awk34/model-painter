@@ -74,7 +74,7 @@
 
 .conv-meta {
   font-family: var(--font-sans);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
@@ -129,7 +129,7 @@
 
 .conv-eq-brand {
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 

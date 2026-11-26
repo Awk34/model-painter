@@ -1,6 +1,6 @@
 .picker-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
   gap: 10px;
   max-height: 400px;
   overflow-y: auto;
@@ -30,6 +30,6 @@
 }
 
 .picker-info span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }

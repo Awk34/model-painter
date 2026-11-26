@@ -3,13 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { InventoryMatchService } from '../../../core/services/inventory-match.service';
 import { UserStateService } from '../../../core/services/user-state.service';
+import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
 import { StageReadinessPillsComponent } from '../../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
 
 export type ProjectSortMode = 'updated' | 'created' | 'alpha';
 
 @Component({
   selector: 'app-hobby-desk-projects-tab',
-  imports: [FormsModule, RouterModule, StageReadinessPillsComponent],
+  imports: [FormsModule, RouterModule, AppIconComponent, StageReadinessPillsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-projects-tab.component.ng.html',
   styleUrl: './hobby-desk-projects-tab.component.css',

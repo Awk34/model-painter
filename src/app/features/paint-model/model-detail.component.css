@@ -80,10 +80,9 @@
   color: var(--text-primary);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
   transition:
-    transform 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease,
-    background 0.15s ease;
+    background-color 0.15s ease;
 }
 
 .photo-zoom-btn:hover,
@@ -91,8 +90,20 @@
   border-color: var(--gold-bright);
   color: var(--gold-bright);
   background: rgba(19, 22, 28, 0.95);
-  transform: scale(1.06);
-  outline: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .photo-zoom-btn {
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .photo-zoom-btn:hover,
+  .photo-zoom-btn:focus-visible {
+    transform: scale(1.06);
+  }
 }
 
 .color-pin {
@@ -103,13 +114,22 @@
   border: 2px solid #ffffff;
   transform: translate(-50%, -50%);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease;
   z-index: 5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .color-pin {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .color-pin:hover,
+  .color-pin.active {
+    transform: translate(-50%, -50%) scale(1.35);
+  }
 }
 
 .color-pin:hover,
 .color-pin.active {
-  transform: translate(-50%, -50%) scale(1.35);
   border-color: var(--gold-bright);
   box-shadow: 0 0 0 4px rgba(237, 179, 4, 0.45);
   z-index: 10;
@@ -140,19 +160,27 @@
   width: 76px;
   height: 76px;
   border-radius: var(--radius-xs);
-  border: 2px solid var(--border-subtle);
+  border: 2px solid var(--border-strong);
   background: var(--bg-void);
   padding: 4px;
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .angle-thumb:hover,
 .angle-thumb:focus-visible {
-  border-color: var(--border-strong);
-  transform: translateY(-1px);
-  outline: none;
+  border-color: var(--gold-border);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .angle-thumb {
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .angle-thumb:hover,
+  .angle-thumb:focus-visible {
+    transform: translateY(-1px);
+  }
 }
 
 .angle-thumb.active {
@@ -176,7 +204,7 @@
   position: absolute;
   top: 2px;
   right: 3px;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   line-height: 1;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
@@ -255,7 +283,7 @@
   gap: 10px;
   padding: 8px 12px;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
@@ -274,7 +302,7 @@
 }
 
 .cp-info span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
@@ -286,8 +314,8 @@
 .zoom-modal-panel {
   max-width: min(1180px, 95vw);
   width: 95vw;
-  height: min(88vh, 920px);
-  max-height: 92vh;
+  height: min(88dvh, 920px);
+  max-height: 92dvh;
 }
 
 .zoom-modal-header {
@@ -366,7 +394,7 @@
 .zoom-stage-img {
   display: block;
   max-width: 100%;
-  max-height: calc(88vh - 140px);
+  max-height: calc(88dvh - 140px);
   object-fit: contain;
   pointer-events: none;
 }
@@ -391,4 +419,13 @@
   padding: 12px 18px;
   background: var(--bg-void);
   border-top: 1px solid var(--border-subtle);
+}
+
+@media (forced-colors: active) {
+  .cp-card.active,
+  .angle-thumb.active,
+  .color-pin.active {
+    border: 2px solid Highlight;
+    outline: 2px solid Highlight;
+  }
 }

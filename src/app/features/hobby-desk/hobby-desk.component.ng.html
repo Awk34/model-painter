@@ -3,7 +3,7 @@
   <header class="desk-header">
     <div class="desk-title-group">
       @if (isAccountPage()) {
-        <img src="/icons/ic_profile.svg" alt="" class="desk-icon" />
+        <app-icon name="profile" class="desk-icon" />
         <div>
           <h1>Account & Data Sync</h1>
           <p class="subtitle">
@@ -11,7 +11,7 @@
           </p>
         </div>
       } @else {
-        <img src="/icons/ic_hobby_desk.svg" alt="" class="desk-icon" />
+        <app-icon name="hobby_desk" class="desk-icon" />
         <div>
           <h1>Hobby Desk</h1>
           <p class="subtitle">
@@ -89,7 +89,7 @@
         [class.active]="activeTab() === 'projects'"
         (click)="activeTab.set('projects')"
       >
-        <img src="/icons/ic_project.svg" alt="" class="tab-ic" />
+        <app-icon name="project" class="tab-ic" />
         <span>My Projects ({{ userState.projects().length }})</span>
       </button>
 
@@ -99,7 +99,7 @@
         [class.active]="activeTab() === 'models'"
         (click)="activeTab.set('models')"
       >
-        <img src="/icons/ic_models.svg" alt="" class="tab-ic" />
+        <app-icon name="models" class="tab-ic" />
         <span>My Models ({{ userState.state().inventoryModelIds.length }} / {{ userState.state().wishlistModelIds.length }}★)</span>
       </button>
 
@@ -109,7 +109,7 @@
         [class.active]="activeTab() === 'paints'"
         (click)="activeTab.set('paints')"
       >
-        <img src="/icons/ic_paint.svg" alt="" class="tab-ic" />
+        <app-icon name="paint" class="tab-ic" />
         <span>My Paints & Catalogue</span>
       </button>
 
@@ -119,7 +119,7 @@
         [class.active]="activeTab() === 'converter'"
         (click)="activeTab.set('converter')"
       >
-        <img src="/icons/ic_compare.svg" alt="" class="tab-ic" />
+        <app-icon name="compare" class="tab-ic" />
         <span>Cross-Brand Converter</span>
       </button>
     </nav>

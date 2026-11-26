@@ -84,12 +84,18 @@
 }
 
 .step-paint-info span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
 .step-paint-actions {
   display: flex;
   gap: 6px;
+}
+
+@media (forced-colors: active) {
+  .tier-block.highlighted {
+    border: 2px solid Highlight;
+  }
 }
 

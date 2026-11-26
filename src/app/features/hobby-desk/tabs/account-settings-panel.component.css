@@ -39,7 +39,7 @@
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
   gap: 18px;
 }
 
@@ -85,6 +85,11 @@
   object-fit: cover;
   border: 1px solid var(--gold-border);
   background: var(--bg-elevated);
+}
+
+.account-avatar.placeholder {
+  padding: 6px;
+  color: var(--text-secondary);
 }
 
 .account-email {
@@ -162,6 +167,7 @@
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  min-width: 0;
   font-family: var(--font-sans);
   font-size: 0.82rem;
 }
@@ -179,6 +185,7 @@
 
 .pkce-paste-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
 }
@@ -302,5 +309,12 @@
 
 .photo-rules-note strong {
   color: var(--text-primary);
+}
+
+@media (max-width: 520px) {
+  .form-row,
+  .manifest-meta {
+    grid-template-columns: 1fr;
+  }
 }
 

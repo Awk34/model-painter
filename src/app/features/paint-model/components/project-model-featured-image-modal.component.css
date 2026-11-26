@@ -1,7 +1,7 @@
 .featured-picker-panel {
   max-width: 780px;
   width: min(94vw, 780px);
-  max-height: 86vh;
+  max-height: 86dvh;
   display: flex;
   flex-direction: column;
 }
@@ -70,7 +70,7 @@
 
 .image-choice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
   gap: 12px;
 }
 
@@ -81,7 +81,7 @@
   overflow: hidden;
   text-align: left;
   cursor: pointer;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-strong);
 }
 
 .image-choice-card:hover {
@@ -125,7 +125,7 @@
 }
 
 .choice-caption span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
@@ -147,4 +147,11 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+@media (forced-colors: active) {
+  .picker-tab-btn.active,
+  .image-choice-card.selected {
+    border: 2px solid Highlight;
+  }
 }

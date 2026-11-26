@@ -70,7 +70,7 @@
   align-items: center;
   padding: 10px 8px;
   background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
 }
@@ -81,7 +81,7 @@
 }
 
 .tier-btn span {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
@@ -135,7 +135,7 @@
 
 .models-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
   gap: 12px;
 }
 
@@ -161,6 +161,12 @@
 }
 
 .mm-info span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+@media (forced-colors: active) {
+  .tier-btn.active {
+    border: 2px solid Highlight;
+  }
 }

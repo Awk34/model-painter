@@ -47,7 +47,7 @@
 
 .hero-info {
   flex: 1;
-  min-width: 260px;
+  min-width: min(100%, 260px);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -80,7 +80,7 @@
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
   gap: 14px;
 }
 
@@ -152,7 +152,7 @@
 
 .mini-pill {
   font-family: var(--font-sans);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.06);

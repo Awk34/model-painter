@@ -5,10 +5,11 @@ import { USER_LIMITS, formatBytes } from '../../../core/config/user-limits.confi
 import { CatalogService } from '../../../core/services/catalog.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { WarhammerImportService } from '../../../core/services/warhammer-import.service';
+import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
 
 @Component({
   selector: 'app-account-settings-panel',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, AppIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './account-settings-panel.component.ng.html',
   styleUrl: './account-settings-panel.component.css',
@@ -33,6 +34,11 @@ export class AccountSettingsPanelComponent implements OnInit {
   authEmail = '';
   authPassword = '';
   readonly authError = signal<string | null>(null);
+  readonly avatarFailed = signal(false);
+
+  onAvatarError(): void {
+    this.avatarFailed.set(true);
+  }
 
   readonly showcasePhotoCount = computed(
     () => this.userState.allUploadedPhotos().filter((p) => p.kind === 'showcase').length

@@ -30,6 +30,7 @@
 .base-ic {
   width: 18px;
   height: 18px;
+  color: var(--text-secondary);
 }
 
 .filters-bar {
@@ -42,7 +43,7 @@
 
 .search-input-wrap {
   flex: 1;
-  min-width: 240px;
+  min-width: min(100%, 240px);
 }
 
 .filter-controls {
@@ -52,7 +53,7 @@
 }
 
 .filter-select {
-  min-width: 210px;
+  min-width: min(100%, 210px);
 }
 
 .results-meta {
@@ -63,7 +64,7 @@
 
 .colors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 225px), 1fr));
   gap: 16px;
 }
 
@@ -128,4 +129,12 @@
   font-family: var(--font-sans);
   font-size: 0.76rem;
   color: var(--text-secondary);
+}
+
+@media (forced-colors: active) {
+  .fallback-swatch,
+  .swatch-corner {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
 }

@@ -1,0 +1,13 @@
+<svg
+  class="app-icon-svg"
+  [attr.viewBox]="def().viewBox"
+  fill="currentColor"
+  [attr.aria-hidden]="label() ? null : 'true'"
+  [attr.role]="label() ? 'img' : null"
+  [attr.aria-label]="label()"
+  focusable="false"
+>
+  @for (d of def().paths; track d) {
+    <path [attr.d]="d" />
+  }
+</svg>

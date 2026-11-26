@@ -16,7 +16,7 @@
 
 .workspace-identity {
   flex: 1;
-  min-width: 240px;
+  min-width: min(100%, 240px);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -81,7 +81,7 @@
 
 .qty-label {
   font-family: var(--font-sans);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -95,6 +95,10 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   padding: 2px;
+}
+
+.qty-stepper:focus-within {
+  border-color: var(--gold-bright);
 }
 
 .qty-btn {
@@ -130,8 +134,9 @@
   font-weight: 700;
 }
 
-.qty-input:focus {
-  outline: none;
+.qty-input:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
 }
 
 .action-buttons-row {

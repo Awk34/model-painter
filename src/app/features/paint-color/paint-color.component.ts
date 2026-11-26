@@ -6,11 +6,12 @@ import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { applyReadinessFilter } from '../../core/utils/catalog-filter.util';
+import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { StageReadinessPillsComponent } from '../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
 
 @Component({
   selector: 'app-paint-color',
-  imports: [FormsModule, RouterModule, StageReadinessPillsComponent],
+  imports: [FormsModule, RouterModule, AppIconComponent, StageReadinessPillsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-color.component.ng.html',
   styleUrl: './paint-color.component.css',
