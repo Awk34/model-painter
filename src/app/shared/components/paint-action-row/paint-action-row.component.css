@@ -1,0 +1,143 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.par-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.par-container.variant-row {
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.par-container.variant-card {
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.par-container.variant-pill {
+  padding: 6px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  gap: 8px;
+}
+
+.par-container.variant-step {
+  padding: 0;
+  gap: 8px;
+}
+
+.par-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+.variant-card .par-main {
+  gap: 12px;
+}
+
+.variant-pill .par-main {
+  gap: 8px;
+}
+
+.step-order-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-void);
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.par-pot-thumb {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.par-info {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  min-width: 0;
+}
+
+.variant-pill .par-info {
+  font-size: 0.8rem;
+}
+
+.par-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.variant-card .par-name {
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.par-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.delta-badge {
+  display: inline-block;
+  width: fit-content;
+  margin-top: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.delta-badge[data-quality='exact'] {
+  background: var(--status-owned-bg);
+  color: var(--status-owned);
+}
+
+.delta-badge[data-quality='close'] {
+  background: var(--status-sub-bg);
+  color: var(--status-sub);
+}
+
+.delta-badge[data-quality='similar'] {
+  background: var(--status-wishlist-bg);
+  color: var(--status-wishlist);
+}
+
+.par-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}

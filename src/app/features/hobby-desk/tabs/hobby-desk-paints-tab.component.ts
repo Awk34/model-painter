@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, model, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, model, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { CollectionSubMode } from '../../../core/models/catalog.models';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
-import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
@@ -10,8 +11,7 @@ import {
   PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
 import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
-import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
-import { CollectionSubMode } from './hobby-desk-models-tab.component';
+import { PaintActionRowComponent } from '../../../shared/components/paint-action-row/paint-action-row.component';
 
 interface UnifiedPaintRow {
   id: string;
@@ -28,7 +28,7 @@ interface UnifiedPaintRow {
   code?: string;
 }
 
-interface CustomPaintFormState {
+export interface CustomPaintFormState {
   brand: string;
   range: string;
   name: string;
@@ -50,7 +50,7 @@ function createDefaultCustomPaintForm(): CustomPaintFormState {
 
 @Component({
   selector: 'app-hobby-desk-paints-tab',
-  imports: [FormsModule, AppModalDialogComponent, PaintSwatchComponent],
+  imports: [ReactiveFormsModule, AppModalDialogComponent, PaintActionRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-paints-tab.component.ng.html',
   styleUrl: './hobby-desk-paints-tab.component.css',
@@ -58,7 +58,6 @@ function createDefaultCustomPaintForm(): CustomPaintFormState {
 export class HobbyDeskPaintsTabComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
-  readonly paintModal = inject(PaintModalService);
   readonly img = inject(ImageService);
 
   readonly subMode = model<CollectionSubMode>('inventory');
@@ -68,6 +67,67 @@ export class HobbyDeskPaintsTabComponent {
   readonly showCustomPaintModal = signal(false);
 
   readonly customPaintForm = signal<CustomPaintFormState>(createDefaultCustomPaintForm());
+
+  readonly paintSearchControl = new FormControl('', { nonNullable: true });
+  readonly brandFilterControl = new FormControl('all', { nonNullable: true });
+  readonly categoryFilterControl = new FormControl('all', { nonNullable: true });
+
+  readonly customPaintFormGroup = new FormGroup({
+    brand: new FormControl(createDefaultCustomPaintForm().brand, { nonNullable: true }),
+    range: new FormControl(createDefaultCustomPaintForm().range, { nonNullable: true }),
+    name: new FormControl(createDefaultCustomPaintForm().name, { nonNullable: true }),
+    category: new FormControl(createDefaultCustomPaintForm().category, { nonNullable: true }),
+    hex: new FormControl(createDefaultCustomPaintForm().hex, { nonNullable: true }),
+    citadelPaintId: new FormControl(createDefaultCustomPaintForm().citadelPaintId, { nonNullable: true }),
+  });
+
+  constructor() {
+    effect(() => {
+      const q = this.paintSearch();
+      if (this.paintSearchControl.value !== q) {
+        this.paintSearchControl.setValue(q, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const b = this.selectedBrandFilter();
+      if (this.brandFilterControl.value !== b) {
+        this.brandFilterControl.setValue(b, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const c = this.selectedCategoryFilter();
+      if (this.categoryFilterControl.value !== c) {
+        this.categoryFilterControl.setValue(c, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const f = this.customPaintForm();
+      const raw = this.customPaintFormGroup.getRawValue();
+      if (
+        raw.brand !== f.brand ||
+        raw.range !== f.range ||
+        raw.name !== f.name ||
+        raw.category !== f.category ||
+        raw.hex !== f.hex ||
+        raw.citadelPaintId !== f.citadelPaintId
+      ) {
+        this.customPaintFormGroup.setValue(f, { emitEvent: false });
+      }
+    });
+
+    this.paintSearchControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.paintSearch.set(v);
+    });
+    this.brandFilterControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.selectedBrandFilter.set(v);
+    });
+    this.categoryFilterControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.selectedCategoryFilter.set(v);
+    });
+    this.customPaintFormGroup.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.customPaintForm.set(this.customPaintFormGroup.getRawValue());
+    });
+  }
 
   readonly allUnifiedPaints = computed<UnifiedPaintRow[]>(() => {
     const rows: UnifiedPaintRow[] = [];
@@ -194,4 +254,3 @@ export class HobbyDeskPaintsTabComponent {
     this.closeCustomPaintModal();
   }
 }
-

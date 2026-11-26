@@ -2,7 +2,7 @@
   display: block;
 }
 
-.rollup-section {
+:host ::ng-deep .rollup-section {
   gap: 16px;
 }
 
@@ -40,54 +40,10 @@
   gap: 10px;
 }
 
-.rollup-paint-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-}
-
-.rp-main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-align: left;
-  flex: 1;
-  min-width: 0;
-}
-
-.rp-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.rp-name {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: 0.86rem;
-  color: var(--text-primary);
-}
-
-.rp-meta {
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
 .sub-note {
   font-family: var(--font-sans);
   font-size: 0.75rem;
   color: var(--status-sub);
-}
-
-.rp-btns {
-  display: flex;
-  gap: 6px;
 }
 
 .all-covered-msg {
@@ -95,4 +51,3 @@
   color: var(--status-owned);
   font-weight: 600;
 }
-

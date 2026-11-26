@@ -1,0 +1,83 @@
+:host {
+  display: block;
+}
+
+.desk-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #1b1f27 0%, #13151a 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.desk-title-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.desk-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--gold-bright);
+  filter: drop-shadow(0 2px 8px rgba(237, 179, 4, 0.3));
+}
+
+.desk-title-group h1 {
+  font-size: 2rem;
+  color: var(--gold-bright);
+}
+
+.desk-kpi-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.kpi-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  min-width: 96px;
+}
+
+button.kpi-pill:hover {
+  border-color: var(--gold-bright);
+}
+
+.kpi-pill.owned .kpi-num {
+  color: var(--status-owned);
+}
+
+.kpi-pill.wishlist .kpi-num {
+  color: var(--status-wishlist);
+}
+
+.kpi-num {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--gold-bright);
+}
+
+.kpi-cap {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.kpi-label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 700;
+}

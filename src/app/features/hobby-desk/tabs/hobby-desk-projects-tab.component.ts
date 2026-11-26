@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { InventoryMatchService } from '../../../core/services/inventory-match.service';
 import { ProjectImageResolverService } from '../../../core/services/project-image-resolver.service';
 import { UserStateService } from '../../../core/services/user-state.service';
@@ -13,8 +14,8 @@ export type ProjectSortMode = 'updated' | 'created' | 'alpha';
 @Component({
   selector: 'app-hobby-desk-projects-tab',
   imports: [
-    FormsModule,
-    RouterModule,
+    ReactiveFormsModule,
+    RouterLink,
     AppIconComponent,
     AppModalDialogComponent,
     StageReadinessPillsComponent,
@@ -33,6 +34,42 @@ export class HobbyDeskProjectsTabComponent {
   readonly projectSort = signal<ProjectSortMode>('updated');
   readonly showNewProjectModal = signal(false);
   readonly newProjectName = signal('');
+
+  readonly searchControl = new FormControl('', { nonNullable: true });
+  readonly sortControl = new FormControl<ProjectSortMode>('updated', { nonNullable: true });
+  readonly newProjectNameControl = new FormControl('', { nonNullable: true });
+  readonly newProjectForm = new FormGroup({ name: this.newProjectNameControl });
+
+  constructor() {
+    effect(() => {
+      const q = this.projectSearch();
+      if (this.searchControl.value !== q) {
+        this.searchControl.setValue(q, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const s = this.projectSort();
+      if (this.sortControl.value !== s) {
+        this.sortControl.setValue(s, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const n = this.newProjectName();
+      if (this.newProjectNameControl.value !== n) {
+        this.newProjectNameControl.setValue(n, { emitEvent: false });
+      }
+    });
+
+    this.searchControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.projectSearch.set(v);
+    });
+    this.sortControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.projectSort.set(v);
+    });
+    this.newProjectNameControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.newProjectName.set(v);
+    });
+  }
 
   readonly filteredProjectCards = computed(() => {
     const q = this.projectSearch().trim().toLowerCase();
@@ -80,7 +117,7 @@ export class HobbyDeskProjectsTabComponent {
       return;
     }
     this.closeNewProjectModal();
-    this.router.navigate(['/projects', created.id]);
+    void this.router.navigate(['/projects', created.id]);
   }
 
   confirmDeleteProject(projectId: string, name: string): void {
@@ -89,4 +126,3 @@ export class HobbyDeskProjectsTabComponent {
     }
   }
 }
-

@@ -74,7 +74,7 @@
   color: var(--text-secondary);
 }
 
-.project-photos-stack {
+:host ::ng-deep .project-photos-stack {
   gap: 20px;
 }
 

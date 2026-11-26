@@ -1,0 +1,42 @@
+<div class="settings-card studio-card">
+  <span class="badge badge-owned">Smart IndexedDB Cache</span>
+  <h2>Catalog Manifest &amp; Cache Freshness</h2>
+  <p class="settings-desc">
+    On startup, the app hydrates immediately from browser IndexedDB and checks <code>catalog_meta/manifest</code> (1 read) to diff SHA-256 bundle hashes before downloading any updates.
+  </p>
+
+  @if (catalog.manifest(); as mf) {
+    <div class="manifest-meta">
+      <div><strong>Catalog Version:</strong> {{ mf.catalogVersion ?? mf.schemaVersion ?? '1' }}</div>
+      <div>
+        <strong>Manifest Updated:</strong>
+        <time [attr.datetime]="mf.updatedAt">{{ mf.updatedAt | date:'medium' }}</time>
+      </div>
+      <div><strong>Sync Status:</strong> <span class="status-tag">{{ catalog.syncStatus() }}</span></div>
+      @if (catalog.lastCheckedAt(); as checkedAt) {
+        <div>
+          <strong>Last Checked:</strong>
+          <time [attr.datetime]="checkedAt">{{ checkedAt | date:'mediumTime' }}</time>
+        </div>
+      }
+    </div>
+
+    <div class="bundle-table">
+      @for (entry of manifestBundlesList(); track entry.key) {
+        <div class="bundle-row">
+          <span class="bundle-name">{{ entry.key }}</span>
+          <code class="bundle-hash">{{ (entry.hash || '').slice(0, 19) }}…</code>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="backup-btn-row cache-actions-row">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="catalog.initializeCatalog(false)">
+      ↻ Check Manifest Now (1 Read)
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="catalog.initializeCatalog(true)">
+      ⚡ Force Full Cache Rebuild
+    </button>
+  </div>
+</div>

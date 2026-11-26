@@ -10,7 +10,8 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { USER_LIMITS } from '../../../core/config/user-limits.config';
 import {
   ModelRecipe,
@@ -33,7 +34,7 @@ export type FeaturedImagePickerTab = 'angles' | 'uploaded' | 'catalog';
 
 @Component({
   selector: 'app-project-model-featured-image-modal',
-  imports: [FormsModule, AppModalDialogComponent],
+  imports: [ReactiveFormsModule, AppModalDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-model-featured-image-modal.component.ng.html',
   styleUrl: './project-model-featured-image-modal.component.css',
@@ -57,6 +58,7 @@ export class ProjectModelFeaturedImageModalComponent {
 
   readonly activeTab = signal<FeaturedImagePickerTab>('angles');
   readonly catalogSearch = signal('');
+  readonly catalogSearchControl = new FormControl('', { nonNullable: true });
   readonly uploading = signal(false);
   readonly uploadError = signal<string | null>(null);
   readonly tabs: readonly FeaturedImagePickerTab[] = ['angles', 'uploaded', 'catalog'];
@@ -74,6 +76,17 @@ export class ProjectModelFeaturedImageModalComponent {
         this.catalogSearch.set('');
         this.uploadError.set(null);
       }
+    });
+
+    effect(() => {
+      const q = this.catalogSearch();
+      if (this.catalogSearchControl.value !== q) {
+        this.catalogSearchControl.setValue(q, { emitEvent: false });
+      }
+    });
+
+    this.catalogSearchControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((val) => {
+      this.catalogSearch.set(val);
     });
   }
 

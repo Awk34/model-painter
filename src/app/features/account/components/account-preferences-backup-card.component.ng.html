@@ -1,0 +1,37 @@
+<div class="settings-card studio-card">
+  <span class="badge badge-sub">Readiness &amp; Portability</span>
+  <h2>"Can I Paint This?" Rules &amp; Browser Backups</h2>
+  <p class="settings-desc">
+    Configure how the app calculates model and color paint readiness across your inventory.
+  </p>
+
+  <form class="pref-toggles" [formGroup]="prefsForm">
+    <label class="toggle-row">
+      <input type="checkbox" formControlName="allowCompatibleSubstitutions" />
+      <div>
+        <strong>Allow Official Citadel ↔ Tone Pro Substitutions</strong>
+        <p>Count a required paint as covered if you own its official Tone Pro or Classic Citadel counterpart.</p>
+      </div>
+    </label>
+
+    <label class="toggle-row">
+      <input type="checkbox" formControlName="allowThirdPartySubstitutions" />
+      <div>
+        <strong>Allow 3rd-Party Brand Paint Substitutions</strong>
+        <p>Count a required paint as covered if you own a linked equivalent from The Army Painter, Vallejo, Two Thin Coats, Pro Acryl, or AK 3G.</p>
+      </div>
+    </label>
+  </form>
+
+  <hr class="divider" />
+
+  <h3>Local Browser Backup &amp; Reset</h3>
+  <div class="backup-btn-row">
+    <button type="button" class="btn btn-secondary" (click)="userState.exportBackupJson()">
+      ⬇ Export Full JSON Backup
+    </button>
+    <button type="button" class="btn btn-ghost danger-text" (click)="confirmResetData()">
+      🗑 Reset Local Data to Blank Slate
+    </button>
+  </div>
+</div>

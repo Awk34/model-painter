@@ -6,9 +6,8 @@ import {
 } from '../../../core/models/catalog.models';
 import { normalizePaintingStageLabel } from '../../../core/utils/catalog-normalizer.util';
 import { ImageService } from '../../../core/services/image.service';
-import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
-import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
+import { PaintActionRowComponent } from '../../../shared/components/paint-action-row/paint-action-row.component';
 
 export type ModelStageFilter = 'all' | 'Base Finish' | 'Detail Finish' | 'Artificer Finish';
 
@@ -20,14 +19,13 @@ export interface PaintingProgressSummary {
 
 @Component({
   selector: 'app-model-painting-steps',
-  imports: [PaintSwatchComponent],
+  imports: [PaintActionRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './model-painting-steps.component.ng.html',
   styleUrl: './model-painting-steps.component.css',
 })
 export class ModelPaintingStepsComponent {
   readonly userState = inject(UserStateService);
-  readonly paintModal = inject(PaintModalService);
   readonly img = inject(ImageService);
 
   readonly modelId = input<string>('');
@@ -41,13 +39,13 @@ export class ModelPaintingStepsComponent {
     const pid = this.projectId();
     const entryId = this.projectModelId();
     if (pid && entryId) {
-      return new Set(this.userState.getProjectModelCompletedStepIds?.(pid, entryId) ?? []);
+      return new Set(this.userState.getProjectModelCompletedStepIds(pid, entryId));
     }
     const id = this.modelId();
     if (!id) {
       return new Set<string>();
     }
-    return new Set(this.userState.getCompletedStepIds?.(id) ?? []);
+    return new Set(this.userState.getCompletedStepIds(id));
   });
 
   readonly overallProgress = computed<PaintingProgressSummary & { percent: number }>(() => {
@@ -87,14 +85,14 @@ export class ModelPaintingStepsComponent {
     const pid = this.projectId();
     const entryId = this.projectModelId();
     if (pid && entryId) {
-      this.userState.toggleProjectModelStepDone?.(pid, entryId, stepId);
+      this.userState.toggleProjectModelStepDone(pid, entryId, stepId);
       return;
     }
     const id = this.modelId();
     if (!id) {
       return;
     }
-    this.userState.toggleStepDone?.(id, stepId);
+    this.userState.toggleStepDone(id, stepId);
   }
 
   getAreaProgress(area: ModelPaintingArea): PaintingProgressSummary {
@@ -119,14 +117,14 @@ export class ModelPaintingStepsComponent {
     const pid = this.projectId();
     const entryId = this.projectModelId();
     if (pid && entryId) {
-      this.userState.setProjectModelStepsDone?.(pid, entryId, ids, !isDone);
+      this.userState.setProjectModelStepsDone(pid, entryId, ids, !isDone);
       return;
     }
     const id = this.modelId();
     if (!id) {
       return;
     }
-    this.userState.setStepsDone?.(id, ids, !isDone);
+    this.userState.setStepsDone(id, ids, !isDone);
   }
 
   getStageProgress(stage: Exclude<ModelStageFilter, 'all'>): PaintingProgressSummary {
@@ -150,14 +148,14 @@ export class ModelPaintingStepsComponent {
     const pid = this.projectId();
     const entryId = this.projectModelId();
     if (pid && entryId) {
-      this.userState.clearProjectModelProgress?.(pid, entryId);
+      this.userState.clearProjectModelProgress(pid, entryId);
       return;
     }
     const id = this.modelId();
     if (!id) {
       return;
     }
-    this.userState.clearModelProgress?.(id);
+    this.userState.clearModelProgress(id);
   }
 
   private getAreaTrackingIds(area: ModelPaintingArea, useFiltered: boolean): string[] {

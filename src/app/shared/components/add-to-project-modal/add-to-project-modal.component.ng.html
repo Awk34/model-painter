@@ -27,15 +27,13 @@
       <label class="field-label" for="new-proj-item-name">
         Or Create a New Project with This {{ itemType() === 'model' ? 'Model' : 'Color' }}:
       </label>
-      <form class="create-proj-row" (ngSubmit)="createProjectWithItem()">
+      <form class="create-proj-row" [formGroup]="createProjectForm" (ngSubmit)="createProjectWithItem()">
         <input
           id="new-proj-item-name"
-          name="newProjectName"
           type="text"
           class="input-control"
           placeholder="New project name..."
-          [ngModel]="newProjectName()"
-          (ngModelChange)="newProjectName.set($event)"
+          [formControl]="projectNameControl"
           autofocus
         />
         <button type="submit" class="btn btn-gold">

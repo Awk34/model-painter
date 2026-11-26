@@ -1,0 +1,68 @@
+<header class="desk-header">
+  <div class="desk-title-group">
+    <app-icon [name]="icon()" class="desk-icon" />
+    <div>
+      <h1>{{ title() }}</h1>
+      <p class="subtitle">{{ subtitle() }}</p>
+    </div>
+  </div>
+
+  <div class="desk-kpi-strip">
+    <button
+      type="button"
+      class="kpi-pill"
+      [title]="userState.projects().length + ' / ' + userState.limits.MAX_PROJECTS + ' projects'"
+      (click)="projectsClick.emit()"
+    >
+      <span class="kpi-num">
+        {{ userState.projects().length }}<small class="kpi-cap">/{{ userState.limits.MAX_PROJECTS }}</small>
+      </span>
+      <span class="kpi-label">Projects</span>
+    </button>
+    <button
+      type="button"
+      class="kpi-pill owned"
+      [title]="userState.inventoryModelIds().length + ' / ' + userState.limits.MAX_INVENTORY_MODELS + ' owned models'"
+      (click)="modelsClick.emit('inventory')"
+    >
+      <span class="kpi-num">{{ userState.inventoryModelIds().length }}</span>
+      <span class="kpi-label">Owned Models</span>
+    </button>
+    <button
+      type="button"
+      class="kpi-pill wishlist"
+      [title]="userState.wishlistModelIds().length + ' / ' + userState.limits.MAX_WISHLIST_MODELS + ' wishlist models'"
+      (click)="modelsClick.emit('wishlist')"
+    >
+      <span class="kpi-num">{{ userState.wishlistModelIds().length }}</span>
+      <span class="kpi-label">Model Wishlist</span>
+    </button>
+    <button
+      type="button"
+      class="kpi-pill owned"
+      [title]="userState.inventoryPaintIds().length + ' / ' + userState.limits.MAX_INVENTORY_PAINTS + ' owned paints'"
+      (click)="paintsClick.emit('inventory')"
+    >
+      <span class="kpi-num">{{ userState.inventoryPaintIds().length }}</span>
+      <span class="kpi-label">Owned Paints</span>
+    </button>
+    <button
+      type="button"
+      class="kpi-pill wishlist"
+      [title]="userState.wishlistPaintIds().length + ' / ' + userState.limits.MAX_WISHLIST_PAINTS + ' wishlist paints'"
+      (click)="paintsClick.emit('wishlist')"
+    >
+      <span class="kpi-num">{{ userState.wishlistPaintIds().length }}</span>
+      <span class="kpi-label">Paint Wishlist</span>
+    </button>
+    <div
+      class="kpi-pill"
+      [title]="userState.allUploadedPhotos().length + ' / ' + userState.limits.MAX_TOTAL_USER_PHOTOS + ' uploaded photos (' + totalUploadedBytesLabel() + ')'"
+    >
+      <span class="kpi-num">
+        {{ userState.allUploadedPhotos().length }}<small class="kpi-cap">/{{ userState.limits.MAX_TOTAL_USER_PHOTOS }}</small>
+      </span>
+      <span class="kpi-label">Photos</span>
+    </div>
+  </div>
+</header>

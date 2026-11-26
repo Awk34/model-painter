@@ -40,8 +40,7 @@
         type="search"
         class="input-control"
         placeholder="Search models by name, faction, or game system..."
-        [ngModel]="modelSearch()"
-        (ngModelChange)="onSearchChange($event)"
+        [formControl]="searchControl"
       />
     </div>
 
@@ -50,8 +49,7 @@
       <select
         id="desk-models-game"
         class="input-control filter-select"
-        [ngModel]="selectedModelGameFilter()"
-        (ngModelChange)="onGameFilterChange($event)"
+        [formControl]="gameFilterControl"
       >
         <option value="all">All Game Systems</option>
         @for (g of catalog.games(); track g.id) {
@@ -68,51 +66,11 @@
   @if (displayedModels().length > 0) {
     <div class="desk-models-grid">
       @for (item of displayedModels(); track item.model.id) {
-        <div class="desk-model-card studio-card interactive">
-          <div class="desk-model-thumb-wrap">
-            <img
-              [src]="img.resolve(item.model.localPrimaryImage, item.model.primaryImage)"
-              [alt]="item.model.name"
-              class="desk-model-thumb"
-              loading="lazy"
-            />
-          </div>
-
-          <div class="desk-model-body">
-            <h2 class="desk-model-title">
-              <a [routerLink]="['/models', item.model.id]" class="card-stretched-link">
-                {{ item.model.name }}
-              </a>
-            </h2>
-            <span class="desk-model-sub">
-              {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Miniature' }}
-            </span>
-
-            <app-stage-readiness-pills [staged]="item.staged" />
-          </div>
-
-          <div class="desk-model-actions">
-            <button
-              type="button"
-              class="icon-toggle"
-              [class.active-owned]="userState.isModelOwned(item.model.id)"
-              title="Toggle Model Inventory"
-              (click)="userState.toggleModelInventory(item.model.id)"
-            >
-              {{ userState.isModelOwned(item.model.id) ? '✓ Owned' : '+ Own Model' }}
-            </button>
-            <button
-              type="button"
-              class="icon-toggle"
-              [class.active-wish]="userState.isModelWishlisted(item.model.id)"
-              [attr.aria-label]="(userState.isModelWishlisted(item.model.id) ? 'Remove from model wishlist: ' : 'Add to model wishlist: ') + item.model.name"
-              title="Toggle Model Wishlist"
-              (click)="userState.toggleModelWishlist(item.model.id)"
-            >
-              {{ userState.isModelWishlisted(item.model.id) ? '★' : '☆' }}
-            </button>
-          </div>
-        </div>
+        <app-model-card
+          [model]="item.model"
+          [staged]="item.staged"
+          headingLevel="h2"
+        />
       }
     </div>
 

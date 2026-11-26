@@ -8,7 +8,8 @@ import {
   model,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
   UserProject,
   UserProjectNote,
@@ -16,11 +17,17 @@ import {
 } from '../../../core/models/catalog.models';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { createEntityId } from '../../../core/utils/catalog-filter.util';
+import { CollapsibleSectionComponent } from '../../../shared/components/collapsible-section/collapsible-section.component';
 import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
 
 @Component({
   selector: 'app-project-notes-section',
-  imports: [FormsModule, DragDropModule, AppModalDialogComponent],
+  imports: [
+    ReactiveFormsModule,
+    DragDropModule,
+    CollapsibleSectionComponent,
+    AppModalDialogComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-notes-section.component.ng.html',
   styleUrl: './project-notes-section.component.css',
@@ -34,6 +41,8 @@ export class ProjectNotesSectionComponent {
   readonly editingNoteId = signal<string | null>(null);
   readonly noteTitleDraft = signal('');
   readonly noteBlocksDraft = signal<UserProjectNoteComponent[]>([]);
+  readonly noteTitleControl = new FormControl('', { nonNullable: true });
+  readonly noteForm = new FormGroup({ title: this.noteTitleControl });
   private lastProjectId: string | null = null;
 
   constructor() {
@@ -43,6 +52,17 @@ export class ProjectNotesSectionComponent {
         this.closeNoteEditor();
       }
       this.lastProjectId = pid;
+    });
+
+    effect(() => {
+      const title = this.noteTitleDraft();
+      if (this.noteTitleControl.value !== title) {
+        this.noteTitleControl.setValue(title, { emitEvent: false });
+      }
+    });
+
+    this.noteTitleControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((val) => {
+      this.noteTitleDraft.set(val);
     });
   }
 
@@ -107,6 +127,14 @@ export class ProjectNotesSectionComponent {
     );
   }
 
+  onBlockValueInput(idx: number, event: Event): void {
+    this.updateBlockValue(idx, (event.target as HTMLInputElement).value);
+  }
+
+  onBlockCheckedChange(idx: number, event: Event): void {
+    this.updateBlockChecked(idx, (event.target as HTMLInputElement).checked);
+  }
+
   dropNoteBlock(event: CdkDragDrop<UserProjectNoteComponent[]>): void {
     const next = [...this.noteBlocksDraft()];
     moveItemInArray(next, event.previousIndex, event.currentIndex);
@@ -135,4 +163,3 @@ export class ProjectNotesSectionComponent {
     this.closeNoteEditor();
   }
 }
-

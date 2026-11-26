@@ -204,56 +204,16 @@
 
               @if (step.paint; as sp) {
                 <div class="step-paint-box">
-                  <button
-                    type="button"
-                    class="step-paint-main"
-                    (click)="paintModal.openPaint(sp.id)"
-                  >
-                    <app-paint-swatch [paint]="sp" />
-                    <div class="sp-info">
-                      <strong>{{ sp.name }}</strong>
-                      <span>{{ sp.category }}</span>
-                    </div>
-                  </button>
-
-                  <div class="sp-actions">
-                    @let sub = readiness().substitutedByPaintId[sp.id];
-                    @if (userState.isOwned(sp.id)) {
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-owned"
-                        (click)="userState.toggleInventory(sp.id)"
-                      >
-                        ✓ Owned
-                      </button>
-                    } @else if (sub) {
-                      <button
-                        type="button"
-                        class="btn btn-sm badge-sub"
-                        title="Covered by equivalent in your Inventory"
-                        (click)="paintModal.openPaint(sp.id)"
-                      >
-                        ⇄ Covered by {{ sub.substituteName }}
-                      </button>
-                    } @else {
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-ghost"
-                        (click)="userState.toggleInventory(sp.id)"
-                      >
-                        + Own
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-sm"
-                        [class.btn-wishlist]="userState.isWishlisted(sp.id)"
-                        [class.btn-ghost]="!userState.isWishlisted(sp.id)"
-                        (click)="userState.toggleWishlist(sp.id)"
-                      >
-                        {{ userState.isWishlisted(sp.id) ? '★' : '☆' }}
-                      </button>
-                    }
-                  </div>
+                  <app-paint-action-row
+                    [paintId]="sp.id"
+                    [name]="sp.name"
+                    [subtitle]="sp.category"
+                    [paint]="sp"
+                    [substitute]="readiness().substitutedByPaintId[sp.id]"
+                    substituteFormat="full"
+                    actionMode="full"
+                    variant="step"
+                  />
                 </div>
               }
             </div>

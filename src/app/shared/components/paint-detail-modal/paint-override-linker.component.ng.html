@@ -1,0 +1,25 @@
+<div class="override-box">
+  <label for="paint-override-select" class="override-label">
+    Link Custom or 3rd-Party Equivalent Override:
+  </label>
+  <div class="override-controls">
+    <select
+      id="paint-override-select"
+      class="input-control"
+      [formControl]="overrideControl"
+    >
+      <option value="">Select a 3rd-party or custom paint...</option>
+      @for (tp of paints(); track tp.id) {
+        <option [value]="tp.id">{{ tp.brand }} — {{ tp.name }} ({{ tp.range }})</option>
+      }
+    </select>
+    <button
+      type="button"
+      class="btn btn-secondary"
+      [disabled]="!selectedPaintId()"
+      (click)="onLinkClick()"
+    >
+      + Link Equivalent
+    </button>
+  </div>
+</div>

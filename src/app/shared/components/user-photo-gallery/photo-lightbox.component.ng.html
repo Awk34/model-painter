@@ -1,0 +1,80 @@
+<app-modal-dialog
+  [open]="photo() !== null"
+  [ariaLabelledBy]="photo() ? titleId() : null"
+  size="xl"
+  (closed)="closed.emit()"
+  (keydown)="onLightboxKeyDown($event)"
+>
+  @if (photo(); as activePhoto) {
+    <div class="lightbox-shell">
+      <div class="lightbox-header">
+        <div class="lightbox-title-wrap">
+          <h2 [id]="titleId()" class="lightbox-title">
+            {{ activePhoto.caption || activePhoto.fileName }}
+          </h2>
+          <span class="lightbox-meta">
+            {{ formatBytes(activePhoto.sizeBytes) }}
+            @if (activePhoto.width && activePhoto.height) {
+              • {{ activePhoto.width }}×{{ activePhoto.height }}
+            }
+            @if (isReference()) {
+              • 🔒 Private Reference
+            }
+          </span>
+        </div>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          aria-label="Close photo preview"
+          autofocus
+          (click)="closed.emit()"
+        >
+          ✕ Close
+        </button>
+      </div>
+
+      <div class="lightbox-stage">
+        @if (totalCount() > 1) {
+          <button
+            type="button"
+            class="lightbox-nav-btn prev"
+            aria-label="Previous photo"
+            (click)="prev.emit()"
+          >
+            ‹
+          </button>
+        }
+
+        <img
+          [src]="photoUrl()"
+          [alt]="activePhoto.caption || activePhoto.fileName"
+          class="lightbox-img"
+        />
+
+        @if (totalCount() > 1) {
+          <button
+            type="button"
+            class="lightbox-nav-btn next"
+            aria-label="Next photo"
+            (click)="next.emit()"
+          >
+            ›
+          </button>
+        }
+      </div>
+
+      <div class="lightbox-footer">
+        <span class="lightbox-counter">
+          Photo {{ index() + 1 }} of {{ totalCount() }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm danger-text"
+          (click)="deleteRequested.emit(activePhoto)"
+        >
+          🗑 Delete Photo
+        </button>
+      </div>
+    </div>
+  }
+</app-modal-dialog>

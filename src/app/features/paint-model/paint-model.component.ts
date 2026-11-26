@@ -1,19 +1,19 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
 import { FactionNode, FinishStageKey, GameSystem } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { applyReadinessFilter, matchesModelSearch } from '../../core/utils/catalog-filter.util';
+import { createVisibleLimit } from '../../core/utils/pagination.util';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
-import { StageReadinessPillsComponent } from '../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
+import { CatalogFilterBarComponent } from '../../shared/components/catalog-filter-bar/catalog-filter-bar.component';
+import { ModelCardComponent } from '../../shared/components/model-card/model-card.component';
 
 @Component({
   selector: 'app-paint-model',
-  imports: [DecimalPipe, FormsModule, RouterModule, AppIconComponent, StageReadinessPillsComponent],
+  imports: [DecimalPipe, AppIconComponent, CatalogFilterBarComponent, ModelCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-model.component.ng.html',
   styleUrl: './paint-model.component.css',
@@ -34,7 +34,18 @@ export class PaintModelComponent {
   );
   readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing2' | 'sortReady'>('all');
-  readonly visibleLimit = signal<number>(60);
+
+  private readonly pagination = createVisibleLimit(60, () => [
+    this.selectedGameId(),
+    this.selectedParentFactionId(),
+    this.selectedSubFactionId(),
+    this.searchQuery(),
+    this.collectionFilter(),
+    this.rangeFilter(),
+    this.targetStage(),
+    this.readinessFilter(),
+  ]);
+  readonly visibleLimit = this.pagination.limit;
 
   readonly selectedGame = computed(() => {
     const gid = this.selectedGameId();
@@ -120,27 +131,19 @@ export class PaintModelComponent {
     this.selectedGameId.set(game ? game.id : null);
     this.selectedParentFactionId.set(null);
     this.selectedSubFactionId.set(null);
-    this.visibleLimit.set(60);
   }
 
   selectParentFaction(faction: FactionNode | null): void {
     this.selectedParentFactionId.set(faction ? faction.id : null);
     this.selectedSubFactionId.set(null);
-    this.visibleLimit.set(60);
   }
 
   selectSubFaction(subFactionId: string | null): void {
     this.selectedSubFactionId.set(subFactionId);
-    this.visibleLimit.set(60);
-  }
-
-  onSearchChange(val: string): void {
-    this.searchQuery.set(val);
-    this.visibleLimit.set(60);
   }
 
   loadMore(): void {
-    this.visibleLimit.update((v) => v + 60);
+    this.pagination.loadMore();
   }
 
   resetFilters(): void {
@@ -152,6 +155,6 @@ export class PaintModelComponent {
     this.rangeFilter.set('all');
     this.targetStage.set('base');
     this.readinessFilter.set('all');
-    this.visibleLimit.set(60);
+    this.pagination.reset();
   }
 }

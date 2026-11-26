@@ -7,17 +7,15 @@
       </div>
 
       @if (editingName()) {
-        <form class="name-edit-row" (ngSubmit)="saveCustomName()">
+        <form class="name-edit-row" [formGroup]="nameForm" (ngSubmit)="saveCustomName()">
           <label for="project-model-custom-name" class="sr-only">Custom model label</label>
           <input
             id="project-model-custom-name"
-            name="nameDraft"
             type="text"
             class="input-control name-input"
             [maxlength]="userState.limits.MAX_TITLE_LENGTH"
             placeholder="e.g., Redemptor — Macro Plasma..."
-            [ngModel]="nameDraft()"
-            (ngModelChange)="nameDraft.set($event)"
+            [formControl]="nameControl"
           />
           <button type="submit" class="btn btn-gold btn-sm">Save</button>
           @if (hasCustomName()) {
@@ -149,8 +147,7 @@
       rows="3"
       [maxlength]="userState.limits.MAX_MODEL_NOTE_LENGTH"
       placeholder="Add build notes, loadout details, paint mix ratios, sub-assembly reminders, or basing recipes for this specific model..."
-      [ngModel]="notesDraft()"
-      (ngModelChange)="notesDraft.set($event)"
+      [formControl]="notesControl"
       (blur)="saveNotes()"
     ></textarea>
   </div>

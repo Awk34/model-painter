@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterModule } from '@angular/router';
-import { from, of } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { concat, from, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { ColorDetails, ColorStageStep, FinishStageKey } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
@@ -12,12 +12,19 @@ import { AddToProjectModalComponent } from '../../shared/components/add-to-proje
 import { PaintBrandBadgeComponent } from '../../shared/components/paint-brand-badge/paint-brand-badge.component';
 import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint-swatch.component';
 import { StageReadinessBarsComponent } from '../../shared/components/stage-readiness-bars/stage-readiness-bars.component';
+import { FINISH_STAGE_META_BY_KEY } from '../../shared/constants/finish-stage-meta';
 import { ColorTierBlock, ColorTierStepsComponent } from './components/color-tier-steps.component';
+
+interface ColorLoadState {
+  loading: boolean;
+  data: ColorDetails | null;
+  error: string | null;
+}
 
 @Component({
   selector: 'app-color-detail',
   imports: [
-    RouterModule,
+    RouterLink,
     StageReadinessBarsComponent,
     ColorTierStepsComponent,
     AddToProjectModalComponent,
@@ -35,48 +42,42 @@ export class ColorDetailComponent {
   readonly readinessService = inject(InventoryMatchService);
   readonly img = inject(ImageService);
 
-  readonly loading = signal(true);
-  readonly loadError = signal<string | null>(null);
-  readonly color = signal<ColorDetails | null>(null);
   readonly activeTier = signal<FinishStageKey>('base');
   readonly showProjectModal = signal(false);
 
-  constructor() {
-    this.route.paramMap
-      .pipe(
-        map((params) => params.get('id')),
-        tap(() => {
-          this.loading.set(true);
-          this.loadError.set(null);
-          this.activeTier.set('base');
-          this.showProjectModal.set(false);
-        }),
-        switchMap((id) => {
-          if (!id) {
-            return of<{ data: ColorDetails | null; error: string | null }>({
-              data: null,
-              error: null,
-            });
-          }
-          return from(this.catalog.getColorDetails(id)).pipe(
-            map((data) => ({ data, error: null as string | null })),
+  private readonly colorLoadState = toSignal(
+    this.route.paramMap.pipe(
+      map((params) => params.get('id')),
+      tap(() => {
+        this.activeTier.set('base');
+        this.showProjectModal.set(false);
+      }),
+      switchMap((id) => {
+        if (!id) {
+          return of<ColorLoadState>({ loading: false, data: null, error: null });
+        }
+        return concat(
+          of<ColorLoadState>({ loading: true, data: null, error: null }),
+          from(this.catalog.getColorDetails(id)).pipe(
+            map((data): ColorLoadState => ({ loading: false, data, error: null })),
             catchError((err: unknown) => {
               console.warn(`Failed to load color guide ${id}:`, err);
-              return of({
-                data: null as ColorDetails | null,
+              return of<ColorLoadState>({
+                loading: false,
+                data: null,
                 error: 'Unable to load this color guide right now. Please try again.',
               });
             })
-          );
-        }),
-        takeUntilDestroyed()
-      )
-      .subscribe(({ data, error }) => {
-        this.color.set(data);
-        this.loadError.set(error);
-        this.loading.set(false);
-      });
-  }
+          )
+        );
+      })
+    ),
+    { initialValue: { loading: true, data: null, error: null } as ColorLoadState }
+  );
+
+  readonly loading = computed(() => this.colorLoadState().loading);
+  readonly loadError = computed(() => this.colorLoadState().error);
+  readonly color = computed(() => this.colorLoadState().data);
 
   readonly activeShowcaseImage = computed(() => {
     const c = this.color();
@@ -105,19 +106,23 @@ export class ColorDetailComponent {
     }
     const blocks: ColorTierBlock[] = [];
     if (c.baseFinish?.stages?.length) {
-      blocks.push({ key: 'base', label: 'Base Finish (Battle Ready)', steps: c.baseFinish.stages });
+      blocks.push({
+        key: 'base',
+        label: FINISH_STAGE_META_BY_KEY.base.fullLabel,
+        steps: c.baseFinish.stages,
+      });
     }
     if (c.detailFinish?.stages?.length) {
       blocks.push({
         key: 'detail',
-        label: 'Detail Finish (Parade Ready)',
+        label: FINISH_STAGE_META_BY_KEY.detail.fullLabel,
         steps: c.detailFinish.stages,
       });
     }
     if (c.artificerFinish?.stages?.length) {
       blocks.push({
         key: 'artificer',
-        label: 'Artificer Finish (Masterclass)',
+        label: FINISH_STAGE_META_BY_KEY.artificer.fullLabel,
         steps: c.artificerFinish.stages,
       });
     }

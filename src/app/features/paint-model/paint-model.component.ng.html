@@ -116,13 +116,26 @@
   }
 
   <!-- Search, Range & "Can I Paint This?" Filter Bar -->
-  <section class="filters-bar studio-card">
-    <div class="chip-bar collection-chips">
+  <app-catalog-filter-bar
+    searchId="paint-model-search"
+    searchLabel="Search models"
+    searchPlaceholder="Search models by name, unit, character, or faction..."
+    stageSelectId="paint-model-stage"
+    readinessSelectId="paint-model-readiness"
+    rangeSelectId="paint-model-range"
+    readinessAllLabel="Can I Paint This? — All Models"
+    [missingThreshold]="2"
+    [(searchQuery)]="searchQuery"
+    [(targetStage)]="targetStage"
+    [(readinessFilter)]="readinessFilter"
+    [(rangeFilter)]="rangeFilter"
+  >
+    <div class="chip-bar collection-chips" filterBarTop>
       <button
         type="button"
         class="chip"
         [class.active]="collectionFilter() === 'all'"
-        (click)="collectionFilter.set('all'); visibleLimit.set(60)"
+        (click)="collectionFilter.set('all')"
       >
         All Models ({{ catalog.models().length | number }})
       </button>
@@ -130,7 +143,7 @@
         type="button"
         class="chip"
         [class.active]="collectionFilter() === 'inventory'"
-        (click)="collectionFilter.set('inventory'); visibleLimit.set(60)"
+        (click)="collectionFilter.set('inventory')"
       >
         ✓ My Model Inventory ({{ userState.inventoryModelIds().length }})
       </button>
@@ -138,64 +151,12 @@
         type="button"
         class="chip"
         [class.active]="collectionFilter() === 'wishlist'"
-        (click)="collectionFilter.set('wishlist'); visibleLimit.set(60)"
+        (click)="collectionFilter.set('wishlist')"
       >
         ★ My Model Wishlist ({{ userState.wishlistModelIds().length }})
       </button>
     </div>
-
-    <div class="search-input-wrap">
-      <label for="paint-model-search" class="sr-only">Search models</label>
-      <input
-        id="paint-model-search"
-        type="search"
-        class="input-control"
-        placeholder="Search models by name, unit, character, or faction..."
-        [ngModel]="searchQuery()"
-        (ngModelChange)="onSearchChange($event)"
-      />
-    </div>
-
-    <div class="filter-controls">
-      <label for="paint-model-stage" class="sr-only">Target finish stage</label>
-      <select
-        id="paint-model-stage"
-        class="input-control filter-select"
-        [ngModel]="targetStage()"
-        (ngModelChange)="targetStage.set($event); visibleLimit.set(60)"
-        title="Target Finish Stage for Readiness Filtering"
-      >
-        <option value="base">Target: 1. Base Finish (Battle Ready)</option>
-        <option value="detail">Target: 2. Detail Finish (Parade Ready)</option>
-        <option value="artificer">Target: 3. Artificer Finish</option>
-      </select>
-
-      <label for="paint-model-readiness" class="sr-only">Readiness filter</label>
-      <select
-        id="paint-model-readiness"
-        class="input-control filter-select"
-        [ngModel]="readinessFilter()"
-        (ngModelChange)="readinessFilter.set($event); visibleLimit.set(60)"
-      >
-        <option value="all">Can I Paint This? — All Models</option>
-        <option value="ready100">✓ 100% Ready for Target Finish</option>
-        <option value="missing2">⚡ Missing ≤ 2 Paints for Target Finish</option>
-        <option value="sortReady">Sort by Highest Match % (Target Finish)</option>
-      </select>
-
-      <label for="paint-model-range" class="sr-only">Paint range filter</label>
-      <select
-        id="paint-model-range"
-        class="input-control filter-select"
-        [ngModel]="rangeFilter()"
-        (ngModelChange)="rangeFilter.set($event); visibleLimit.set(60)"
-      >
-        <option value="all">All Paint Ranges</option>
-        <option value="warhammer_colour">Citadel Colour (Classic)</option>
-        <option value="warhammer_pro">Citadel Tone Pro</option>
-      </select>
-    </div>
-  </section>
+  </app-catalog-filter-bar>
 
   <!-- Results Count -->
   <div class="results-meta" aria-live="polite" aria-atomic="true">
@@ -209,56 +170,13 @@
   @if (displayedModels().length > 0) {
     <div class="models-grid">
       @for (item of displayedModels(); track item.model.id) {
-        <div class="model-card studio-card interactive">
-          <div class="model-img-box">
-            <img
-              [src]="img.resolve(item.model.localPrimaryImage, item.model.primaryImage)"
-              [alt]="item.model.name"
-              loading="lazy"
-            />
-            @if (item.model.range === 'warhammer_pro') {
-              <span class="range-tag badge badge-pro">Tone Pro</span>
-            }
-          </div>
-
-          <div class="model-card-body">
-            <h2 class="model-name">
-              <a [routerLink]="['/models', item.model.id]" class="card-stretched-link">
-                {{ item.model.name }}
-              </a>
-            </h2>
-            <p class="model-factions">
-              {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Miniature' }}
-            </p>
-
-            <app-stage-readiness-pills
-              [staged]="item.staged"
-              [activeStage]="targetStage()"
-            />
-          </div>
-
-          <div class="model-card-actions">
-            <button
-              type="button"
-              class="icon-toggle"
-              [class.active-owned]="userState.isModelOwned(item.model.id)"
-              (click)="userState.toggleModelInventory(item.model.id)"
-              title="Toggle Model Inventory"
-            >
-              {{ userState.isModelOwned(item.model.id) ? '✓ Owned' : '+ Own Model' }}
-            </button>
-            <button
-              type="button"
-              class="icon-toggle"
-              [class.active-wish]="userState.isModelWishlisted(item.model.id)"
-              [attr.aria-label]="(userState.isModelWishlisted(item.model.id) ? 'Remove from model wishlist: ' : 'Add to model wishlist: ') + item.model.name"
-              (click)="userState.toggleModelWishlist(item.model.id)"
-              title="Toggle Model Wishlist"
-            >
-              {{ userState.isModelWishlisted(item.model.id) ? '★' : '☆' }}
-            </button>
-          </div>
-        </div>
+        <app-model-card
+          [model]="item.model"
+          [staged]="item.staged"
+          [activeStage]="targetStage()"
+          [showRangeTag]="true"
+          headingLevel="h2"
+        />
       }
     </div>
 

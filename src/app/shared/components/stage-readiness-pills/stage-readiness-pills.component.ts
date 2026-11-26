@@ -4,6 +4,7 @@ import {
   InventoryReadinessResult,
   StagedReadinessResult,
 } from '../../../core/models/catalog.models';
+import { FINISH_STAGE_META } from '../../constants/finish-stage-meta';
 
 interface StagePillItem {
   key: FinishStageKey;
@@ -23,11 +24,11 @@ export class StageReadinessPillsComponent {
 
   readonly stages = computed<StagePillItem[]>(() => {
     const s = this.staged();
-    return [
-      { key: 'base', label: '1. Base', data: s.base },
-      { key: 'detail', label: '2. Detail', data: s.detail },
-      { key: 'artificer', label: '3. Artificer', data: s.artificer },
-    ];
+    return FINISH_STAGE_META.map((meta) => ({
+      key: meta.key,
+      label: meta.shortLabel,
+      data: s[meta.key],
+    }));
   });
 }
 

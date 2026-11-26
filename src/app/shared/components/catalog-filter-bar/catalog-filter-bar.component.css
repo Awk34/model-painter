@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  align-items: center;
+}
+
+.search-input-wrap {
+  flex: 1;
+  min-width: min(100%, 240px);
+}
+
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.filter-select {
+  min-width: min(100%, 210px);
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .filter-controls {
+    width: 100%;
+  }
+
+  select.filter-select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}

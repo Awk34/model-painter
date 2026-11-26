@@ -18,8 +18,7 @@
         type="search"
         class="input-control big-search"
         placeholder="Type any miniature, faction, paint brand or name, or color scheme..."
-        [ngModel]="query()"
-        (ngModelChange)="query.set($event)"
+        [formControl]="queryControl"
         autofocus
       />
       @if (query()) {
@@ -76,45 +75,25 @@
       <h2>Paints ({{ matchedCitadelPaints().length + matchedThirdPartyPaints().length }})</h2>
       <div class="paints-grid">
         @for (cp of matchedCitadelPaints().slice(0, 24); track cp.id) {
-          <div class="paint-item studio-card">
-            <button type="button" class="paint-main" (click)="paintModal.openPaint(cp.id)">
-              <app-paint-swatch [paint]="cp" />
-              <div class="p-info">
-                <strong>{{ cp.name }}</strong>
-                <span>{{ getCitadelBrandLabel(cp.range, 'Citadel Colour') }} • {{ cp.category }}</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm"
-              [class.btn-owned]="userState.isOwned(cp.id)"
-              [class.btn-ghost]="!userState.isOwned(cp.id)"
-              (click)="userState.toggleInventory(cp.id)"
-            >
-              {{ userState.isOwned(cp.id) ? '✓ Owned' : '+ Own' }}
-            </button>
-          </div>
+          <app-paint-action-row
+            [paintId]="cp.id"
+            [name]="cp.name"
+            [subtitle]="getCitadelBrandLabel(cp.range, 'Citadel Colour') + ' • ' + cp.category"
+            [paint]="cp"
+            actionMode="own-only"
+            variant="card"
+          />
         }
 
         @for (tp of matchedThirdPartyPaints().slice(0, 24); track tp.id) {
-          <div class="paint-item studio-card">
-            <button type="button" class="paint-main" (click)="paintModal.openPaint(tp.id)">
-              <app-paint-swatch [paint]="tp" />
-              <div class="p-info">
-                <strong>{{ tp.name }}</strong>
-                <span>{{ tp.brand }} • {{ tp.range }}</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm"
-              [class.btn-owned]="userState.isOwned(tp.id)"
-              [class.btn-ghost]="!userState.isOwned(tp.id)"
-              (click)="userState.toggleInventory(tp.id)"
-            >
-              {{ userState.isOwned(tp.id) ? '✓ Owned' : '+ Own' }}
-            </button>
-          </div>
+          <app-paint-action-row
+            [paintId]="tp.id"
+            [name]="tp.name"
+            [subtitle]="tp.brand + ' • ' + tp.range"
+            [paint]="tp"
+            actionMode="own-only"
+            variant="card"
+          />
         }
       </div>
     </section>
@@ -144,42 +123,12 @@
       <h2>Model Painting Guides ({{ matchedModels().length }})</h2>
       <div class="cards-grid">
         @for (m of matchedModels().slice(0, 36); track m.id) {
-          <div class="result-card studio-card interactive">
-            <div class="m-img-box">
-              <img
-                [src]="img.resolve(m.localPrimaryImage, m.primaryImage)"
-                [alt]="m.name"
-                loading="lazy"
-              />
-            </div>
-            <div class="r-body">
-              <h3>
-                <a [routerLink]="['/models', m.id]" class="card-stretched-link">{{ m.name }}</a>
-              </h3>
-              <span>{{ m.factionNames.slice(0, 2).join(' • ') || m.gameNames[0] }}</span>
-            </div>
-            <div class="r-actions">
-              <button
-                type="button"
-                class="btn btn-sm"
-                [class.btn-owned]="userState.isModelOwned(m.id)"
-                [class.btn-ghost]="!userState.isModelOwned(m.id)"
-                (click)="userState.toggleModelInventory(m.id)"
-              >
-                {{ userState.isModelOwned(m.id) ? '✓ Owned' : '+ Own Model' }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm"
-                [class.btn-wishlist]="userState.isModelWishlisted(m.id)"
-                [class.btn-ghost]="!userState.isModelWishlisted(m.id)"
-                [attr.aria-label]="(userState.isModelWishlisted(m.id) ? 'Remove from model wishlist: ' : 'Add to model wishlist: ') + m.name"
-                (click)="userState.toggleModelWishlist(m.id)"
-              >
-                {{ userState.isModelWishlisted(m.id) ? '★' : '☆' }}
-              </button>
-            </div>
-          </div>
+          <app-model-card
+            [model]="m"
+            headingLevel="h3"
+            [compact]="true"
+            subtitleFallback=""
+          />
         }
       </div>
     </section>

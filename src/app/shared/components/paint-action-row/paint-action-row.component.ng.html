@@ -1,0 +1,142 @@
+<div class="par-container" [class]="'par-container variant-' + variant()">
+  <button type="button" class="par-main" (click)="onInspect()">
+    @if (stepOrder() !== null) {
+      <span class="step-order-num">{{ stepOrder() }}</span>
+    }
+    @if (imageUrl(); as imgSrc) {
+      <img [src]="imgSrc" [alt]="name()" class="par-pot-thumb" loading="lazy" />
+    } @else {
+      <app-paint-swatch [paint]="paint()" [hex]="hex()" [size]="swatchSize()" />
+    }
+
+    <div class="par-info">
+      <strong class="par-name">{{ name() }}</strong>
+      @if (subtitle()) {
+        <span class="par-sub">{{ subtitle() }}</span>
+      }
+      <ng-content select="[paintRowMeta]" />
+      @if (deltaE() !== null) {
+        <span class="delta-badge" [attr.data-quality]="matchQuality()">
+          ΔE {{ deltaE() }}@if (matchQuality()) { ({{ matchQuality() }})}
+        </span>
+      }
+    </div>
+  </button>
+
+  @if (actionMode() !== 'none') {
+    <div class="par-actions">
+      @switch (actionMode()) {
+        @case ('owned-badge') {
+          <span class="badge badge-owned">✓ Owned</span>
+        }
+        @case ('compact-own') {
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-owned]="userState.isOwned(paintId())"
+            [class.btn-ghost]="!userState.isOwned(paintId())"
+            [attr.aria-label]="(userState.isOwned(paintId()) ? 'Remove from inventory: ' : 'Add to inventory: ') + name()"
+            (click)="userState.toggleInventory(paintId())"
+          >
+            {{ userState.isOwned(paintId()) ? '✓' : '+' }}
+          </button>
+        }
+        @case ('own-only') {
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-owned]="userState.isOwned(paintId())"
+            [class.btn-ghost]="!userState.isOwned(paintId())"
+            (click)="userState.toggleInventory(paintId())"
+          >
+            {{ userState.isOwned(paintId()) ? '✓ Owned' : '+ Own' }}
+          </button>
+        }
+        @case ('own-wish-text') {
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-owned]="userState.isOwned(paintId())"
+            [class.btn-ghost]="!userState.isOwned(paintId())"
+            (click)="userState.toggleInventory(paintId())"
+          >
+            {{ userState.isOwned(paintId()) ? '✓ Owned' : '+ Own' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-wishlist]="userState.isWishlisted(paintId())"
+            [class.btn-ghost]="!userState.isWishlisted(paintId())"
+            [attr.aria-label]="(userState.isWishlisted(paintId()) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
+            (click)="userState.toggleWishlist(paintId())"
+          >
+            {{ userState.isWishlisted(paintId()) ? '★ Wishlisted' : '☆ Wishlist' }}
+          </button>
+        }
+        @default {
+          @if (userState.isOwned(paintId())) {
+            @if (useIconToggle()) {
+              <button
+                type="button"
+                class="icon-toggle active-owned"
+                title="Toggle Inventory"
+                (click)="userState.toggleInventory(paintId())"
+              >
+                ✓ Owned
+              </button>
+              <button
+                type="button"
+                class="icon-toggle"
+                [class.active-wish]="userState.isWishlisted(paintId())"
+                [attr.aria-label]="(userState.isWishlisted(paintId()) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
+                title="Toggle Wishlist"
+                (click)="userState.toggleWishlist(paintId())"
+              >
+                {{ userState.isWishlisted(paintId()) ? '★' : '☆' }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="btn btn-sm btn-owned"
+                (click)="userState.toggleInventory(paintId())"
+              >
+                ✓ Owned
+              </button>
+            }
+          } @else if (substitute()) {
+            @let sub = substitute()!;
+            <button
+              type="button"
+              class="btn btn-sm badge-sub"
+              title="Covered by equivalent in your Inventory"
+              (click)="onInspect()"
+            >
+              {{ substituteFormat() === 'short' ? '⇄ ' + sub.substituteName : '⇄ Covered by ' + sub.substituteName }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              [class]="useIconToggle() ? 'icon-toggle' : 'btn btn-sm btn-ghost'"
+              [title]="useIconToggle() ? 'Toggle Inventory' : ''"
+              (click)="userState.toggleInventory(paintId())"
+            >
+              + Own
+            </button>
+            <button
+              type="button"
+              [class]="useIconToggle() ? 'icon-toggle' : 'btn btn-sm'"
+              [class.active-wish]="useIconToggle() && userState.isWishlisted(paintId())"
+              [class.btn-wishlist]="!useIconToggle() && userState.isWishlisted(paintId())"
+              [class.btn-ghost]="!useIconToggle() && !userState.isWishlisted(paintId())"
+              [attr.aria-label]="(userState.isWishlisted(paintId()) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
+              [title]="useIconToggle() ? 'Toggle Wishlist' : ''"
+              (click)="userState.toggleWishlist(paintId())"
+            >
+              {{ userState.isWishlisted(paintId()) ? '★' : '☆' }}
+            </button>
+          }
+        }
+      }
+    </div>
+  }
+</div>

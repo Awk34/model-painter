@@ -1,7 +1,5 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { USER_LIMITS, formatBytes } from '../../../core/config/user-limits.config';
+import { USER_LIMITS } from '../../../core/config/user-limits.config';
 import {
   UserPhotoKind,
   UserPhotoTargetType,
@@ -15,11 +13,13 @@ import {
   isEditableElement,
   readClipboardImageFiles,
 } from '../../../core/utils/clipboard-image.util';
-import { AppModalDialogComponent } from '../modal-dialog/modal-dialog.component';
+import { PhotoCardComponent } from './photo-card.component';
+import { PhotoLightboxComponent } from './photo-lightbox.component';
+import { PhotoUploadDropzoneComponent } from './photo-upload-dropzone.component';
 
 @Component({
   selector: 'app-user-photo-gallery',
-  imports: [DatePipe, FormsModule, AppModalDialogComponent],
+  imports: [PhotoUploadDropzoneComponent, PhotoCardComponent, PhotoLightboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './user-photo-gallery.component.ng.html',
   styleUrl: './user-photo-gallery.component.css',
@@ -31,7 +31,6 @@ export class UserPhotoGalleryComponent {
   readonly userState = inject(UserStateService);
   readonly media = inject(UserMediaService);
   readonly limits = USER_LIMITS;
-  readonly formatBytes = formatBytes;
 
   readonly targetType = input.required<UserPhotoTargetType>();
   readonly targetId = input.required<string>();
@@ -130,42 +129,12 @@ export class UserPhotoGalleryComponent {
     });
   }
 
-  async onFileInputChange(event: Event): Promise<void> {
-    const inputEl = event.target as HTMLInputElement;
-    const fileList = inputEl.files;
-    if (!fileList || fileList.length === 0) {
-      return;
-    }
-    const files = Array.from(fileList);
-    inputEl.value = '';
-    await this.handleFiles(files);
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    if (!this.isAtLimit() && !this.uploading()) {
-      this.dragActive.set(true);
-    }
-  }
-
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
     const currentTarget = event.currentTarget as HTMLElement | null;
     const relatedTarget = event.relatedTarget;
     if (!(relatedTarget instanceof Node && currentTarget?.contains(relatedTarget))) {
       this.dragActive.set(false);
-    }
-  }
-
-  async onDrop(event: DragEvent): Promise<void> {
-    event.preventDefault();
-    this.dragActive.set(false);
-    if (this.isAtLimit() || this.uploading()) {
-      return;
-    }
-    const files = Array.from(event.dataTransfer?.files ?? []);
-    if (files.length > 0) {
-      await this.handleFiles(files);
     }
   }
 
@@ -215,7 +184,7 @@ export class UserPhotoGalleryComponent {
     }
   }
 
-  private async handleFiles(files: File[]): Promise<void> {
+  async handleFiles(files: File[]): Promise<void> {
     this.uploading.set(true);
     this.errorMessages.set([]);
     try {
@@ -248,8 +217,8 @@ export class UserPhotoGalleryComponent {
     this.editingCaptionText.set('');
   }
 
-  saveCaption(photoId: string): void {
-    this.userState.updatePhotoCaption(photoId, this.editingCaptionText());
+  saveCaption(photoId: string, captionText?: string): void {
+    this.userState.updatePhotoCaption(photoId, captionText ?? this.editingCaptionText());
     this.editingCaptionId.set(null);
     this.editingCaptionText.set('');
   }
@@ -296,18 +265,5 @@ export class UserPhotoGalleryComponent {
       return;
     }
     this.lightboxIndex.set((idx + 1) % len);
-  }
-
-  onLightboxKeyDown(event: KeyboardEvent): void {
-    if (!this.activeLightboxPhoto() || this.photos().length <= 1 || isEditableElement(event.target)) {
-      return;
-    }
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      this.prevPhoto();
-    } else if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      this.nextPhoto();
-    }
   }
 }

@@ -1,0 +1,122 @@
+<app-modal-dialog
+  class="zoom-modal-dialog"
+  [open]="open()"
+  [ariaLabelledBy]="open() ? 'zoom-modal-title' : null"
+  size="xl"
+  (closed)="close()"
+>
+  @if (open()) {
+    <div class="zoom-modal-panel">
+      <div class="modal-header zoom-modal-header">
+        <div class="zoom-title-group">
+          <h2 id="zoom-modal-title">{{ title() }}</h2>
+          <span class="zoom-hint">Scroll or +/− to zoom • Drag or Arrow keys to pan • 0 to reset • Double-click to toggle zoom</span>
+        </div>
+
+        <div class="zoom-toolbar">
+          @if (canShowColorPins()) {
+            <button
+              type="button"
+              class="btn btn-sm zoom-pins-toggle-btn"
+              [class.btn-gold]="showZoomPins()"
+              [class.btn-ghost]="!showZoomPins()"
+              [attr.aria-pressed]="showZoomPins()"
+              (click)="toggleZoomPins()"
+            >
+              {{ showZoomPins() ? '👁 Hide Orbs' : '👁 Show Orbs' }} ({{ colorPoints().length }})
+            </button>
+          }
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            aria-label="Zoom out"
+            [disabled]="zoomScale() <= 1"
+            (click)="zoomOut()"
+          >
+            −
+          </button>
+          <span class="zoom-readout-pill">{{ (zoomScale() * 100) | number:'1.0-0' }}%</span>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            aria-label="Zoom in"
+            [disabled]="zoomScale() >= 4"
+            (click)="zoomIn()"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            aria-label="Reset zoom and pan"
+            (click)="resetZoom()"
+          >
+            1× Fit
+          </button>
+          <button
+            type="button"
+            class="close-btn"
+            aria-label="Close zoom view"
+            title="Close (Esc)"
+            autofocus
+            (click)="close()"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="zoom-stage"
+        tabindex="0"
+        role="region"
+        aria-label="Zoomable model image. Use arrow keys to pan, plus and minus to zoom, 0 to reset."
+        [class.can-pan]="zoomScale() > 1"
+        [class.is-panning]="isPanning()"
+        (wheel)="onZoomWheel($event)"
+        (dblclick)="toggleQuickZoom()"
+        (pointerdown)="onPanStart($event)"
+        (pointermove)="onPanMove($event)"
+        (pointerup)="onPanEnd($event)"
+        (pointercancel)="onPanEnd($event)"
+      >
+        <div
+          class="zoom-canvas-box"
+          [style.transform]="'translate3d(' + panX() + 'px, ' + panY() + 'px, 0) scale(' + zoomScale() + ')'"
+          [style.--pin-scale]="1 / zoomScale()"
+        >
+          <img
+            [src]="imageUrl()"
+            [alt]="imageAlt()"
+            class="zoom-stage-img"
+            draggable="false"
+          />
+
+          @if (canShowColorPins() && showZoomPins()) {
+            @for (cp of colorPoints(); track cp.id) {
+              <button
+                type="button"
+                class="color-pin zoom-color-pin"
+                [class.active]="selectedColorPointId() === cp.id"
+                [style.left.%]="cp.point.x * 100"
+                [style.top.%]="cp.point.y * 100"
+                [style.background]="cp.hex"
+                [title]="cp.name"
+                [attr.aria-label]="cp.name"
+                (pointerdown)="$event.stopPropagation()"
+                (dblclick)="$event.stopPropagation()"
+                (click)="$event.stopPropagation(); selectColorPoint.emit(cp.id)"
+              ></button>
+            }
+          }
+        </div>
+      </div>
+
+      @if (hasThumbnailStrip()) {
+        <div class="zoom-modal-footer">
+          <ng-content select="[zoomFooter]" />
+        </div>
+      }
+    </div>
+  }
+</app-modal-dialog>

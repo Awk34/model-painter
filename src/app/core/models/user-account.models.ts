@@ -1,5 +1,7 @@
 import { ThirdPartyPaint } from './paint.models';
 
+export type CollectionSubMode = 'inventory' | 'wishlist' | 'catalogue';
+
 export enum CloudSyncStatus {
   LocalOnly = 'local-only',
   Synced = 'synced',

@@ -1,21 +1,28 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { CatalogService } from '../../core/services/catalog.service';
-import { ImageService } from '../../core/services/image.service';
-import { PaintModalService } from '../../core/services/paint-modal.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
   matchesModelSearch,
 } from '../../core/utils/catalog-filter.util';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
-import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint-swatch.component';
+import { ModelCardComponent } from '../../shared/components/model-card/model-card.component';
+import { PaintActionRowComponent } from '../../shared/components/paint-action-row/paint-action-row.component';
 
 @Component({
   selector: 'app-search',
-  imports: [DecimalPipe, FormsModule, RouterModule, AppIconComponent, PaintSwatchComponent],
+  imports: [
+    DecimalPipe,
+    ReactiveFormsModule,
+    RouterLink,
+    AppIconComponent,
+    ModelCardComponent,
+    PaintActionRowComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './search.component.ng.html',
   styleUrl: './search.component.css',
@@ -23,12 +30,24 @@ import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint
 export class SearchComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
-  readonly paintModal = inject(PaintModalService);
-  readonly img = inject(ImageService);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
 
   readonly query = signal<string>('');
   readonly tab = signal<'all' | 'models' | 'colors' | 'paints'>('all');
+  readonly queryControl = new FormControl('', { nonNullable: true });
+
+  constructor() {
+    effect(() => {
+      const value = this.query();
+      if (this.queryControl.value !== value) {
+        this.queryControl.setValue(value, { emitEvent: false });
+      }
+    });
+
+    this.queryControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((val) => {
+      this.query.set(val);
+    });
+  }
 
   readonly matchedCitadelPaints = computed(() => {
     const q = this.query().trim().toLowerCase();

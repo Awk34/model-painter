@@ -6,7 +6,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
@@ -18,12 +17,20 @@ import {
   PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
 import { AppModalDialogComponent } from '../modal-dialog/modal-dialog.component';
+import { PaintActionRowComponent } from '../paint-action-row/paint-action-row.component';
 import { PaintBrandBadgeComponent } from '../paint-brand-badge/paint-brand-badge.component';
 import { PaintSwatchComponent } from '../paint-swatch/paint-swatch.component';
+import { PaintOverrideLinkerComponent } from './paint-override-linker.component';
 
 @Component({
   selector: 'app-paint-detail-modal',
-  imports: [FormsModule, AppModalDialogComponent, PaintBrandBadgeComponent, PaintSwatchComponent],
+  imports: [
+    AppModalDialogComponent,
+    PaintActionRowComponent,
+    PaintBrandBadgeComponent,
+    PaintSwatchComponent,
+    PaintOverrideLinkerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-detail-modal.component.ng.html',
   styleUrl: './paint-detail-modal.component.css',
@@ -184,8 +191,7 @@ export class PaintDetailModalComponent {
     this.modalService.openPaint(id);
   }
 
-  addCustomLink(citadelPaintId: string): void {
-    const overrideId = this.selectedOverridePaintId();
+  addCustomLink(citadelPaintId: string, overrideId = this.selectedOverridePaintId()): void {
     if (!overrideId) {
       return;
     }
@@ -195,12 +201,12 @@ export class PaintDetailModalComponent {
 
   goToColor(colorId: string): void {
     this.close();
-    this.router.navigate(['/colors', colorId]);
+    void this.router.navigate(['/colors', colorId]);
   }
 
   goToModel(modelId: string): void {
     this.close();
-    this.router.navigate(['/models', modelId]);
+    void this.router.navigate(['/models', modelId]);
   }
 
   close(): void {

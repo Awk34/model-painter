@@ -85,7 +85,7 @@
     @let r = recipe();
     @if (loading()) {
       <div class="loading-card studio-card">
-        <p>Loading model recipe & interactive color points...</p>
+        <p>Loading model recipe &amp; interactive color points...</p>
       </div>
     } @else if (r) {
       <div class="hero-split">
@@ -120,7 +120,7 @@
                 </svg>
               </button>
 
-              @if (canShowColorPins() && showPins()) {
+              @if (canShowColorPins()) {
                 @for (cp of r.colorPoints; track cp.id) {
                   <button
                     type="button"
@@ -133,9 +133,7 @@
                     [attr.aria-label]="'Inspect color point: ' + cp.name"
                     [attr.aria-pressed]="selectedColorPointId() === cp.id"
                     (click)="selectColorPoint(cp.id)"
-                  >
-                    <span class="pin-ring"></span>
-                  </button>
+                  ></button>
                 }
               }
             </div>
@@ -143,48 +141,19 @@
 
           @if (hasThumbnailStrip()) {
             <div class="viewer-controls">
-              <div class="angle-thumbs" role="group" aria-label="Model photos">
-                @if (hasCustomOverlayFeatured() && customFeaturedUrl(); as featUrl) {
-                  <button
-                    type="button"
-                    class="angle-thumb featured-angle-thumb"
-                    [class.active]="viewingCustomFeatured() && !selectedUserPhoto()"
-                    title="Custom Featured Image"
-                    aria-label="View custom featured image"
-                    (click)="selectCustomFeaturedView()"
-                  >
-                    <img [src]="featUrl" alt="" />
-                    <span class="thumb-star" aria-hidden="true">★</span>
-                  </button>
-                }
-                @for (imgUrl of r.images; track $index; let idx = $index) {
-                  <button
-                    type="button"
-                    class="angle-thumb"
-                    [class.active]="!viewingCustomFeatured() && !selectedUserPhoto() && selectedImageIndex() === idx"
-                    [attr.aria-label]="'View official angle ' + (idx + 1)"
-                    (click)="selectOfficialAngleView(idx)"
-                  >
-                    <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
-                  </button>
-                }
-                @for (ph of userThumbPhotos(); track ph.id) {
-                  <button
-                    type="button"
-                    class="angle-thumb user-angle-thumb"
-                    [class.ref-angle-thumb]="ph.kind === 'reference'"
-                    [class.active]="selectedUserPhoto()?.id === ph.id"
-                    [title]="ph.caption || ph.fileName"
-                    [attr.aria-label]="'View ' + (ph.kind === 'reference' ? 'private reference photo: ' : 'my photo: ') + (ph.caption || ph.fileName)"
-                    (click)="selectUserPhotoView(ph.id)"
-                  >
-                    <img [src]="media.resolvePhotoUrl(ph)" alt="" />
-                    @if (ph.kind === 'reference') {
-                      <span class="thumb-lock" aria-hidden="true">🔒</span>
-                    }
-                  </button>
-                }
-              </div>
+              <app-model-thumbnail-strip
+                [officialImages]="r.images"
+                [localImagePaths]="r.localImagePaths"
+                [userPhotos]="userThumbPhotos()"
+                [customFeaturedUrl]="customFeaturedUrl()"
+                [hasCustomOverlayFeatured]="hasCustomOverlayFeatured()"
+                [viewingCustomFeatured]="viewingCustomFeatured()"
+                [selectedImageIndex]="selectedImageIndex()"
+                [selectedUserPhotoId]="selectedUserPhoto()?.id ?? null"
+                (selectCustomFeatured)="selectCustomFeaturedView()"
+                (selectOfficialAngle)="selectOfficialAngleView($event)"
+                (selectUserPhoto)="selectUserPhotoView($event)"
+              />
             </div>
           }
         </div>
@@ -257,81 +226,65 @@
       </div>
 
       <!-- User Uploaded Painted Photos & Private Reference Photos -->
-      <section class="project-section studio-card">
-        <div class="section-header-bar">
-          <button
-            type="button"
-            class="section-toggle-btn"
-            [attr.aria-expanded]="userPhotosExpanded()"
-            (click)="userPhotosExpanded.set(!userPhotosExpanded())"
-          >
-            <span class="section-chevron" [class.expanded]="userPhotosExpanded()">▸</span>
-            <h2>
-              📷
-              {{ isProjectMode() ? 'This Model Entry\'s Photos & Private References' : 'My Painted Photos & Private References' }}
-              ({{ modelPhotoCount() }})
-            </h2>
-          </button>
-        </div>
+      <app-collapsible-section
+        [title]="'📷 ' + (isProjectMode() ? 'This Model Entry\'s Photos & Private References' : 'My Painted Photos & Private References') + ' (' + modelPhotoCount() + ')'"
+        [(expanded)]="userPhotosExpanded"
+        contentClass="user-photos-content"
+      >
+        @if (isProjectMode() && project(); as proj) {
+          @if (projectModelEntry(); as entry) {
+            <app-user-photo-gallery
+              targetType="project_model"
+              [targetId]="entry.id"
+              [projectId]="proj.id"
+              kind="showcase"
+              heading="My Painted Photos (This Project Entry)"
+              description="Upload photos specific to this model instance in your project. Click 'Set Featured' to use any photo as its featured image."
+              [allowSetCover]="true"
+              [allowGlobalPaste]="!showFeaturedImageModal() && !zoomModalOpen()"
+              coverButtonLabel="Set Featured"
+              activeCoverBadgeLabel="★ Featured"
+              [activeCoverPhotoId]="featuredUploadedPhotoId()"
+              (selectCover)="onSelectFeaturedUploadedPhoto($event)"
+            />
 
-        @if (userPhotosExpanded()) {
-          <div class="section-content user-photos-content">
-            @if (isProjectMode() && project(); as proj) {
-              @if (projectModelEntry(); as entry) {
-                <app-user-photo-gallery
-                  targetType="project_model"
-                  [targetId]="entry.id"
-                  [projectId]="proj.id"
-                  kind="showcase"
-                  heading="My Painted Photos (This Project Entry)"
-                  description="Upload photos specific to this model instance in your project. Click 'Set Featured' to use any photo as its featured image."
-                  [allowSetCover]="true"
-                  [allowGlobalPaste]="!showFeaturedImageModal() && !zoomModalOpen()"
-                  coverButtonLabel="Set Featured"
-                  activeCoverBadgeLabel="★ Featured"
-                  [activeCoverPhotoId]="featuredUploadedPhotoId()"
-                  (selectCover)="onSelectFeaturedUploadedPhoto($event)"
-                />
+            <hr class="section-divider" />
 
-                <hr class="section-divider" />
+            <app-user-photo-gallery
+              targetType="project_model"
+              [targetId]="entry.id"
+              [projectId]="proj.id"
+              kind="reference"
+              heading="Private Reference Photos (This Project Entry)"
+              description="Private inspiration, alternative color schemes, or loadout reference shots stored exclusively with this project model."
+              [allowSetCover]="true"
+              coverButtonLabel="Set Featured"
+              activeCoverBadgeLabel="★ Featured"
+              [activeCoverPhotoId]="featuredUploadedPhotoId()"
+              (selectCover)="onSelectFeaturedUploadedPhoto($event)"
+            />
+          }
+        } @else {
+          <app-user-photo-gallery
+            targetType="model"
+            [targetId]="r.id"
+            kind="showcase"
+            heading="My Painted Model Photos"
+            description="Upload photos of your own painted version or work-in-progress stages of this miniature."
+            [allowGlobalPaste]="!showProjectModal() && !zoomModalOpen()"
+          />
 
-                <app-user-photo-gallery
-                  targetType="project_model"
-                  [targetId]="entry.id"
-                  [projectId]="proj.id"
-                  kind="reference"
-                  heading="Private Reference Photos (This Project Entry)"
-                  description="Private inspiration, alternative color schemes, or loadout reference shots stored exclusively with this project model."
-                  [allowSetCover]="true"
-                  coverButtonLabel="Set Featured"
-                  activeCoverBadgeLabel="★ Featured"
-                  [activeCoverPhotoId]="featuredUploadedPhotoId()"
-                  (selectCover)="onSelectFeaturedUploadedPhoto($event)"
-                />
-              }
-            } @else {
-              <app-user-photo-gallery
-                targetType="model"
-                [targetId]="r.id"
-                kind="showcase"
-                heading="My Painted Model Photos"
-                description="Upload photos of your own painted version or work-in-progress stages of this miniature."
-                [allowGlobalPaste]="!showProjectModal() && !zoomModalOpen()"
-              />
+          <hr class="section-divider" />
 
-              <hr class="section-divider" />
-
-              <app-user-photo-gallery
-                targetType="model"
-                [targetId]="r.id"
-                kind="reference"
-                heading="Private Model Reference Photos"
-                description="Private inspiration, alternative color schemes, or reference closeups for painting this model."
-              />
-            }
-          </div>
+          <app-user-photo-gallery
+            targetType="model"
+            [targetId]="r.id"
+            kind="reference"
+            heading="Private Model Reference Photos"
+            description="Private inspiration, alternative color schemes, or reference closeups for painting this model."
+          />
         }
-      </section>
+      </app-collapsible-section>
 
       @if (r.paintingAreas.length) {
         <app-model-painting-steps
@@ -368,170 +321,39 @@
         }
       }
 
-      <app-modal-dialog
-        class="zoom-modal-dialog"
+      <app-image-zoom-lightbox
         [open]="zoomModalOpen()"
-        [ariaLabelledBy]="zoomModalOpen() ? 'zoom-modal-title' : null"
-        size="xl"
+        [title]="projectModelEntry()?.customName || r.name"
+        [imageUrl]="activeImageUrl()"
+        [imageAlt]="(projectModelEntry()?.customName || r.name) + ' zoomed detail view'"
+        [colorPoints]="r.colorPoints"
+        [canShowColorPins]="canShowColorPins()"
+        [selectedColorPointId]="selectedColorPointId()"
+        [hasThumbnailStrip]="hasThumbnailStrip()"
+        [(zoomScale)]="zoomScale"
+        [(panX)]="panX"
+        [(panY)]="panY"
+        [(showZoomPins)]="showZoomPins"
         (closed)="closeZoomModal()"
+        (selectColorPoint)="selectColorPoint($event)"
       >
-        @if (zoomModalOpen()) {
-          <div class="zoom-modal-panel">
-            <div class="modal-header zoom-modal-header">
-              <div class="zoom-title-group">
-                <h2 id="zoom-modal-title">{{ projectModelEntry()?.customName || r.name }}</h2>
-                <span class="zoom-hint">Scroll or +/− to zoom • Drag or Arrow keys to pan • 0 to reset • Double-click to toggle zoom</span>
-              </div>
-
-              <div class="zoom-toolbar">
-                @if (canShowColorPins()) {
-                  <button
-                    type="button"
-                    class="btn btn-sm zoom-pins-toggle-btn"
-                    [class.btn-gold]="showZoomPins()"
-                    [class.btn-ghost]="!showZoomPins()"
-                    [attr.aria-pressed]="showZoomPins()"
-                    (click)="toggleZoomPins()"
-                  >
-                    {{ showZoomPins() ? '👁 Hide Orbs' : '👁 Show Orbs' }} ({{ r.colorPoints.length }})
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-sm"
-                  aria-label="Zoom out"
-                  [disabled]="zoomScale() <= 1"
-                  (click)="zoomOut()"
-                >
-                  −
-                </button>
-                <span class="zoom-readout-pill">{{ (zoomScale() * 100) | number:'1.0-0' }}%</span>
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-sm"
-                  aria-label="Zoom in"
-                  [disabled]="zoomScale() >= 4"
-                  (click)="zoomIn()"
-                >
-                  +
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-sm"
-                  aria-label="Reset zoom and pan"
-                  (click)="resetZoom()"
-                >
-                  1× Fit
-                </button>
-                <button
-                  type="button"
-                  class="close-btn"
-                  aria-label="Close zoom view"
-                  title="Close (Esc)"
-                  autofocus
-                  (click)="closeZoomModal()"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div
-              class="zoom-stage"
-              tabindex="0"
-              role="region"
-              aria-label="Zoomable model image. Use arrow keys to pan, plus and minus to zoom, 0 to reset."
-              [class.can-pan]="zoomScale() > 1"
-              [class.is-panning]="isPanning()"
-              (wheel)="onZoomWheel($event)"
-              (dblclick)="toggleQuickZoom()"
-              (pointerdown)="onPanStart($event)"
-              (pointermove)="onPanMove($event)"
-              (pointerup)="onPanEnd($event)"
-              (pointercancel)="onPanEnd($event)"
-            >
-              <div
-                class="zoom-canvas-box"
-                [style.transform]="'translate3d(' + panX() + 'px, ' + panY() + 'px, 0) scale(' + zoomScale() + ')'"
-                [style.--pin-scale]="1 / zoomScale()"
-              >
-                <img
-                  [src]="activeImageUrl()"
-                  [alt]="(projectModelEntry()?.customName || r.name) + ' zoomed detail view'"
-                  class="zoom-stage-img"
-                  draggable="false"
-                />
-
-                @if (canShowColorPins() && showZoomPins()) {
-                  @for (cp of r.colorPoints; track cp.id) {
-                    <button
-                      type="button"
-                      class="color-pin zoom-color-pin"
-                      [class.active]="selectedColorPointId() === cp.id"
-                      [style.left.%]="cp.point.x * 100"
-                      [style.top.%]="cp.point.y * 100"
-                      [style.background]="cp.hex"
-                      [title]="cp.name"
-                      [attr.aria-label]="cp.name"
-                      (pointerdown)="$event.stopPropagation()"
-                      (dblclick)="$event.stopPropagation()"
-                      (click)="$event.stopPropagation(); selectColorPoint(cp.id)"
-                    >
-                      <span class="pin-ring"></span>
-                    </button>
-                  }
-                }
-              </div>
-            </div>
-
-            @if (hasThumbnailStrip()) {
-              <div class="zoom-modal-footer">
-                <div class="angle-thumbs" role="group" aria-label="Model photos">
-                  @if (hasCustomOverlayFeatured() && customFeaturedUrl(); as featUrl) {
-                    <button
-                      type="button"
-                      class="angle-thumb featured-angle-thumb"
-                      [class.active]="viewingCustomFeatured() && !selectedUserPhoto()"
-                      aria-label="View custom featured image"
-                      (click)="selectCustomFeaturedView()"
-                    >
-                      <img [src]="featUrl" alt="" />
-                      <span class="thumb-star" aria-hidden="true">★</span>
-                    </button>
-                  }
-                  @for (imgUrl of r.images; track $index; let idx = $index) {
-                    <button
-                      type="button"
-                      class="angle-thumb"
-                      [class.active]="!viewingCustomFeatured() && !selectedUserPhoto() && selectedImageIndex() === idx"
-                      [attr.aria-label]="'View angle ' + (idx + 1)"
-                      (click)="selectOfficialAngleView(idx)"
-                    >
-                      <img [src]="img.resolve(r.localImagePaths[idx], imgUrl)" alt="" />
-                    </button>
-                  }
-                  @for (ph of userThumbPhotos(); track ph.id) {
-                    <button
-                      type="button"
-                      class="angle-thumb user-angle-thumb"
-                      [class.ref-angle-thumb]="ph.kind === 'reference'"
-                      [class.active]="selectedUserPhoto()?.id === ph.id"
-                      [title]="ph.caption || ph.fileName"
-                      [attr.aria-label]="'View ' + (ph.kind === 'reference' ? 'private reference photo: ' : 'my photo: ') + (ph.caption || ph.fileName)"
-                      (click)="selectUserPhotoView(ph.id)"
-                    >
-                      <img [src]="media.resolvePhotoUrl(ph)" alt="" />
-                      @if (ph.kind === 'reference') {
-                        <span class="thumb-lock" aria-hidden="true">🔒</span>
-                      }
-                    </button>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </app-modal-dialog>
+        <app-model-thumbnail-strip
+          zoomFooter
+          [officialImages]="r.images"
+          [localImagePaths]="r.localImagePaths"
+          [userPhotos]="userThumbPhotos()"
+          [customFeaturedUrl]="customFeaturedUrl()"
+          [hasCustomOverlayFeatured]="hasCustomOverlayFeatured()"
+          [viewingCustomFeatured]="viewingCustomFeatured()"
+          [selectedImageIndex]="selectedImageIndex()"
+          [selectedUserPhotoId]="selectedUserPhoto()?.id ?? null"
+          officialAriaPrefix="View angle "
+          [showCustomFeaturedTitle]="false"
+          (selectCustomFeatured)="selectCustomFeaturedView()"
+          (selectOfficialAngle)="selectOfficialAngleView($event)"
+          (selectUserPhoto)="selectUserPhotoView($event)"
+        />
+      </app-image-zoom-lightbox>
     } @else if (loadError()) {
       <div class="empty-box studio-card" role="alert">
         @if (isProjectMode() && project() && projectModelEntry()) {

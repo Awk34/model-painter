@@ -1,8 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   FinishStageKey,
   ModelSummary,
@@ -13,6 +13,7 @@ import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
 import { UserStateService } from '../../core/services/user-state.service';
+import { CollapsibleSectionComponent } from '../../shared/components/collapsible-section/collapsible-section.component';
 import { StageReadinessBarsComponent } from '../../shared/components/stage-readiness-bars/stage-readiness-bars.component';
 import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
 import { ProjectNotesSectionComponent } from './components/project-notes-section.component';
@@ -43,8 +44,9 @@ export interface ProjectModelCardView {
   selector: 'app-project-detail',
   imports: [
     DatePipe,
-    FormsModule,
-    RouterModule,
+    ReactiveFormsModule,
+    RouterLink,
+    CollapsibleSectionComponent,
     UserPhotoGalleryComponent,
     StageReadinessBarsComponent,
     ProjectPaintRollupComponent,
@@ -64,7 +66,9 @@ export class ProjectDetailComponent {
   readonly img = inject(ImageService);
   readonly projectImg = inject(ProjectImageResolverService);
 
-  readonly projectId = signal<string>('');
+  private readonly paramMap = toSignal(this.route.paramMap);
+  readonly projectId = computed(() => this.paramMap()?.get('id') ?? '');
+
   readonly modelsExpanded = signal(true);
   readonly paintsExpanded = signal(true);
   readonly photosExpanded = signal(true);
@@ -76,20 +80,38 @@ export class ProjectDetailComponent {
 
   readonly editingTitle = signal(false);
   readonly titleDraft = signal('');
+  readonly titleControl = new FormControl('', { nonNullable: true });
+  readonly titleForm = new FormGroup({ title: this.titleControl });
+
+  private lastProjectId: string | null = null;
 
   constructor() {
-    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      this.projectId.set(params.get('id') ?? '');
-      this.modelsExpanded.set(true);
-      this.paintsExpanded.set(true);
-      this.photosExpanded.set(true);
-      this.colorsExpanded.set(true);
-      this.notesExpanded.set(true);
-      this.editingTitle.set(false);
-      this.titleDraft.set('');
-      this.activePickerModal.set(null);
-      this.notesEditorOpen.set(false);
-      this.selectedRollupStage.set('base');
+    effect(() => {
+      const pid = this.projectId();
+      if (this.lastProjectId !== null && pid !== this.lastProjectId) {
+        this.modelsExpanded.set(true);
+        this.paintsExpanded.set(true);
+        this.photosExpanded.set(true);
+        this.colorsExpanded.set(true);
+        this.notesExpanded.set(true);
+        this.editingTitle.set(false);
+        this.titleDraft.set('');
+        this.activePickerModal.set(null);
+        this.notesEditorOpen.set(false);
+        this.selectedRollupStage.set('base');
+      }
+      this.lastProjectId = pid;
+    });
+
+    effect(() => {
+      const t = this.titleDraft();
+      if (this.titleControl.value !== t) {
+        this.titleControl.setValue(t, { emitEvent: false });
+      }
+    });
+
+    this.titleControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.titleDraft.set(v);
     });
   }
 
@@ -201,14 +223,14 @@ export class ProjectDetailComponent {
   duplicateAndOpen(projectId: string): void {
     const copy = this.userState.duplicateProject(projectId);
     if (copy) {
-      this.router.navigate(['/projects', copy.id]);
+      void this.router.navigate(['/projects', copy.id]);
     }
   }
 
   deleteProject(projectId: string, name: string): void {
     if (confirm(`Delete project "${name}"?`)) {
       this.userState.deleteProject(projectId);
-      this.router.navigate(['/hobby-desk']);
+      void this.router.navigate(['/hobby-desk']);
     }
   }
 

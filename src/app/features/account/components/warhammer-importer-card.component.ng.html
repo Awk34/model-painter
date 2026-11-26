@@ -1,0 +1,95 @@
+<div class="settings-card studio-card">
+  <span class="badge badge-gold">Multi-User Importer</span>
+  <h2>Import from Any "My Warhammer" Account</h2>
+  <p class="settings-desc">
+    Any user can import their live Inventory, Wishlist, and custom Projects from the official Citadel Colour app using either the self-service Auth0 PKCE flow or a file upload.
+  </p>
+
+  <div class="import-mode-selector">
+    <label class="radio-label">
+      <input type="radio" [formControl]="importModeControl" value="merge" />
+      <span>Merge with current browser data (Recommended)</span>
+    </label>
+    <label class="radio-label">
+      <input type="radio" [formControl]="importModeControl" value="replace" />
+      <span>Replace current browser data</span>
+    </label>
+  </div>
+
+  <div class="wizard-steps">
+    @if (snapshotAvailable() === true) {
+      <div class="wizard-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Quick Snapshot (Extracted APK Account)</strong>
+          <p>Load the pre-extracted account snapshot (owned paints, wishlist paints, and projects).</p>
+          <button
+            type="button"
+            class="btn btn-gold btn-sm"
+            [disabled]="snapshotBusy()"
+            (click)="loadSnapshot.emit()"
+          >
+            {{ snapshotBusy() ? 'Importing...' : '⚡ Import Extracted Account Snapshot' }}
+          </button>
+          @if (snapshotError()) {
+            <p class="error-msg" role="alert">{{ snapshotError() }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="wizard-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>Self-Service My Warhammer Login (Auth0 PKCE)</strong>
+        <p>
+          Click below to open <code>login.mywarhammer.com</code> in a new tab. After signing in, open DevTools Network tab, copy the full <code>citadel-colour://.../callback?code=...&amp;state=...</code> redirect URL, and paste it below.
+        </p>
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="startPkceLogin()">
+            🔑 Open My Warhammer Login
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="copyPkceLoginUrl()">
+            {{ pkceUrlCopied() ? '✓ Copied Login URL!' : '📋 Copy Login URL to Clipboard' }}
+          </button>
+        </div>
+        <form class="pkce-paste-row" [formGroup]="pkceForm" (ngSubmit)="submitPkceCallback()">
+          <label for="pkce-callback-url" class="sr-only">My Warhammer callback URL</label>
+          <input
+            id="pkce-callback-url"
+            [formControl]="callbackUrlControl"
+            type="text"
+            class="input-control"
+            placeholder="Paste citadel-colour://login.mywarhammer.com/.../callback?code=...&state=... here"
+          />
+          <button
+            type="submit"
+            class="btn btn-gold btn-sm"
+            [disabled]="!callbackUrlValue().trim() || pkceBusy()"
+          >
+            {{ pkceBusy() ? 'Importing...' : 'Exchange &amp; Import' }}
+          </button>
+        </form>
+        @if (pkceError()) {
+          <p class="error-msg" role="alert">{{ pkceError() }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>Upload JSON or CSV File</strong>
+        <p>Upload any <code>user_account.json</code>, web app backup JSON, or <code>user_inventory_wishlist.csv</code>.</p>
+        <label for="account-import-file" class="sr-only">Upload JSON or CSV backup file</label>
+        <input
+          id="account-import-file"
+          type="file"
+          accept=".json,.csv"
+          class="file-input"
+          (change)="onFileUpload($event)"
+        />
+      </div>
+    </div>
+  </div>
+</div>
