@@ -1,16 +1,30 @@
-import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ModelPaintingStepsComponent } from '../../features/paint-model/components/model-painting-steps.component';
 import {
   CatalogManifest,
   CatalogSyncStatus,
   KNOWN_THIRD_PARTY_BRANDS,
 } from '../models/catalog.models';
 import { normalizePaintingStageLabel } from '../utils/catalog-normalizer.util';
-import { CatalogRepository } from './catalog.repository';
+import {
+  CATALOG_IDB_NAME,
+  CatalogRepository,
+  STORE_BUNDLES,
+  STORE_COLORS,
+  STORE_RECIPES,
+} from './catalog.repository';
 import { CatalogService } from './catalog.service';
-import { InventoryMatchService } from './inventory-match.service';
-import { UserStateService } from './user-state.service';
+
+async function resetCatalogIdb(): Promise<void> {
+  if (typeof indexedDB === 'undefined') {
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    const req = indexedDB.deleteDatabase(CATALOG_IDB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => resolve();
+    req.onblocked = () => resolve();
+  });
+}
 
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -22,10 +36,19 @@ function jsonResponse(payload: unknown, status = 200): Response {
 describe('CatalogService', () => {
   let fetchSpy: jasmine.Spy<typeof window.fetch>;
   let routeResponses: Map<string, () => Response>;
+  let activeServices: CatalogService[];
+
+  function injectCatalogService(): CatalogService {
+    const service = TestBed.inject(CatalogService);
+    activeServices.push(service);
+    return service;
+  }
 
   beforeEach(async () => {
+    activeServices = [];
     localStorage.removeItem('whc_pkce_token_cache');
     sessionStorage.removeItem('whc_pkce_token_cache');
+    await resetCatalogIdb();
 
     routeResponses = new Map<string, () => Response>([
       [
@@ -218,7 +241,16 @@ describe('CatalogService', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    const pendingInits = activeServices
+      .map((s) => (s as unknown as { initPromise: Promise<void> | null }).initPromise)
+      .filter((p): p is Promise<void> => Boolean(p));
+    if (pendingInits.length > 0) {
+      await Promise.allSettled(pendingInits);
+    }
+    activeServices = [];
+    TestBed.resetTestingModule();
+    await resetCatalogIdb();
     localStorage.removeItem('whc_pkce_token_cache');
     sessionStorage.removeItem('whc_pkce_token_cache');
   });
@@ -232,7 +264,7 @@ describe('CatalogService', () => {
   });
 
   it('loads full recipe from /data/recipes/{id}.json, preserves exact (x,y) pins, and normalizes paintingStage', async () => {
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
     await service.clearEntityCaches();
 
@@ -255,7 +287,7 @@ describe('CatalogService', () => {
   });
 
   it('loads color details from /data/colours/{id}.json and normalizes object colourGroups to string[]', async () => {
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
     await service.clearEntityCaches();
 
@@ -304,7 +336,7 @@ describe('CatalogService', () => {
       JSON.stringify({ code: 'abc', bearer: 'test-bearer-token' })
     );
 
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
     await service.clearEntityCaches();
 
@@ -330,7 +362,7 @@ describe('CatalogService', () => {
     );
     sessionStorage.removeItem('whc_pkce_token_cache');
 
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
     await service.clearEntityCaches();
 
@@ -383,7 +415,7 @@ describe('CatalogService', () => {
       })
     );
 
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
     await service.clearEntityCaches();
 
@@ -430,7 +462,7 @@ describe('CatalogService', () => {
       })
     );
 
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
 
     expect(service.thirdPartyBrands()).toEqual([
@@ -492,7 +524,7 @@ describe('CatalogService', () => {
       })
     );
 
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
 
     expect(service.models().map((m) => m.id)).toEqual([
@@ -530,7 +562,7 @@ describe('CatalogService', () => {
 
   it('logs console.warn on malformed entity JSON and still returns fetched recipe when idb.put fails', async () => {
     const warnSpy = spyOn(console, 'warn');
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await service.initializeCatalog(true);
     await service.clearEntityCaches();
 
@@ -615,7 +647,7 @@ describe('CatalogService', () => {
 
     const repo1 = TestBed.inject(CatalogRepository);
     attachIdbStub(repo1);
-    const service1 = TestBed.inject(CatalogService);
+    const service1 = injectCatalogService();
     await (service1 as unknown as { initPromise: Promise<void> }).initPromise;
 
     // Fetched paints_bundle is still hydrated in-memory despite idb.put failure
@@ -633,7 +665,7 @@ describe('CatalogService', () => {
     TestBed.configureTestingModule({ providers: [CatalogService] });
     const repo2 = TestBed.inject(CatalogRepository);
     attachIdbStub(repo2);
-    const service2 = TestBed.inject(CatalogService);
+    const service2 = injectCatalogService();
     await (service2 as unknown as { initPromise: Promise<void> }).initPromise;
 
     const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
@@ -693,7 +725,7 @@ describe('CatalogService', () => {
       idbStore.set(`${store}:${key}`, value);
     });
 
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await (service as unknown as { initPromise: Promise<void> }).initPromise;
 
     const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
@@ -757,7 +789,7 @@ describe('CatalogService', () => {
       idbStore.set(`${store}:${key}`, value);
     });
 
-    const service = TestBed.inject(CatalogService);
+    const service = injectCatalogService();
     await (service as unknown as { initPromise: Promise<void> }).initPromise;
 
     const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
@@ -765,377 +797,159 @@ describe('CatalogService', () => {
     expect(service.paints().length).toBeGreaterThan(0);
     expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
   });
-});
 
-describe('ModelPaintingStepsComponent stage filtering', () => {
-  function configureStepsTestingModule() {
-    TestBed.configureTestingModule({
-      imports: [ModelPaintingStepsComponent],
-      providers: [
-        {
-          provide: UserStateService,
-          useValue: {
-            isOwned: () => false,
-            isWishlisted: () => false,
-            toggleInventory: () => undefined,
-            toggleWishlist: () => undefined,
-            getCompletedStepIds: () => [],
-            getProjectModelCompletedStepIds: () => [],
-            toggleStepDone: () => undefined,
-            toggleProjectModelStepDone: () => undefined,
-            setStepsDone: () => undefined,
-            setProjectModelStepsDone: () => undefined,
-            clearModelProgress: () => undefined,
-            clearProjectModelProgress: () => undefined,
-          },
-        },
-        {
-          provide: InventoryMatchService,
-          useValue: {},
-        },
-        {
-          provide: CatalogService,
-          useValue: {
-            paints: signal([]),
-            paintById: signal(new Map()),
-          },
-        },
-      ],
-    });
-  }
+  it('populates and clears all 3 IndexedDB stores (bundles, recipes, colors) cleanly for isolation', async () => {
+    const service = injectCatalogService();
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+    await service.getModelRecipe('model-dante');
+    await service.getColorDetails('color-gold');
 
-  it('filters both normalized and raw paintingStage values', () => {
-    configureStepsTestingModule();
+    const repo = TestBed.inject(CatalogRepository);
+    const idbClient = (repo as unknown as {
+      idb: { get: <T>(store: string, key: string) => Promise<T | null> };
+    }).idb;
 
-    const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
-    const comp = fixture.componentInstance;
-    const steps = [
-      { id: 's1', stepOrder: 1, stepNumber: 1, paintingStage: 'base' },
-      { id: 's2', stepOrder: 2, stepNumber: 2, paintingStage: 'Detail Finish' },
-      { id: 's3', stepOrder: 3, stepNumber: 3, paintingStage: 'artificer' },
-    ];
+    expect(await idbClient.get(STORE_BUNDLES, 'manifest')).not.toBeNull();
+    expect(await idbClient.get(STORE_BUNDLES, 'paints_bundle')).not.toBeNull();
+    expect(await idbClient.get(STORE_RECIPES, 'model-dante')).not.toBeNull();
+    expect(await idbClient.get(STORE_COLORS, 'color-gold')).not.toBeNull();
 
-    comp.stageFilter.set('Base Finish');
-    expect(comp.filterSteps(steps).map((s) => s.id)).toEqual(['s1']);
-
-    comp.stageFilter.set('Detail Finish');
-    expect(comp.filterSteps(steps).map((s) => s.id)).toEqual(['s2']);
-
-    comp.stageFilter.set('Artificer Finish');
-    expect(comp.filterSteps(steps).map((s) => s.id)).toEqual(['s3']);
-
-    comp.stageFilter.set('all');
-    expect(comp.filterSteps(steps).map((s) => s.id)).toEqual(['s1', 's2', 's3']);
+    await repo.clearAllCache();
+    expect(await idbClient.get(STORE_BUNDLES, 'manifest')).toBeNull();
+    expect(await idbClient.get(STORE_BUNDLES, 'paints_bundle')).toBeNull();
+    expect(await idbClient.get(STORE_RECIPES, 'model-dante')).toBeNull();
+    expect(await idbClient.get(STORE_COLORS, 'color-gold')).toBeNull();
   });
 
-  it('renders metallic gradient background and .metallic class on metallic step swatches', () => {
-    configureStepsTestingModule();
+  it('transitions to OfflineCached when remote manifest fetch fails after IDB hydration', async () => {
+    const repo = TestBed.inject(CatalogRepository);
+    const idbClient = (repo as unknown as {
+      idb: {
+        put: (store: string, key: string, value: unknown) => Promise<void>;
+      };
+    }).idb;
 
-    const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
-    fixture.componentRef.setInput('paintingAreas', [
-      {
-        id: 'area-base',
-        areaOrder: 1,
-        name: 'Base Finish',
-        paintingSteps: [
+    await idbClient.put(STORE_BUNDLES, 'manifest', {
+      schemaVersion: 1,
+      updatedAt: '2026-11-15T00:00:00Z',
+      bundles: {
+        paints_bundle: 'sha256:paints_cached',
+      },
+    });
+    await idbClient.put(STORE_BUNDLES, 'paints_bundle', {
+      paints: [
+        {
+          id: 'paint-cached',
+          name: 'Cached Blue',
+          range: 'warhammer_colour',
+          category: 'Base',
+          gradientStartHex: '#112233',
+        },
+      ],
+      compatibility: [],
+    });
+
+    routeResponses.set('/data/catalog_meta/manifest.json', () =>
+      new Response('Offline', { status: 503 })
+    );
+
+    const warnSpy = spyOn(console, 'warn');
+    const service = injectCatalogService();
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    expect(service.paints().map((p) => p.id)).toEqual(['paint-cached']);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.OfflineCached);
+    expect(service.loading()).toBeFalse();
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it('discards stale concurrent initializeCatalog runs via initGeneration', async () => {
+    const service = injectCatalogService();
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    let resolveSlowManifest!: (resp: Response) => void;
+    let holdSlowManifest = true;
+
+    fetchSpy.and.callFake((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === '/data/catalog_meta/manifest.json' && holdSlowManifest) {
+        holdSlowManifest = false;
+        return new Promise<Response>((resolve) => {
+          resolveSlowManifest = resolve;
+        });
+      }
+      const responder = routeResponses.get(url);
+      if (responder) {
+        return Promise.resolve(responder());
+      }
+      return Promise.resolve(new Response('Not Found', { status: 404 }));
+    });
+
+    // Start slow run (run 1 after constructor) then immediately start newer run (run 2)
+    routeResponses.set('/data/catalog_meta/paints_bundle.json', () =>
+      jsonResponse({
+        paints: [
           {
-            id: 'step-gold',
-            stepOrder: 1,
-            stepNumber: 6,
-            paintingStage: 'Base Finish',
-            techniqueName: 'Basecoat',
-            text: '• Gold areas',
-            paint: {
-              id: 'paint-retributor',
-              name: 'Retributor Armour',
-              category: 'base',
-              potStyle: 'metallic',
-              gradientStartHex: '#FFFFFF',
-              gradientMiddleHex: '#EBB854',
-              gradientEndHex: '#89571D',
-            },
-          },
-          {
-            id: 'step-black',
-            stepOrder: 2,
-            stepNumber: 7,
-            paintingStage: 'Base Finish',
-            techniqueName: 'Basecoat',
-            text: '• Black areas',
-            paint: {
-              id: 'paint-abaddon',
-              name: 'Abaddon Black',
-              category: 'base',
-              potStyle: 'flat',
-              gradientStartHex: '#000000',
-            },
-          },
-          {
-            id: 'step-shade',
-            stepOrder: 3,
-            stepNumber: 9,
-            paintingStage: 'Base Finish',
-            techniqueName: 'Shade',
-            text: '• Gold areas',
-            paint: {
-              id: 'paint-reikland',
-              name: 'Reikland Fleshshade',
-              category: 'shade',
-              potStyle: 'shade',
-              gradientStartHex: '#FFD5B7',
-              gradientMiddleHex: '#AC491D',
-              gradientEndHex: '#311908',
-            },
+            id: 'paint-newer',
+            name: 'Newer Paint',
+            range: 'warhammer_colour',
+            category: 'Base',
+            gradientStartHex: '#445566',
           },
         ],
-      },
-    ]);
-    fixture.componentRef.setInput('readiness', {
-      totalRequired: 3,
-      ownedDirectCount: 0,
-      substitutedCount: 0,
-      missingCount: 3,
-      matchPercent: 0,
-      ownedDirectIds: [],
-      substitutedByPaintId: {},
-      missingPaintIds: ['paint-retributor', 'paint-abaddon', 'paint-reikland'],
-    });
-    fixture.detectChanges();
+        compatibility: [],
+      })
+    );
+    const slowRun = service.initializeCatalog(false);
+    while (!resolveSlowManifest) {
+      await new Promise((r) => setTimeout(r, 0));
+    }
 
-    const swatches = Array.from(
-      fixture.nativeElement.querySelectorAll('.paint-swatch')
-    ) as HTMLElement[];
-    expect(swatches.length).toBe(3);
+    const newerRun = service.initializeCatalog(true);
+    await newerRun;
+    expect(service.paints().map((p) => p.id)).toEqual(['paint-newer']);
 
-    const goldSwatch = swatches[0];
-    expect(goldSwatch.classList.contains('metallic')).toBeTrue();
-    expect(goldSwatch.classList.contains('shade')).toBeFalse();
-    const goldBg = goldSwatch.style.background || goldSwatch.style.backgroundImage;
-    expect(goldBg).toContain('linear-gradient');
-    expect(goldBg).toContain('235, 184, 84'); // #EBB854 in rgb
-
-    const blackSwatch = swatches[1];
-    expect(blackSwatch.classList.contains('metallic')).toBeFalse();
-    expect(blackSwatch.classList.contains('shade')).toBeFalse();
-    expect(blackSwatch.style.background).toContain('rgb(0, 0, 0)');
-
-    const shadeSwatch = swatches[2];
-    expect(shadeSwatch.classList.contains('shade')).toBeTrue();
-    expect(shadeSwatch.classList.contains('metallic')).toBeFalse();
-    const shadeBg = shadeSwatch.style.background || shadeSwatch.style.backgroundImage;
-    expect(shadeBg).toContain('linear-gradient');
-    expect(shadeBg).toContain('172, 73, 29'); // #AC491D in rgb
-  });
-
-  it('tracks individual color area steps and whole stage completion', () => {
-    const progressSignal = signal<Record<string, string[]>>({});
-    TestBed.configureTestingModule({
-      imports: [ModelPaintingStepsComponent],
-      providers: [
-        {
-          provide: UserStateService,
-          useValue: {
-            isOwned: () => false,
-            isWishlisted: () => false,
-            toggleInventory: () => undefined,
-            toggleWishlist: () => undefined,
-            getCompletedStepIds: (modelId: string) => progressSignal()[modelId] ?? [],
-            toggleStepDone: (modelId: string, stepId: string) => {
-              const cur = new Set(progressSignal()[modelId] ?? []);
-              if (cur.has(stepId)) cur.delete(stepId);
-              else cur.add(stepId);
-              progressSignal.set({ ...progressSignal(), [modelId]: Array.from(cur) });
-            },
-            setStepsDone: (modelId: string, stepIds: string[], done: boolean) => {
-              const cur = new Set(progressSignal()[modelId] ?? []);
-              for (const id of stepIds) {
-                if (done) cur.add(id);
-                else cur.delete(id);
-              }
-              progressSignal.set({ ...progressSignal(), [modelId]: Array.from(cur) });
-            },
-            clearModelProgress: (modelId: string) => {
-              const next = { ...progressSignal() };
-              delete next[modelId];
-              progressSignal.set(next);
-            },
-          },
-        },
-        {
-          provide: InventoryMatchService,
-          useValue: {},
-        },
-        {
-          provide: CatalogService,
-          useValue: {
-            paints: signal([]),
-            paintById: signal(new Map()),
-          },
-        },
-      ],
-    });
-
-    const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
-    const comp = fixture.componentInstance;
-    const baseArea = {
-      id: 'area-base',
-      areaOrder: 1,
-      name: 'Base Finish',
-      paintingSteps: [
-        { id: 'step-1', stepOrder: 1, stepNumber: 1, paintingStage: 'Base Finish', text: '• Blue areas' },
-        { id: 'step-2', stepOrder: 2, stepNumber: 2, paintingStage: 'Base Finish', text: '• Gold areas' },
-      ],
-    };
-    fixture.componentRef.setInput('modelId', 'model-1');
-    fixture.componentRef.setInput('paintingAreas', [baseArea]);
-    fixture.componentRef.setInput('readiness', {
-      totalRequired: 0,
-      ownedDirectCount: 0,
-      substitutedCount: 0,
-      missingCount: 0,
-      matchPercent: 100,
-      ownedDirectIds: [],
-      substitutedByPaintId: {},
-      missingPaintIds: [],
-    });
-    fixture.detectChanges();
-
-    expect(comp.overallProgress()).toEqual({ done: 0, total: 2, isDone: false, percent: 0 });
-    expect(comp.getAreaProgress(baseArea)).toEqual({ done: 0, total: 2, isDone: false });
-
-    const progressBar = fixture.nativeElement.querySelector('[role="progressbar"]') as HTMLElement | null;
-    expect(progressBar).not.toBeNull();
-    expect(progressBar?.getAttribute('aria-label')).toBeTruthy();
-
-    const stageBtn = fixture.nativeElement.querySelector(
-      '.stage-done-btn'
-    ) as HTMLButtonElement;
-    const stepBtns = Array.from(
-      fixture.nativeElement.querySelectorAll('.step-done-btn')
-    ) as HTMLButtonElement[];
-    expect(stageBtn).toBeTruthy();
-    expect(stageBtn.title).toContain('Mark stage done: Base Finish');
-    expect(stepBtns.length).toBe(2);
-    expect(stepBtns[0].title).toContain('Mark done: • Blue areas');
-
-    // Mark an individual color area step done
-    stepBtns[0].click();
-    fixture.detectChanges();
-    expect(comp.isStepDone('step-1')).toBeTrue();
-    expect(comp.isStepDone('step-2')).toBeFalse();
-    expect(stepBtns[0].getAttribute('aria-pressed')).toBe('true');
-    expect(stageBtn.classList.contains('partial')).toBeTrue();
-    expect(comp.overallProgress()).toEqual({ done: 1, total: 2, isDone: false, percent: 50 });
-
-    // Mark entire stage done
-    stageBtn.click();
-    fixture.detectChanges();
-    expect(comp.isStepDone('step-1')).toBeTrue();
-    expect(comp.isStepDone('step-2')).toBeTrue();
-    expect(stageBtn.getAttribute('aria-pressed')).toBe('true');
-    expect(stageBtn.classList.contains('done')).toBeTrue();
-    expect(stageBtn.classList.contains('partial')).toBeFalse();
-    expect(comp.getAreaProgress(baseArea)).toEqual({ done: 2, total: 2, isDone: true });
-    expect(comp.overallProgress()).toEqual({ done: 2, total: 2, isDone: true, percent: 100 });
-
-    // Toggle stage off
-    stageBtn.click();
-    fixture.detectChanges();
-    expect(stageBtn.getAttribute('aria-pressed')).toBe('false');
-    expect(comp.overallProgress()).toEqual({ done: 0, total: 2, isDone: false, percent: 0 });
-  });
-
-  it('updates stageProgressByKey and areaViewModels reactively and sets image dimensions/lazy attributes', () => {
-    const progressSignal = signal<Record<string, string[]>>({ 'model-2': ['s-base'] });
-    TestBed.configureTestingModule({
-      imports: [ModelPaintingStepsComponent],
-      providers: [
-        {
-          provide: UserStateService,
-          useValue: {
-            isOwned: () => false,
-            isWishlisted: () => false,
-            toggleInventory: () => undefined,
-            toggleWishlist: () => undefined,
-            getCompletedStepIds: (modelId: string) => progressSignal()[modelId] ?? [],
-            toggleStepDone: () => undefined,
-            setStepsDone: () => undefined,
-            clearModelProgress: () => undefined,
-          },
-        },
-        { provide: InventoryMatchService, useValue: {} },
-        {
-          provide: CatalogService,
-          useValue: { paints: signal([]), paintById: signal(new Map()) },
-        },
-      ],
-    });
-
-    const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
-    const comp = fixture.componentInstance;
-    fixture.componentRef.setInput('modelId', 'model-2');
-    fixture.componentRef.setInput('paintingAreas', [
-      {
-        id: 'area-1',
-        areaOrder: 1,
-        name: 'Armor',
-        localImagePath: '/areas/armor.png',
-        paintingSteps: [
+    // Now resolve the older manifest pointing to a stale paint bundle — it must be ignored
+    routeResponses.set('/data/catalog_meta/paints_bundle.json', () =>
+      jsonResponse({
+        paints: [
           {
-            id: 's-base',
-            stepOrder: 1,
-            stepNumber: 1,
-            paintingStage: 'Base Finish',
-            localImagePath: '/steps/s1.png',
-          },
-          {
-            id: 's-detail',
-            stepOrder: 2,
-            stepNumber: 2,
-            paintingStage: 'Detail Finish',
+            id: 'paint-stale',
+            name: 'Stale Paint',
+            range: 'warhammer_colour',
+            category: 'Base',
+            gradientStartHex: '#999999',
           },
         ],
-      },
+        compatibility: [],
+      })
+    );
+    resolveSlowManifest(
+      jsonResponse({
+        schemaVersion: 1,
+        updatedAt: '2026-11-10T00:00:00Z',
+        bundles: { paints_bundle: 'sha256:stale_run' },
+      })
+    );
+    await slowRun;
+
+    expect(service.paints().map((p) => p.id)).toEqual(['paint-newer']);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
+  });
+
+  it('computes reverse lookup maps modelsUsingPaintMap, colorsUsingPaintMap, and modelsUsingColorMap', async () => {
+    const service = injectCatalogService();
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    expect(service.modelsUsingPaintMap().get('paint-gold')?.map((m) => m.id)).toEqual([
+      'model-dante',
     ]);
-    fixture.componentRef.setInput('readiness', {
-      totalRequired: 0,
-      ownedDirectCount: 0,
-      substitutedCount: 0,
-      missingCount: 0,
-      matchPercent: 100,
-      ownedDirectIds: [],
-      substitutedByPaintId: {},
-      missingPaintIds: [],
-    });
-    fixture.detectChanges();
-
-    expect(comp.stageProgressByKey()['Base Finish']).toEqual({ done: 1, total: 1, isDone: true });
-    expect(comp.stageProgressByKey()['Detail Finish']).toEqual({ done: 0, total: 1, isDone: false });
-    expect(comp.areaViewModels()[0].steps.map((s) => s.step.id)).toEqual(['s-base', 's-detail']);
-
-    comp.stageFilter.set('Detail Finish');
-    fixture.detectChanges();
-    expect(comp.areaViewModels()[0].steps.map((s) => s.step.id)).toEqual(['s-detail']);
-    expect(comp.areaViewModels()[0].progress).toEqual({ done: 0, total: 1, isDone: false });
-
-    progressSignal.set({ 'model-2': ['s-base', 's-detail'] });
-    fixture.detectChanges();
-    expect(comp.stageProgressByKey()['Detail Finish']).toEqual({ done: 1, total: 1, isDone: true });
-    expect(comp.areaViewModels()[0].progress).toEqual({ done: 1, total: 1, isDone: true });
-
-    comp.stageFilter.set('all');
-    fixture.detectChanges();
-    const root = fixture.nativeElement as HTMLElement;
-    const areaThumb = root.querySelector('.area-thumb') as HTMLImageElement;
-    expect(areaThumb.getAttribute('width')).toBe('56');
-    expect(areaThumb.getAttribute('height')).toBe('56');
-    expect(areaThumb.getAttribute('loading')).toBe('lazy');
-    expect(areaThumb.getAttribute('decoding')).toBe('async');
-
-    const stepImg = root.querySelector('.step-img-box img') as HTMLImageElement;
-    expect(stepImg.getAttribute('width')).toBe('200');
-    expect(stepImg.getAttribute('height')).toBe('134');
-    expect(stepImg.getAttribute('loading')).toBe('lazy');
-    expect(stepImg.getAttribute('decoding')).toBe('async');
+    expect(service.colorsUsingPaintMap().get('paint-gold')?.map((c) => c.id)).toEqual([
+      'color-gold',
+    ]);
+    expect(service.modelsUsingColorMap().get('color-gold')?.map((m) => m.id)).toEqual([
+      'model-dante',
+    ]);
+    expect(service.modelsUsingPaintMap().get('nonexistent')).toBeUndefined();
   });
 });

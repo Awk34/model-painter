@@ -476,5 +476,105 @@ describe('InventoryMatchService', () => {
     expect(fromSteps.artificer.matchPercent).toBe(0);
     expect(fromSteps.overall.totalRequired).toBe(2);
   });
+
+  it('resolves customCompatibilityOverrides via thirdPartyPaintById and paintById', () => {
+    preferences.set({
+      allowCompatibleSubstitutions: false,
+      allowThirdPartySubstitutions: false,
+    });
+    customCompatibilityOverrides.set({
+      'cit-abaddon': ['tp-vallejo-red', 'pro-crimson'],
+    });
+
+    inventorySet.set(new Set(['tp-vallejo-red']));
+    const tpMatch = service.evaluateReadiness(['cit-abaddon']);
+    expect(tpMatch.substitutedByPaintId['cit-abaddon']).toEqual(
+      jasmine.objectContaining({
+        substitutePaintId: 'tp-vallejo-red',
+        substituteName: 'Flat Red',
+        substituteBrand: 'Vallejo (Model Color)',
+        matchType: 'custom_override',
+      })
+    );
+
+    inventorySet.set(new Set(['pro-crimson']));
+    const citadelMatch = service.evaluateReadiness(['cit-abaddon']);
+    expect(citadelMatch.substitutedByPaintId['cit-abaddon']).toEqual(
+      jasmine.objectContaining({
+        substitutePaintId: 'pro-crimson',
+        substituteName: 'Sanguine Crimson',
+        substituteBrand: 'Citadel Tone Pro',
+        matchType: 'custom_override',
+      })
+    );
+  });
+
+  it('merges summary.paintsByStage for empty step stages and ignores steps missing paint.id', () => {
+    inventorySet.set(new Set(['cit-mephiston']));
+    modelById.set(
+      new Map<string, ModelSummary>([
+        [
+          'm-partial',
+          {
+            id: 'm-partial',
+            name: 'Partial Marine',
+            range: 'warhammer_colour',
+            gameIds: [],
+            gameNames: [],
+            factionIds: [],
+            factionNames: [],
+            colorIds: [],
+            requiredPaintIds: ['cit-mephiston', 'cit-abaddon'],
+            paintsByStage: {
+              base: ['cit-mephiston'],
+              detail: ['cit-abaddon'],
+              artificer: [],
+            },
+          },
+        ],
+      ])
+    );
+
+    const staged = service.evaluateModelRecipeStagedReadiness({
+      id: 'm-partial',
+      name: 'Partial Marine',
+      range: 'warhammer_colour',
+      games: [],
+      factions: [],
+      images: [],
+      localImagePaths: [],
+      colorPoints: [],
+      paintingAreas: [
+        {
+          id: 'a1',
+          areaOrder: 1,
+          name: 'Armour',
+          paintingSteps: [
+            {
+              id: 's-no-paint',
+              stepOrder: 1,
+              stepNumber: 1,
+              paintingStage: 'Base Finish',
+            },
+            {
+              id: 's-base',
+              stepOrder: 2,
+              stepNumber: 2,
+              paintingStage: 'Base Finish',
+              paint: { id: 'cit-mephiston', name: 'Mephiston Red' },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(staged.base.totalRequired).toBe(1);
+    expect(staged.base.matchPercent).toBe(100);
+    // Detail stage had 0 steps so it fell back to summary.paintsByStage.detail
+    expect(staged.detail.totalRequired).toBe(1);
+    expect(staged.detail.missingPaintIds).toEqual(['cit-abaddon']);
+    // Overall evaluates the explicit step paint IDs (steps without paint.id are ignored)
+    expect(staged.overall.totalRequired).toBe(1);
+  });
 });
 

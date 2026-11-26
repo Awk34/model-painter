@@ -179,4 +179,34 @@ describe('user-state-merger.util', () => {
     expect(Object.hasOwn(merged.customCompatibilityOverrides, 'prototype')).toBeFalse();
     expect(merged.projects.length).toBe(USER_LIMITS.MAX_PROJECTS);
   });
+
+  it('enforces MAX_CUSTOM_PAINTS, MAX_STEPS_PER_MODEL_PROGRESS, and MAX_COMPATIBILITY_OVERRIDES_PER_PAINT caps when merging', () => {
+    const prev = createDefaultState();
+    const merged = mergeUserAccountState(prev, {
+      customPaints: Array.from({ length: USER_LIMITS.MAX_CUSTOM_PAINTS + 15 }, (_, i) => ({
+        id: `cp_${i}`,
+        brand: 'Vallejo',
+        range: 'Model Color',
+        name: `Custom ${i}`,
+        category: 'Layer',
+        hex: '#112233',
+        citadelMatches: [],
+      })),
+      modelProgress: {
+        m1: Array.from({ length: USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS + 10 }, (_, i) => `s_${i}`),
+      },
+      customCompatibilityOverrides: {
+        p1: Array.from(
+          { length: USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT + 10 },
+          (_, i) => `eq_${i}`
+        ),
+      },
+    });
+
+    expect(merged.customPaints.length).toBe(USER_LIMITS.MAX_CUSTOM_PAINTS);
+    expect(merged.modelProgress['m1'].length).toBe(USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+    expect(merged.customCompatibilityOverrides['p1'].length).toBe(
+      USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT
+    );
+  });
 });

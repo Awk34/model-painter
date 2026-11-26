@@ -314,4 +314,132 @@ describe('WarhammerImportService', () => {
     expect(fetchSpy).toHaveBeenCalled();
     expect(userStateSpy.importAccountPayload).toHaveBeenCalled();
   });
+
+  it('handles ?error=... callbacks, proxy 404/HTML or missing token errors, same-code cache hits, and getCachedBearerToken()', async () => {
+    await service.generateMyWarhammerLoginUrl();
+    await expectAsync(
+      service.exchangeCallbackAndImport(
+        'citadel-colour://login.mywarhammer.com/callback?error=access_denied&error_description=User%20cancelled'
+      )
+    ).toBeRejectedWithError(/User cancelled/);
+    expect(sessionStorage.getItem(PKCE_VERIFIER_KEY)).toBeNull();
+
+    // 404/HTML proxy error
+    const tx1 = await service.generateMyWarhammerLoginUrl();
+    spyOn(
+      service as unknown as { isLocalDevHost: () => boolean },
+      'isLocalDevHost'
+    ).and.returnValue(true);
+    spyOn(
+      service as unknown as {
+        getFirebaseFunctionsSafe: () => Promise<FirebaseFunctionsHandle | null>;
+      },
+      'getFirebaseFunctionsSafe'
+    ).and.resolveTo(null);
+
+    fetchSpy.and.resolveTo(
+      new Response('<html>Not Found</html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      })
+    );
+    await expectAsync(
+      service.exchangeCallbackAndImport(
+        `citadel-colour://login.mywarhammer.com/callback?code=c1&state=${tx1.state}`
+      )
+    ).toBeRejectedWithError(/Local proxy \(\/gw-auth-api\) is not active/);
+
+    // Missing access_token/id_token
+    const tx2 = await service.generateMyWarhammerLoginUrl();
+    fetchSpy.and.resolveTo(jsonResponse({ token_type: 'Bearer' }));
+    await expectAsync(
+      service.exchangeCallbackAndImport(
+        `citadel-colour://login.mywarhammer.com/callback?code=c2&state=${tx2.state}`
+      )
+    ).toBeRejectedWithError(/No access_token returned/);
+
+    // Same-code cache hit skips /gw-auth-api/oauth/token and exposes getCachedBearerToken()
+    sessionStorage.setItem(
+      PKCE_TOKEN_CACHE_KEY,
+      JSON.stringify({ code: 'cached_code', bearer: 'cached_bearer_tok' })
+    );
+    expect(service.getCachedBearerToken()).toBe('cached_bearer_tok');
+
+    const tx3 = await service.generateMyWarhammerLoginUrl();
+    fetchSpy.calls.reset();
+    fetchSpy.and.callFake(async () => jsonResponse([]));
+    await service.exchangeCallbackAndImport(
+      `citadel-colour://login.mywarhammer.com/callback?code=cached_code&state=${tx3.state}`
+    );
+    expect(
+      fetchSpy.calls.allArgs().some((a) => String(a[0]) === '/gw-auth-api/oauth/token')
+    ).toBeFalse();
+  });
+
+  it('imports JSON and CSV files via importFromFile() with ID/name lookup and wishlist routing', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        WarhammerImportService,
+        { provide: UserStateService, useValue: userStateSpy },
+        {
+          provide: CatalogService,
+          useValue: {
+            clearEntityCaches: jasmine.createSpy('clearEntityCaches').and.resolveTo(),
+            paints: signal([
+              { id: 'cit-red', name: 'Mephiston Red', range: 'warhammer_colour', category: 'Base' },
+            ]),
+            thirdPartyPaints: signal([
+              {
+                id: 'tp-val',
+                brand: 'Vallejo',
+                range: 'Model Color',
+                name: 'Flat Red',
+                category: 'Acrylic',
+                hex: '#991111',
+                citadelMatches: [],
+              },
+            ]),
+          },
+        },
+      ],
+    });
+    const svc = TestBed.inject(WarhammerImportService);
+
+    const jsonFile = new File(
+      [JSON.stringify({ inventoryPaintIds: ['cit-red'], projects: [] })],
+      'backup.json',
+      { type: 'application/json' }
+    );
+    await svc.importFromFile(jsonFile, 'replace');
+    expect(userStateSpy.importAccountPayload).toHaveBeenCalledWith(
+      { inventoryPaintIds: ['cit-red'], projects: [] },
+      'replace'
+    );
+
+    const csvFile = new File(
+      [
+        'paint_id,paint_name,list_type\n' +
+          'p-by-id,Ignored,inventory\n' +
+          ',Mephiston Red,wishlist\n' +
+          ',Flat Red,inventory\n' +
+          ',Unknown Paint,inventory\n',
+      ],
+      'paints.csv',
+      { type: 'text/csv' }
+    );
+    await svc.importFromFile(csvFile, 'merge');
+    expect(userStateSpy.importAccountPayload).toHaveBeenCalledWith(
+      {
+        inventoryPaintIds: ['p-by-id', 'tp-val'],
+        wishlistPaintIds: ['cit-red'],
+      },
+      'merge'
+    );
+
+    const emptyCsv = new File(['paint_id,paint_name,list_type\n'], 'empty.csv', {
+      type: 'text/csv',
+    });
+    await expectAsync(svc.importFromFile(emptyCsv)).toBeRejectedWithError(/empty or missing rows/i);
+  });
 });
