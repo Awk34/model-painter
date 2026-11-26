@@ -11,6 +11,7 @@ import {
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { StageReadinessBarsComponent } from '../../shared/components/stage-readiness-bars/stage-readiness-bars.component';
 import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
@@ -61,6 +62,7 @@ export class ProjectDetailComponent {
   readonly userState = inject(UserStateService);
   readonly readinessService = inject(InventoryMatchService);
   readonly img = inject(ImageService);
+  readonly projectImg = inject(ProjectImageResolverService);
 
   readonly projectId = signal<string>('');
   readonly modelsExpanded = signal(true);
@@ -136,7 +138,7 @@ export class ProjectDetailComponent {
         catalogName,
         hasCustomName: Boolean(customName && customName !== catalogName),
         gameLabel: summary?.gameNames.join(', ') ?? '',
-        imageUrl: this.userState.resolveProjectModelImageUrl(entry, summary),
+        imageUrl: this.projectImg.resolveProjectModelImageUrl(entry, summary),
         hasNotes: entry.notes.trim().length > 0,
         hasCustomImage: Boolean(entry.featuredImage),
         completedStepCount: entry.completedStepIds.length,
@@ -161,7 +163,7 @@ export class ProjectDetailComponent {
     if (!p) {
       return '/icons/ic_project.svg';
     }
-    return this.userState.resolveProjectCoverUrl(p);
+    return this.projectImg.resolveProjectCoverUrl(p);
   });
 
   readonly stagedRollupReadiness = computed(() => {

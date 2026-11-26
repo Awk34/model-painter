@@ -1,13 +1,12 @@
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { User } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { USER_LIMITS } from '../config/user-limits.config';
-import { CloudSyncStatus, ModelSummary } from '../models/catalog.models';
-import { CatalogService } from './catalog.service';
-import { ImageService } from './image.service';
+import { CloudSyncStatus } from '../models/catalog.models';
 import { ToastService } from './toast.service';
+import { UserCloudSyncService } from './user-cloud-sync.service';
 import { UserMediaService } from './user-media.service';
-import { UserStateService } from './user-state.service';
+import { LOCAL_PERSIST_DEBOUNCE_MS, UserStateService } from './user-state.service';
 import {
   PKCE_STATE_KEY,
   PKCE_TOKEN_CACHE_KEY,
@@ -28,37 +27,10 @@ describe('UserStateService — Project Model Entries', () => {
 
     deletePhotoAssetsSpy = jasmine.createSpy('deletePhotoAssets').and.resolveTo();
 
-    const modelSummary: ModelSummary = {
-      id: 'redemptor-dreadnought',
-      name: 'Redemptor Dreadnought',
-      range: 'warhammer_colour',
-      primaryImage: 'https://example.com/redemptor.png',
-      localPrimaryImage: 'assets/images/models/redemptor.png',
-      gameIds: ['w40k'],
-      gameNames: ['Warhammer 40,000'],
-      factionIds: ['sm'],
-      factionNames: ['Space Marines'],
-      colorIds: [],
-      requiredPaintIds: [],
-    };
-
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         UserStateService,
-        {
-          provide: CatalogService,
-          useValue: {
-            modelById: signal(new Map([[modelSummary.id, modelSummary]])),
-          },
-        },
-        {
-          provide: ImageService,
-          useValue: {
-            resolve: (local?: string | null, remote?: string | null) =>
-              local || remote || '/icons/ic_models.svg',
-          },
-        },
         {
           provide: UserMediaService,
           useValue: {
@@ -185,17 +157,18 @@ describe('UserStateService — Project Model Entries', () => {
     expect(updatedFirst.quantity).toBe(1);
     expect(updatedFirst.notes).toBe('Magnetized plasma arm + blue osl glow');
     expect(updatedFirst.completedStepIds).toEqual(['step-armor-base']);
-    expect(service.resolveProjectModelImageUrl(updatedFirst)).toBe(
-      'assets/images/models/redemptor_back.png'
-    );
+    expect(updatedFirst.featuredImage).toEqual({
+      source: 'catalog_angle',
+      imageIndex: 2,
+      localImagePath: 'assets/images/models/redemptor_back.png',
+      imageUrl: undefined,
+    });
 
     expect(updatedSecond.customName).toBe('Redemptor — Gatling');
     expect(updatedSecond.quantity).toBe(25);
     expect(updatedSecond.notes).toBe('Heavy onslaught gatling cannon');
     expect(updatedSecond.completedStepIds).toEqual([]);
-    expect(service.resolveProjectModelImageUrl(updatedSecond)).toBe(
-      'assets/images/models/redemptor.png'
-    );
+    expect(updatedSecond.featuredImage).toBeUndefined();
 
     // Total miniature count reflects summed quantities (1 + 25 = 26)
     expect(service.getProjectTotalMiniatures(service.getProjectById(proj.id)!)).toBe(26);
@@ -343,17 +316,6 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     TestBed.configureTestingModule({
       providers: [
         UserStateService,
-        {
-          provide: CatalogService,
-          useValue: { modelById: signal(new Map()) },
-        },
-        {
-          provide: ImageService,
-          useValue: {
-            resolve: (local?: string | null, remote?: string | null) =>
-              local || remote || '/icons/ic_models.svg',
-          },
-        },
         {
           provide: UserMediaService,
           useValue: mediaMock,
@@ -627,13 +589,16 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
         })
     );
     mediaMock.deletePhotoAssets.calls.reset();
+    const cloudSync = TestBed.inject(UserCloudSyncService);
     const racePromise = service.uploadPhotos({
       files: [file],
       targetType: 'model',
       targetId: 'm3',
       kind: 'showcase',
     });
-    service.currentUser.set({ uid: 'user-switched' } as User);
+    (
+      cloudSync as unknown as { _currentUser: WritableSignal<User | null> }
+    )._currentUser.set({ uid: 'user-switched' } as User);
     releaseUidRace();
     const raceResult = await racePromise;
     expect(raceResult.uploaded.length).toBe(0);
@@ -732,30 +697,37 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
       schemaVersion: 2,
       inventoryPaintIds: ['owned-before-signout'],
     });
+    const cloudSync = TestBed.inject(UserCloudSyncService);
 
-    const svcPrivate = service as unknown as {
-      getFbHandles: () => unknown;
-      getUserDocRef: (db: unknown, uid: string) => unknown;
-      getProjectsColRef: (db: unknown, uid: string) => unknown;
-      getProjectDocRef: (db: unknown, uid: string, pid: string) => unknown;
+    const syncPrivate = cloudSync as unknown as {
+      isFirebaseConfigured: () => boolean;
+      getAuthHandle: () => Promise<unknown>;
+      getFirestoreHandle: () => Promise<unknown>;
+      getUserDocRef: (fs: unknown, uid: string) => unknown;
+      getProjectsColRef: (fs: unknown, uid: string) => unknown;
+      getProjectDocRef: (fs: unknown, uid: string, pid: string) => unknown;
       subscribeAuthState: (auth: unknown, cb: (u: User | null) => void) => () => void;
-      fetchDocSnap: (ref: unknown) => Promise<{ exists: () => boolean; data: () => unknown }>;
-      fetchQuerySnap: (ref: unknown) => Promise<{ forEach: (cb: (d: unknown) => void) => void }>;
+      fetchDocSnap: (fs: unknown, ref: unknown) => Promise<{ exists: () => boolean; data: () => unknown }>;
+      fetchQuerySnap: (fs: unknown, ref: unknown) => Promise<{ forEach: (cb: (d: unknown) => void) => void }>;
       subscribeDocSnapshot: (
+        fs: unknown,
         ref: unknown,
         onNext: (snap: unknown) => void,
         onError: (err: Error) => void
       ) => () => void;
       subscribeQuerySnapshot: (
+        fs: unknown,
         ref: unknown,
         onNext: (snap: unknown) => void,
         onError: (err: Error) => void
       ) => () => void;
-      createWriteBatch: (db: unknown) => {
+      createWriteBatch: (fs: unknown) => {
         set: () => void;
         delete: () => void;
         commit: () => Promise<void>;
       };
+      writeDoc: (fs: unknown, ref: unknown, data: unknown, opts?: unknown) => Promise<void>;
+      removeDoc: (fs: unknown, ref: unknown) => Promise<void>;
       sdkSignOut: (auth: unknown) => Promise<void>;
       pendingProjectWrites: Map<string, number>;
     };
@@ -771,53 +743,56 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     let projOnError!: (err: Error) => void;
 
     let resolveGetDoc!: (val: { exists: () => boolean; data: () => unknown }) => void;
-    const fetchDocSpy = spyOn(svcPrivate, 'fetchDocSnap').and.callFake(
+    const fetchDocSpy = spyOn(syncPrivate, 'fetchDocSnap').and.callFake(
       () =>
         new Promise((res) => {
           resolveGetDoc = res;
         })
     );
-    spyOn(svcPrivate, 'fetchQuerySnap').and.resolveTo({
+    spyOn(syncPrivate, 'fetchQuerySnap').and.resolveTo({
       forEach: () => {},
     });
-    spyOn(svcPrivate, 'getFbHandles').and.returnValue({
-      auth: {},
-      db: {},
-      storage: {},
-    });
-    spyOn(svcPrivate, 'getUserDocRef').and.returnValue({ path: 'users/u' });
-    spyOn(svcPrivate, 'getProjectsColRef').and.returnValue({ path: 'users/u/projects' });
-    spyOn(svcPrivate, 'getProjectDocRef').and.returnValue({ path: 'users/u/projects/p' });
-    spyOn(svcPrivate, 'subscribeAuthState').and.callFake((_auth, cb) => {
+    spyOn(syncPrivate, 'isFirebaseConfigured').and.returnValue(true);
+    spyOn(syncPrivate, 'getAuthHandle').and.resolveTo({ auth: {} });
+    spyOn(syncPrivate, 'getFirestoreHandle').and.resolveTo({ db: {} });
+    spyOn(syncPrivate, 'getUserDocRef').and.returnValue({ path: 'users/u' });
+    spyOn(syncPrivate, 'getProjectsColRef').and.returnValue({ path: 'users/u/projects' });
+    spyOn(syncPrivate, 'getProjectDocRef').and.returnValue({ path: 'users/u/projects/p' });
+    spyOn(syncPrivate, 'subscribeAuthState').and.callFake((_auth, cb) => {
       authCb = cb;
       authSubCount++;
       return authSubCount === 1 ? unsubAuth1 : unsubAuth2;
     });
-    spyOn(svcPrivate, 'subscribeDocSnapshot').and.callFake((_ref, onNext, onError) => {
+    spyOn(syncPrivate, 'subscribeDocSnapshot').and.callFake((_fs, _ref, onNext, onError) => {
       docOnNext = onNext;
       docOnError = onError;
       return () => {};
     });
-    spyOn(svcPrivate, 'subscribeQuerySnapshot').and.callFake((_ref, onNext, onError) => {
+    spyOn(syncPrivate, 'subscribeQuerySnapshot').and.callFake((_fs, _ref, onNext, onError) => {
       projOnNext = onNext;
       projOnError = onError;
       return () => {};
     });
-    spyOn(svcPrivate, 'createWriteBatch').and.returnValue({
+    spyOn(syncPrivate, 'createWriteBatch').and.returnValue({
       set: () => {},
       delete: () => {},
       commit: () => Promise.resolve(),
     });
-    const signOutSpy = spyOn(svcPrivate, 'sdkSignOut').and.resolveTo();
+    spyOn(syncPrivate, 'writeDoc').and.resolveTo();
+    spyOn(syncPrivate, 'removeDoc').and.resolveTo();
+    const signOutSpy = spyOn(syncPrivate, 'sdkSignOut').and.resolveTo();
 
     // 1. Re-calling initAuthListener invokes previous unsubscribeAuth
     service.initAuthListener();
+    await new Promise((r) => setTimeout(r, 0));
     service.initAuthListener();
+    await new Promise((r) => setTimeout(r, 0));
     expect(unsubAuth1).toHaveBeenCalledTimes(1);
 
     // 2. Stale syncSignedInUser aborted when user signs out mid-fetch
     authCb({ uid: 'user-a' } as User);
     expect(service.cloudSyncStatus()).toBe(CloudSyncStatus.Syncing);
+    await new Promise((r) => setTimeout(r, 0));
     const firstResolve = resolveGetDoc;
     authCb(null);
     firstResolve({
@@ -839,17 +814,19 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     expect(service.state().inventoryPaintIds).toContain('user-b-paint');
 
     const localProj = service.createProject('Local Pending Project')!;
-    svcPrivate.pendingProjectWrites.set(localProj.id, 1);
+    syncPrivate.pendingProjectWrites.set(localProj.id, 1);
     projOnNext({
       metadata: { hasPendingWrites: false },
       forEach: () => {},
     });
     expect(service.getProjectById(localProj.id)).toBeDefined();
-    svcPrivate.pendingProjectWrites.delete(localProj.id);
+    syncPrivate.pendingProjectWrites.delete(localProj.id);
 
     docOnError(new Error('listener failed'));
     expect(service.cloudSyncStatus()).toBe(CloudSyncStatus.Error);
-    service.cloudSyncStatus.set(CloudSyncStatus.Synced);
+    (
+      cloudSync as unknown as { _cloudSyncStatus: WritableSignal<CloudSyncStatus> }
+    )._cloudSyncStatus.set(CloudSyncStatus.Synced);
     projOnError(new Error('projects listener failed'));
     expect(service.cloudSyncStatus()).toBe(CloudSyncStatus.Error);
     // Avoid unused warning on docOnNext
@@ -909,82 +886,101 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
   });
 
   it('preserves state() reference and performs zero localStorage.setItem writes on no-op setProjectModelStepsDone and clearProjectModelProgress', () => {
-    service = setupService();
-    const proj = service.createProject('No-op Project')!;
-    const entry = service.addModelToProject(proj.id, 'model-1')!;
+    jasmine.clock().install();
+    try {
+      service = setupService();
+      const proj = service.createProject('No-op Project')!;
+      const entry = service.addModelToProject(proj.id, 'model-1')!;
+      service.flushLocalPersistence();
 
-    const baselineState = service.state();
-    const setItemSpy = spyOn(localStorage, 'setItem').and.callThrough();
-    const showToastSpy = spyOn(service, 'showToast').and.callThrough();
+      const baselineState = service.state();
+      const setItemSpy = spyOn(localStorage, 'setItem').and.callThrough();
+      const showToastSpy = spyOn(service, 'showToast').and.callThrough();
 
-    // Entry currently has completedStepIds: []
-    service.setProjectModelStepsDone(proj.id, entry.id, ['step-not-present'], false);
-    service.clearProjectModelProgress(proj.id, entry.id);
+      // Entry currently has completedStepIds: []
+      service.setProjectModelStepsDone(proj.id, entry.id, ['step-not-present'], false);
+      service.clearProjectModelProgress(proj.id, entry.id);
+      jasmine.clock().tick(LOCAL_PERSIST_DEBOUNCE_MS);
 
-    expect(service.state()).toBe(baselineState);
-    expect(setItemSpy).not.toHaveBeenCalled();
-    expect(showToastSpy).not.toHaveBeenCalled();
+      expect(service.state()).toBe(baselineState);
+      expect(setItemSpy).not.toHaveBeenCalled();
+      expect(showToastSpy).not.toHaveBeenCalled();
 
-    // Mark a step done, then verify idempotent setProjectModelStepsDone(..., true) is also a no-op
-    service.setProjectModelStepsDone(proj.id, entry.id, ['step-1'], true);
-    const afterAddState = service.state();
-    setItemSpy.calls.reset();
+      // Mark a step done, then verify idempotent setProjectModelStepsDone(..., true) is also a no-op
+      service.setProjectModelStepsDone(proj.id, entry.id, ['step-1'], true);
+      service.flushLocalPersistence();
+      const afterAddState = service.state();
+      setItemSpy.calls.reset();
 
-    service.setProjectModelStepsDone(proj.id, entry.id, ['step-1'], true);
-    expect(service.state()).toBe(afterAddState);
-    expect(setItemSpy).not.toHaveBeenCalled();
+      service.setProjectModelStepsDone(proj.id, entry.id, ['step-1'], true);
+      jasmine.clock().tick(LOCAL_PERSIST_DEBOUNCE_MS);
+      expect(service.state()).toBe(afterAddState);
+      expect(setItemSpy).not.toHaveBeenCalled();
 
-    // Clearing non-empty progress updates state and triggers toast once
-    service.clearProjectModelProgress(proj.id, entry.id);
-    expect(service.state()).not.toBe(afterAddState);
-    expect(service.getProjectModelCompletedStepIds(proj.id, entry.id)).toEqual([]);
-    expect(setItemSpy).toHaveBeenCalledTimes(1);
-    expect(service.toastMessage()).toContain('Cleared painting progress');
+      // Clearing non-empty progress updates state and triggers toast once, coalescing into 1 write
+      service.clearProjectModelProgress(proj.id, entry.id);
+      expect(service.state()).not.toBe(afterAddState);
+      expect(service.getProjectModelCompletedStepIds(proj.id, entry.id)).toEqual([]);
+      jasmine.clock().tick(LOCAL_PERSIST_DEBOUNCE_MS);
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+      expect(service.toastMessage()).toContain('Cleared painting progress');
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('aborts stale signOutCloud post-await reset when concurrent onAuthStateChanged re-login occurs before sdkSignOut resolves', async () => {
     service = setupService();
+    const cloudSync = TestBed.inject(UserCloudSyncService);
 
-    const svcPrivate = service as unknown as {
-      getFbHandles: () => unknown;
-      getUserDocRef: (db: unknown, uid: string) => unknown;
-      getProjectsColRef: (db: unknown, uid: string) => unknown;
-      getProjectDocRef: (db: unknown, uid: string, pid: string) => unknown;
+    const syncPrivate = cloudSync as unknown as {
+      isFirebaseConfigured: () => boolean;
+      getAuthHandle: () => Promise<unknown>;
+      getFirestoreHandle: () => Promise<unknown>;
+      getUserDocRef: (fs: unknown, uid: string) => unknown;
+      getProjectsColRef: (fs: unknown, uid: string) => unknown;
+      getProjectDocRef: (fs: unknown, uid: string, pid: string) => unknown;
       subscribeAuthState: (auth: unknown, cb: (u: User | null) => void) => () => void;
-      fetchDocSnap: (ref: unknown) => Promise<{ exists: () => boolean; data: () => unknown }>;
-      fetchQuerySnap: (ref: unknown) => Promise<{ forEach: (cb: (d: unknown) => void) => void }>;
+      fetchDocSnap: (fs: unknown, ref: unknown) => Promise<{ exists: () => boolean; data: () => unknown }>;
+      fetchQuerySnap: (fs: unknown, ref: unknown) => Promise<{ forEach: (cb: (d: unknown) => void) => void }>;
       subscribeDocSnapshot: (
+        fs: unknown,
         ref: unknown,
         onNext: (snap: unknown) => void,
         onError: (err: Error) => void
       ) => () => void;
       subscribeQuerySnapshot: (
+        fs: unknown,
         ref: unknown,
         onNext: (snap: unknown) => void,
         onError: (err: Error) => void
       ) => () => void;
-      createWriteBatch: (db: unknown) => {
+      createWriteBatch: (fs: unknown) => {
         set: () => void;
         delete: () => void;
         commit: () => Promise<void>;
       };
+      writeDoc: (fs: unknown, ref: unknown, data: unknown, opts?: unknown) => Promise<void>;
+      removeDoc: (fs: unknown, ref: unknown) => Promise<void>;
       sdkSignOut: (auth: unknown) => Promise<void>;
     };
 
     let authCb!: (user: User | null) => void;
     let resolveSignOut!: () => void;
 
-    spyOn(svcPrivate, 'getFbHandles').and.returnValue({ auth: {}, db: {}, storage: {} });
-    spyOn(svcPrivate, 'getUserDocRef').and.callFake((_db, uid) => ({ path: `users/${uid}` }));
-    spyOn(svcPrivate, 'getProjectsColRef').and.callFake((_db, uid) => ({
+    spyOn(syncPrivate, 'isFirebaseConfigured').and.returnValue(true);
+    spyOn(syncPrivate, 'getAuthHandle').and.resolveTo({ auth: {} });
+    spyOn(syncPrivate, 'getFirestoreHandle').and.resolveTo({ db: {} });
+    spyOn(syncPrivate, 'getUserDocRef').and.callFake((_fs, uid) => ({ path: `users/${uid}` }));
+    spyOn(syncPrivate, 'getProjectsColRef').and.callFake((_fs, uid) => ({
       path: `users/${uid}/projects`,
     }));
-    spyOn(svcPrivate, 'getProjectDocRef').and.returnValue({ path: 'users/u/projects/p' });
-    spyOn(svcPrivate, 'subscribeAuthState').and.callFake((_auth, cb) => {
+    spyOn(syncPrivate, 'getProjectDocRef').and.returnValue({ path: 'users/u/projects/p' });
+    spyOn(syncPrivate, 'subscribeAuthState').and.callFake((_auth, cb) => {
       authCb = cb;
       return () => {};
     });
-    spyOn(svcPrivate, 'fetchDocSnap').and.callFake(async (ref) => {
+    spyOn(syncPrivate, 'fetchDocSnap').and.callFake(async (_fs, ref) => {
       const path = (ref as { path: string }).path;
       if (path === 'users/uB') {
         return {
@@ -997,15 +993,15 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
         data: () => ({ inventoryPaintIds: ['paint-user-a'] }),
       };
     });
-    spyOn(svcPrivate, 'fetchQuerySnap').and.resolveTo({ forEach: () => {} });
-    spyOn(svcPrivate, 'subscribeDocSnapshot').and.returnValue(() => {});
-    spyOn(svcPrivate, 'subscribeQuerySnapshot').and.returnValue(() => {});
-    spyOn(svcPrivate, 'createWriteBatch').and.returnValue({
+    spyOn(syncPrivate, 'fetchQuerySnap').and.resolveTo({ forEach: () => {} });
+    spyOn(syncPrivate, 'subscribeDocSnapshot').and.returnValue(() => {});
+    spyOn(syncPrivate, 'subscribeQuerySnapshot').and.returnValue(() => {});
+    spyOn(syncPrivate, 'createWriteBatch').and.returnValue({
       set: () => {},
       delete: () => {},
       commit: () => Promise.resolve(),
     });
-    spyOn(svcPrivate, 'sdkSignOut').and.callFake(
+    spyOn(syncPrivate, 'sdkSignOut').and.callFake(
       () =>
         new Promise<void>((res) => {
           resolveSignOut = res;
@@ -1013,6 +1009,7 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     );
 
     service.initAuthListener();
+    await new Promise((r) => setTimeout(r, 0));
     authCb({ uid: 'uA' } as User);
     await new Promise((r) => setTimeout(r, 0));
     expect(service.currentUser()?.uid).toBe('uA');
@@ -1020,6 +1017,7 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
 
     mediaMock.clearAllLocalMedia.calls.reset();
     const signOutPromise = service.signOutCloud();
+    await new Promise((r) => setTimeout(r, 0));
 
     // Concurrent re-login as uB before sdkSignOut resolves
     authCb({ uid: 'uB' } as User);
@@ -1149,5 +1147,107 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
 
     toastService.dismiss();
     expect(service.toastMessage()).toBeNull();
+  });
+
+  it('debounces rapid localStorage writes into one write and flushes on pagehide, visibilitychange, resetLocalData, and ngOnDestroy', () => {
+    jasmine.clock().install();
+    try {
+      service = setupService();
+      const setItemSpy = spyOn(localStorage, 'setItem').and.callThrough();
+
+      // 5 rapid mutations coalesce into a single localStorage write
+      service.toggleInventory('p1');
+      service.toggleInventory('p2');
+      service.toggleWishlist('p3');
+      service.toggleModelInventory('m1');
+      service.updatePreferences({ allowThirdPartySubstitutions: false });
+
+      expect(service.inventoryPaintIds()).toEqual(['p1', 'p2']);
+      expect(setItemSpy).not.toHaveBeenCalled();
+
+      jasmine.clock().tick(LOCAL_PERSIST_DEBOUNCE_MS - 1);
+      expect(setItemSpy).not.toHaveBeenCalled();
+
+      jasmine.clock().tick(1);
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+
+      // pagehide flushes immediately
+      setItemSpy.calls.reset();
+      service.toggleInventory('p4');
+      expect(setItemSpy).not.toHaveBeenCalled();
+      window.dispatchEvent(new Event('pagehide'));
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+
+      // visibilitychange(hidden) flushes immediately
+      setItemSpy.calls.reset();
+      service.toggleInventory('p5');
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+
+      // resetLocalData cancels pending timer and writes blank state immediately
+      setItemSpy.calls.reset();
+      service.toggleInventory('p6');
+      service.resetLocalData();
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).inventoryPaintIds).toEqual([]);
+      jasmine.clock().tick(LOCAL_PERSIST_DEBOUNCE_MS);
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+
+      // ngOnDestroy flushes pending writes and unregisters listeners
+      setItemSpy.calls.reset();
+      service.toggleInventory('p7');
+      service.ngOnDestroy();
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+      setItemSpy.calls.reset();
+      window.dispatchEvent(new Event('pagehide'));
+      expect(setItemSpy).not.toHaveBeenCalled();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('preserves unrelated slice signal identities and keeps O(1) lookup maps synchronized', () => {
+    service = setupService();
+    const proj = service.createProject('Identity Test')!;
+    const entry = service.addModelToProject(proj.id, 'model-1')!;
+
+    const invIdsBefore = service.inventoryPaintIds();
+    const invSetBefore = service.inventorySet();
+    const wishSetBefore = service.wishlistSet();
+    const prefsBefore = service.preferences();
+    const customBefore = service.customPaints();
+    const overridesBefore = service.customCompatibilityOverrides();
+    const uploadedBefore = service.uploadedPhotos();
+
+    // Mutating projects preserves all unrelated slice references
+    service.renameProject(proj.id, 'Renamed Identity Test');
+    expect(service.inventoryPaintIds()).toBe(invIdsBefore);
+    expect(service.inventorySet()).toBe(invSetBefore);
+    expect(service.wishlistSet()).toBe(wishSetBefore);
+    expect(service.preferences()).toBe(prefsBefore);
+    expect(service.customPaints()).toBe(customBefore);
+    expect(service.customCompatibilityOverrides()).toBe(overridesBefore);
+    expect(service.uploadedPhotos()).toBe(uploadedBefore);
+
+    // Mutating inventory preserves projects and modelProgress references
+    const projectsBefore = service.projects();
+    const progressBefore = service.modelProgress();
+    service.toggleInventory('paint-xyz');
+    expect(service.projects()).toBe(projectsBefore);
+    expect(service.modelProgress()).toBe(progressBefore);
+
+    // O(1) lookup maps reflect updated project & entry
+    expect(service.projectByIdMap().get(proj.id)?.name).toBe('Renamed Identity Test');
+    expect(service.projectModelByIdMap().get(entry.id)?.entry.recipeId).toBe('model-1');
+    service.removeModelFromProject(proj.id, entry.id);
+    expect(service.projectModelByIdMap().has(entry.id)).toBeFalse();
   });
 });

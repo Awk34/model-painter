@@ -36,6 +36,8 @@ describe('HobbyDeskPaintsTabComponent custom paint modal draft reset', () => {
           provide: UserStateService,
           useValue: {
             state: signal({ inventoryPaintIds: [], wishlistPaintIds: [] }),
+            inventoryPaintIds: signal([]),
+            wishlistPaintIds: signal([]),
             inventorySet: signal(new Set<string>()),
             wishlistSet: signal(new Set<string>()),
             customPaints: signal([]),

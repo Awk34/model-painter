@@ -61,6 +61,10 @@ describe('AppComponent', () => {
             const toast = TestBed.inject(ToastService);
             return {
               projects: signal([]),
+              inventoryPaintIds: signal([]),
+              wishlistPaintIds: signal([]),
+              inventoryModelIds: signal([]),
+              wishlistModelIds: signal([]),
               state: signal({
                 inventoryPaintIds: [],
                 wishlistPaintIds: [],

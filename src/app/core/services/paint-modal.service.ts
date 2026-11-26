@@ -4,14 +4,15 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root',
 })
 export class PaintModalService {
-  readonly activePaintId = signal<string | null>(null);
+  private readonly _activePaintId = signal<string | null>(null);
+  readonly activePaintId = this._activePaintId.asReadonly();
 
   openPaint(paintId: string): void {
     if (!paintId) return;
-    this.activePaintId.set(paintId);
+    this._activePaintId.set(paintId);
   }
 
   close(): void {
-    this.activePaintId.set(null);
+    this._activePaintId.set(null);
   }
 }

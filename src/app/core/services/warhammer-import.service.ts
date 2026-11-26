@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { getFirebaseHandles, FirebaseHandles } from './firebase.config';
-import { httpsCallable } from 'firebase/functions';
+import { FirebaseFunctionsHandle, getFirebaseFunctions } from './firebase.config';
 import { UserStateService } from './user-state.service';
 import { CatalogService } from './catalog.service';
 import {
   clearPkceTransaction,
+  readCachedWarhammerBearer,
   readCachedWarhammerTokenEntry,
   readPkceTransaction,
   savePkceTransaction,
@@ -52,16 +52,20 @@ export class WarhammerImportService {
     return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
   }
 
-  protected getFirebaseHandlesSafe(): FirebaseHandles | null {
-    return getFirebaseHandles();
+  getCachedBearerToken(): string | null {
+    return readCachedWarhammerBearer();
+  }
+
+  protected getFirebaseFunctionsSafe(): Promise<FirebaseFunctionsHandle | null> {
+    return getFirebaseFunctions();
   }
 
   protected async callImportCloudFunction(
-    fb: FirebaseHandles,
+    fb: FirebaseFunctionsHandle,
     code: string,
     codeVerifier: string
   ): Promise<Record<string, unknown>> {
-    const callable = httpsCallable<
+    const callable = fb.httpsCallable<
       { code: string; codeVerifier: string },
       Record<string, unknown>
     >(fb.functions, 'importMyWarhammerAccount');
@@ -160,7 +164,7 @@ export class WarhammerImportService {
         throw new Error('OAuth state mismatch. Please start a fresh My Warhammer login.');
       }
 
-      const fb = this.getFirebaseHandlesSafe();
+      const fb = await this.getFirebaseFunctionsSafe();
       if (fb) {
         try {
           const payload = await this.callImportCloudFunction(fb, code, codeVerifier);

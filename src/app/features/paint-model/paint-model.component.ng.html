@@ -132,7 +132,7 @@
         [class.active]="collectionFilter() === 'inventory'"
         (click)="collectionFilter.set('inventory'); visibleLimit.set(60)"
       >
-        ✓ My Model Inventory ({{ userState.state().inventoryModelIds.length }})
+        ✓ My Model Inventory ({{ userState.inventoryModelIds().length }})
       </button>
       <button
         type="button"
@@ -140,7 +140,7 @@
         [class.active]="collectionFilter() === 'wishlist'"
         (click)="collectionFilter.set('wishlist'); visibleLimit.set(60)"
       >
-        ★ My Model Wishlist ({{ userState.state().wishlistModelIds.length }})
+        ★ My Model Wishlist ({{ userState.wishlistModelIds().length }})
       </button>
     </div>
 

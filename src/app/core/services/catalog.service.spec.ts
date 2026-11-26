@@ -6,7 +6,9 @@ import {
   CatalogSyncStatus,
   KNOWN_THIRD_PARTY_BRANDS,
 } from '../models/catalog.models';
-import { CatalogService, normalizePaintingStageLabel } from './catalog.service';
+import { normalizePaintingStageLabel } from '../utils/catalog-normalizer.util';
+import { CatalogRepository } from './catalog.repository';
+import { CatalogService } from './catalog.service';
 import { InventoryMatchService } from './inventory-match.service';
 import { UserStateService } from './user-state.service';
 
@@ -544,7 +546,8 @@ describe('CatalogService', () => {
     expect(warnSpy).toHaveBeenCalled();
 
     // 2. idb.put rejection does NOT discard fetched ModelRecipe
-    const idbClient = (service as unknown as { idb: { put: jasmine.Spy } }).idb;
+    const repo = TestBed.inject(CatalogRepository);
+    const idbClient = (repo as unknown as { idb: { put: jasmine.Spy } }).idb;
     spyOn(idbClient, 'put').and.rejectWith(new DOMException('Quota exceeded', 'QuotaExceededError'));
 
     const recipe = await service.getModelRecipe('model-dante');
@@ -553,15 +556,7 @@ describe('CatalogService', () => {
   });
 
   it('ignores unsafe prototype keys in findStaleBundles and uses Object.hasOwn for cached manifest bundles', () => {
-    const service = TestBed.inject(CatalogService);
-    const findStaleBundles = (
-      service as unknown as {
-        findStaleBundles: (
-          remote: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> },
-          cached: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> } | null
-        ) => string[];
-      }
-    ).findStaleBundles.bind(service);
+    const repo = TestBed.inject(CatalogRepository);
 
     const remoteBundles = JSON.parse(
       '{"__proto__":"sha256:evil","constructor":"sha256:evil2","prototype":"sha256:evil3","paints_bundle":"sha256:v2","toString":"sha256:custom"}'
@@ -570,7 +565,7 @@ describe('CatalogService', () => {
       paints_bundle: 'sha256:v2',
     };
 
-    const stale = findStaleBundles(
+    const stale = repo.findStaleBundles(
       { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: remoteBundles },
       { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: cachedBundles }
     );
@@ -579,63 +574,76 @@ describe('CatalogService', () => {
   });
 
   it('hydrates in-memory on idb.put failure for paints_bundle and does not advance manifest hash so reload re-fetches it', async () => {
-    const service = TestBed.inject(CatalogService);
-    await (service as unknown as { initPromise: Promise<void> }).initPromise;
-
     const idbStore = new Map<string, unknown>();
     let failPaintsPut = true;
-    const idbClient = (service as unknown as {
-      idb: {
-        get: (store: string, key: string) => Promise<unknown>;
-        put: (store: string, key: string, value: unknown) => Promise<void>;
-        clearAll: () => Promise<void>;
-      };
-    }).idb;
 
-    spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
-      return idbStore.get(`${store}:${key}`) ?? null;
-    });
-    spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
-      if (failPaintsPut && key === 'paints_bundle') {
-        throw new DOMException('Quota exceeded', 'QuotaExceededError');
-      }
-      idbStore.set(`${store}:${key}`, value);
-    });
-    spyOn(idbClient, 'clearAll').and.callFake(async () => {
-      idbStore.clear();
-    });
+    const attachIdbStub = (repo: CatalogRepository) => {
+      const idbClient = (repo as unknown as {
+        idb: {
+          get: (store: string, key: string) => Promise<unknown>;
+          getMany: (store: string, keys: readonly string[]) => Promise<Map<string, unknown>>;
+          put: (store: string, key: string, value: unknown) => Promise<void>;
+          clearAll: () => Promise<void>;
+        };
+      }).idb;
 
-    service.paints.set([]);
-    service.models.set([]);
-    fetchSpy.calls.reset();
+      spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
+        return idbStore.get(`${store}:${key}`) ?? null;
+      });
+      spyOn(idbClient, 'getMany').and.callFake(
+        async (store: string, keys: readonly string[]) => {
+          const out = new Map<string, unknown>();
+          for (const key of keys) {
+            const val = idbStore.get(`${store}:${key}`);
+            if (val !== undefined && val !== null) {
+              out.set(key, val);
+            }
+          }
+          return out;
+        }
+      );
+      spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
+        if (failPaintsPut && key === 'paints_bundle') {
+          throw new DOMException('Quota exceeded', 'QuotaExceededError');
+        }
+        idbStore.set(`${store}:${key}`, value);
+      });
+      spyOn(idbClient, 'clearAll').and.callFake(async () => {
+        idbStore.clear();
+      });
+    };
 
-    await service.initializeCatalog(false);
+    const repo1 = TestBed.inject(CatalogRepository);
+    attachIdbStub(repo1);
+    const service1 = TestBed.inject(CatalogService);
+    await (service1 as unknown as { initPromise: Promise<void> }).initPromise;
 
     // Fetched paints_bundle is still hydrated in-memory despite idb.put failure
-    expect(service.paints().length).toBeGreaterThan(0);
-    expect(service.models().length).toBeGreaterThan(0);
+    expect(service1.paints().length).toBeGreaterThan(0);
+    expect(service1.models().length).toBeGreaterThan(0);
     const cachedManifest = idbStore.get('bundles:manifest') as CatalogManifest | undefined;
     expect(cachedManifest).toBeDefined();
     expect(cachedManifest?.bundles['paints_bundle']).toBeUndefined();
     expect(cachedManifest?.bundles['models_index_0']).toBe('sha256:models_0_test');
 
-    // Simulate reload: clear in-memory signals and allow idb.put to succeed
+    // Simulate reload: fresh CatalogService instance with idb.put succeeding
     failPaintsPut = false;
-    service.paints.set([]);
     fetchSpy.calls.reset();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [CatalogService] });
+    const repo2 = TestBed.inject(CatalogRepository);
+    attachIdbStub(repo2);
+    const service2 = TestBed.inject(CatalogService);
+    await (service2 as unknown as { initPromise: Promise<void> }).initPromise;
 
-    await service.initializeCatalog(false);
     const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
     expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
     expect(requestedUrls).not.toContain('/data/catalog_meta/colours_bundle.json');
-    expect(service.paints().length).toBeGreaterThan(0);
-    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
+    expect(service2.paints().length).toBeGreaterThan(0);
+    expect(service2.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
   });
 
   it('re-fetches missing cached bundles even when cached manifest hashes match remote manifest', async () => {
-    const service = TestBed.inject(CatalogService);
-    await (service as unknown as { initPromise: Promise<void> }).initPromise;
-
     const idbStore = new Map<string, unknown>([
       [
         'bundles:manifest',
@@ -657,25 +665,36 @@ describe('CatalogService', () => {
       ['bundles:models_index_0', { models: [] }],
     ]);
 
-    const idbClient = (service as unknown as {
+    const repo = TestBed.inject(CatalogRepository);
+    const idbClient = (repo as unknown as {
       idb: {
         get: (store: string, key: string) => Promise<unknown>;
+        getMany: (store: string, keys: readonly string[]) => Promise<Map<string, unknown>>;
         put: (store: string, key: string, value: unknown) => Promise<void>;
-        clearAll: () => Promise<void>;
       };
     }).idb;
 
     spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
       return idbStore.get(`${store}:${key}`) ?? null;
     });
+    spyOn(idbClient, 'getMany').and.callFake(
+      async (store: string, keys: readonly string[]) => {
+        const out = new Map<string, unknown>();
+        for (const key of keys) {
+          const val = idbStore.get(`${store}:${key}`);
+          if (val !== undefined && val !== null) {
+            out.set(key, val);
+          }
+        }
+        return out;
+      }
+    );
     spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
       idbStore.set(`${store}:${key}`, value);
     });
 
-    service.paints.set([]);
-    fetchSpy.calls.reset();
-
-    await service.initializeCatalog(false);
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
 
     const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
     expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
@@ -685,29 +704,19 @@ describe('CatalogService', () => {
   });
 
   it('treats malformed non-object cachedManifest.bundles as stale and triggers re-fetch', async () => {
-    const service = TestBed.inject(CatalogService);
-    await (service as unknown as { initPromise: Promise<void> }).initPromise;
-
-    const findStaleBundles = (
-      service as unknown as {
-        findStaleBundles: (
-          remote: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> },
-          cached: { schemaVersion: number; updatedAt: string; bundles: unknown } | null
-        ) => string[];
-      }
-    ).findStaleBundles.bind(service);
+    const repo = TestBed.inject(CatalogRepository);
 
     expect(
-      findStaleBundles(
+      repo.findStaleBundles(
         { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: { '0': 'h', paints_bundle: 'p' } },
-        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: 'h' }
+        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: 'h' } as unknown as CatalogManifest
       )
     ).toEqual(['0', 'paints_bundle']);
 
     expect(
-      findStaleBundles(
+      repo.findStaleBundles(
         { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: { '0': 'h' } },
-        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: ['h'] }
+        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: ['h'] } as unknown as CatalogManifest
       )
     ).toEqual(['0']);
 
@@ -721,9 +730,10 @@ describe('CatalogService', () => {
         },
       ],
     ]);
-    const idbClient = (service as unknown as {
+    const idbClient = (repo as unknown as {
       idb: {
         get: (store: string, key: string) => Promise<unknown>;
+        getMany: (store: string, keys: readonly string[]) => Promise<Map<string, unknown>>;
         put: (store: string, key: string, value: unknown) => Promise<void>;
       };
     }).idb;
@@ -731,14 +741,24 @@ describe('CatalogService', () => {
     spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
       return idbStore.get(`${store}:${key}`) ?? null;
     });
+    spyOn(idbClient, 'getMany').and.callFake(
+      async (store: string, keys: readonly string[]) => {
+        const out = new Map<string, unknown>();
+        for (const key of keys) {
+          const val = idbStore.get(`${store}:${key}`);
+          if (val !== undefined && val !== null) {
+            out.set(key, val);
+          }
+        }
+        return out;
+      }
+    );
     spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
       idbStore.set(`${store}:${key}`, value);
     });
 
-    service.paints.set([]);
-    fetchSpy.calls.reset();
-
-    await service.initializeCatalog(false);
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
 
     const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
     expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');

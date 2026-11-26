@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { FirebaseHandles } from './firebase.config';
+import { FirebaseFunctionsHandle } from './firebase.config';
 import { CatalogService } from './catalog.service';
 import { UserStateService } from './user-state.service';
 import { WarhammerImportService } from './warhammer-import.service';
@@ -120,9 +120,11 @@ describe('WarhammerImportService', () => {
       'isLocalDevHost'
     ).and.returnValue(true);
     spyOn(
-      service as unknown as { getFirebaseHandlesSafe: () => FirebaseHandles | null },
-      'getFirebaseHandlesSafe'
-    ).and.returnValue(null);
+      service as unknown as {
+        getFirebaseFunctionsSafe: () => Promise<FirebaseFunctionsHandle | null>;
+      },
+      'getFirebaseFunctionsSafe'
+    ).and.resolveTo(null);
 
     fetchSpy.and.resolveTo(
       new Response('{"error":"invalid_grant"}', {
@@ -150,9 +152,11 @@ describe('WarhammerImportService', () => {
       'isLocalDevHost'
     ).and.returnValue(true);
     spyOn(
-      service as unknown as { getFirebaseHandlesSafe: () => FirebaseHandles | null },
-      'getFirebaseHandlesSafe'
-    ).and.returnValue(null);
+      service as unknown as {
+        getFirebaseFunctionsSafe: () => Promise<FirebaseFunctionsHandle | null>;
+      },
+      'getFirebaseFunctionsSafe'
+    ).and.resolveTo(null);
 
     fetchSpy.and.callFake(async (input) => {
       const url = String(input);
@@ -208,16 +212,18 @@ describe('WarhammerImportService', () => {
 
   it('surfaces Cloud Function errors in production instead of falling back to /gw-auth-api', async () => {
     const { state } = await service.generateMyWarhammerLoginUrl();
-    const fakeHandles = { functions: {} } as unknown as FirebaseHandles;
+    const fakeHandles = { functions: {} } as unknown as FirebaseFunctionsHandle;
 
     spyOn(
       service as unknown as { isLocalDevHost: () => boolean },
       'isLocalDevHost'
     ).and.returnValue(false);
     spyOn(
-      service as unknown as { getFirebaseHandlesSafe: () => FirebaseHandles | null },
-      'getFirebaseHandlesSafe'
-    ).and.returnValue(fakeHandles);
+      service as unknown as {
+        getFirebaseFunctionsSafe: () => Promise<FirebaseFunctionsHandle | null>;
+      },
+      'getFirebaseFunctionsSafe'
+    ).and.resolveTo(fakeHandles);
     spyOn(
       service as unknown as { callImportCloudFunction: () => Promise<Record<string, unknown>> },
       'callImportCloudFunction'
@@ -241,9 +247,11 @@ describe('WarhammerImportService', () => {
       'isLocalDevHost'
     ).and.returnValue(false);
     spyOn(
-      service as unknown as { getFirebaseHandlesSafe: () => FirebaseHandles | null },
-      'getFirebaseHandlesSafe'
-    ).and.returnValue(null);
+      service as unknown as {
+        getFirebaseFunctionsSafe: () => Promise<FirebaseFunctionsHandle | null>;
+      },
+      'getFirebaseFunctionsSafe'
+    ).and.resolveTo(null);
 
     await expectAsync(
       service.exchangeCallbackAndImport(
@@ -255,15 +263,17 @@ describe('WarhammerImportService', () => {
   });
 
   it('falls back to /gw-auth-api on localhost only for Cloud Function unavailable errors, not auth errors', async () => {
-    const fakeHandles = { functions: {} } as unknown as FirebaseHandles;
+    const fakeHandles = { functions: {} } as unknown as FirebaseFunctionsHandle;
     spyOn(
       service as unknown as { isLocalDevHost: () => boolean },
       'isLocalDevHost'
     ).and.returnValue(true);
     spyOn(
-      service as unknown as { getFirebaseHandlesSafe: () => FirebaseHandles | null },
-      'getFirebaseHandlesSafe'
-    ).and.returnValue(fakeHandles);
+      service as unknown as {
+        getFirebaseFunctionsSafe: () => Promise<FirebaseFunctionsHandle | null>;
+      },
+      'getFirebaseFunctionsSafe'
+    ).and.resolveTo(fakeHandles);
 
     const callSpy = spyOn(
       service as unknown as { callImportCloudFunction: () => Promise<Record<string, unknown>> },

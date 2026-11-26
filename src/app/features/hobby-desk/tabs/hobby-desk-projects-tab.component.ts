@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { InventoryMatchService } from '../../../core/services/inventory-match.service';
+import { ProjectImageResolverService } from '../../../core/services/project-image-resolver.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
 import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
@@ -25,6 +26,7 @@ export type ProjectSortMode = 'updated' | 'created' | 'alpha';
 export class HobbyDeskProjectsTabComponent {
   readonly userState = inject(UserStateService);
   private readonly readinessService = inject(InventoryMatchService);
+  private readonly projectImg = inject(ProjectImageResolverService);
   private readonly router = inject(Router);
 
   readonly projectSearch = signal('');
@@ -55,7 +57,7 @@ export class HobbyDeskProjectsTabComponent {
         project,
         entryCount: project.models.length,
         totalMiniatures: this.userState.getProjectTotalMiniatures(project),
-        coverUrl: this.userState.resolveProjectCoverUrl(project),
+        coverUrl: this.projectImg.resolveProjectCoverUrl(project),
         photoCount: this.userState.getProjectTotalPhotoCount(project),
         staged: staged.overall.totalRequired > 0 ? staged : null,
       };

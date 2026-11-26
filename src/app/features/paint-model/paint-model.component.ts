@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { FactionNode, FinishStageKey, GameSystem } from '../../core/models/catalog.models';
@@ -29,7 +29,9 @@ export class PaintModelComponent {
   readonly selectedSubFactionId = signal<string | null>(null);
   readonly searchQuery = signal<string>('');
   readonly collectionFilter = signal<'all' | 'inventory' | 'wishlist'>('all');
-  readonly rangeFilter = signal<'all' | 'warhammer_colour' | 'warhammer_pro'>('all');
+  readonly rangeFilter = linkedSignal<'all' | 'warhammer_colour' | 'warhammer_pro'>(
+    () => this.userState?.preferences?.()?.defaultRangeFilter ?? 'all'
+  );
   readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing2' | 'sortReady'>('all');
   readonly visibleLimit = signal<number>(60);

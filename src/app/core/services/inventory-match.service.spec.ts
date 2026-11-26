@@ -335,5 +335,146 @@ describe('InventoryMatchService', () => {
     expect(staged.overall.totalRequired).toBe(3);
     expect(staged.overall.ownedDirectCount).toBe(1);
   });
+
+  it('respects UserPreferences.defaultRangeFilter in official compatibility matching while keeping direct ownership unaffected', () => {
+    inventorySet.set(new Set(['pro-crimson', 'cit-mephiston']));
+    // Test 1: defaultRangeFilter = 'warhammer_pro' -> Classic->Tone Pro allowed, Tone Pro->Classic disallowed
+    inventorySet.set(new Set(['pro-crimson']));
+    preferences.set({
+      defaultRangeFilter: 'warhammer_pro',
+      allowCompatibleSubstitutions: true,
+      allowThirdPartySubstitutions: true,
+    } as never);
+    expect(service.evaluateReadiness(['cit-mephiston']).substitutedByPaintId['cit-mephiston']?.matchType).toBe(
+      'tone_pro'
+    );
+
+    inventorySet.set(new Set(['cit-mephiston']));
+    expect(service.evaluateReadiness(['pro-crimson']).missingPaintIds).toEqual(['pro-crimson']);
+
+    // Test 2: defaultRangeFilter = 'warhammer_colour' -> Tone Pro->Classic allowed, Classic->Tone Pro disallowed
+    preferences.set({
+      defaultRangeFilter: 'warhammer_colour',
+      allowCompatibleSubstitutions: true,
+      allowThirdPartySubstitutions: true,
+    } as never);
+    expect(service.evaluateReadiness(['pro-crimson']).substitutedByPaintId['pro-crimson']?.matchType).toBe(
+      'classic_citadel'
+    );
+
+    inventorySet.set(new Set(['pro-crimson']));
+    expect(service.evaluateReadiness(['cit-mephiston']).missingPaintIds).toEqual(['cit-mephiston']);
+    // Direct ownership still succeeds regardless of defaultRangeFilter
+    expect(service.evaluateReadiness(['pro-crimson']).ownedDirectIds).toEqual(['pro-crimson']);
+  });
+
+  it('filters 3rd-party substitutions by preferredThirdPartyBrands when non-empty and allows all brands when empty', () => {
+    inventorySet.set(new Set(['tp-ak-black']));
+    preferences.set({
+      allowCompatibleSubstitutions: true,
+      allowThirdPartySubstitutions: true,
+      preferredThirdPartyBrands: ['Vallejo'],
+    } as never);
+    expect(service.evaluateReadiness(['cit-abaddon']).missingPaintIds).toEqual(['cit-abaddon']);
+
+    preferences.set({
+      allowCompatibleSubstitutions: true,
+      allowThirdPartySubstitutions: true,
+      preferredThirdPartyBrands: ['ak interactive'],
+    } as never);
+    expect(service.evaluateReadiness(['cit-abaddon']).substitutedByPaintId['cit-abaddon']?.matchType).toBe(
+      'third_party'
+    );
+
+    preferences.set({
+      allowCompatibleSubstitutions: true,
+      allowThirdPartySubstitutions: true,
+      preferredThirdPartyBrands: [],
+    } as never);
+    expect(service.evaluateReadiness(['cit-abaddon']).substitutedByPaintId['cit-abaddon']?.matchType).toBe(
+      'third_party'
+    );
+  });
+
+  it('evaluates ModelRecipe staged readiness with summary fallback in evaluateModelRecipeStagedReadiness', () => {
+    inventorySet.set(new Set(['cit-mephiston']));
+    modelById.set(
+      new Map<string, ModelSummary>([
+        [
+          'm-fallback',
+          {
+            id: 'm-fallback',
+            name: 'Fallback Marine',
+            range: 'warhammer_colour',
+            gameIds: [],
+            gameNames: [],
+            factionIds: [],
+            factionNames: [],
+            colorIds: [],
+            requiredPaintIds: ['cit-mephiston', 'cit-abaddon'],
+            paintsByStage: {
+              base: ['cit-mephiston'],
+              detail: ['cit-abaddon'],
+              artificer: [],
+            },
+          },
+        ],
+      ])
+    );
+
+    expect(service.evaluateModelRecipeStagedReadiness(null).overall.totalRequired).toBe(0);
+
+    const fromSummary = service.evaluateModelRecipeStagedReadiness({
+      id: 'm-fallback',
+      name: 'Fallback Marine',
+      range: 'warhammer_colour',
+      games: [],
+      factions: [],
+      images: [],
+      localImagePaths: [],
+      colorPoints: [],
+      paintingAreas: [],
+    });
+    expect(fromSummary.base.matchPercent).toBe(100);
+    expect(fromSummary.detail.matchPercent).toBe(0);
+    expect(fromSummary.overall.totalRequired).toBe(2);
+
+    const fromSteps = service.evaluateModelRecipeStagedReadiness({
+      id: 'm-steps',
+      name: 'Step Marine',
+      range: 'warhammer_colour',
+      games: [],
+      factions: [],
+      images: [],
+      localImagePaths: [],
+      colorPoints: [],
+      paintingAreas: [
+        {
+          id: 'a1',
+          areaOrder: 1,
+          name: 'Armour',
+          paintingSteps: [
+            {
+              id: 's1',
+              stepOrder: 1,
+              stepNumber: 1,
+              paintingStage: 'Base Finish',
+              paint: { id: 'cit-mephiston', name: 'Mephiston Red' },
+            },
+            {
+              id: 's2',
+              stepOrder: 2,
+              stepNumber: 2,
+              paintingStage: 'Artificer Finish',
+              paint: { id: 'cit-abaddon', name: 'Abaddon Black' },
+            },
+          ],
+        },
+      ],
+    });
+    expect(fromSteps.base.matchPercent).toBe(100);
+    expect(fromSteps.artificer.matchPercent).toBe(0);
+    expect(fromSteps.overall.totalRequired).toBe(2);
+  });
 });
 

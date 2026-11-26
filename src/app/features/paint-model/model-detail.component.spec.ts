@@ -12,6 +12,7 @@ import { USER_LIMITS } from '../../core/config/user-limits.config';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
 import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { ModelDetailComponent } from './model-detail.component';
@@ -113,6 +114,13 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
           provide: InventoryMatchService,
           useValue: {
             evaluateStagedReadiness: () => SAMPLE_STAGED,
+            evaluateModelRecipeStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectModelImageUrl: () => '/icons/ic_paint.svg',
           },
         },
         {
@@ -356,6 +364,13 @@ describe('ModelDetailComponent Project-Model Route Mode', () => {
           provide: InventoryMatchService,
           useValue: {
             evaluateStagedReadiness: () => SAMPLE_STAGED,
+            evaluateModelRecipeStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectModelImageUrl: () => '/icons/ic_paint.svg',
           },
         },
         {
@@ -469,6 +484,13 @@ describe('ModelDetailComponent User Photo Thumbnails', () => {
           provide: InventoryMatchService,
           useValue: {
             evaluateStagedReadiness: () => SAMPLE_STAGED,
+            evaluateModelRecipeStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectModelImageUrl: () => '/icons/ic_paint.svg',
           },
         },
         {
@@ -563,6 +585,13 @@ describe('ModelDetailComponent Error & Not-Found States', () => {
           provide: InventoryMatchService,
           useValue: {
             evaluateStagedReadiness: () => SAMPLE_STAGED,
+            evaluateModelRecipeStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectModelImageUrl: () => '/icons/ic_paint.svg',
           },
         },
         {
@@ -666,6 +695,13 @@ describe('ModelDetailComponent Async Re-Entry Race & Route Transitions', () => {
           provide: InventoryMatchService,
           useValue: {
             evaluateStagedReadiness: () => SAMPLE_STAGED,
+            evaluateModelRecipeStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectModelImageUrl: () => '/icons/ic_paint.svg',
           },
         },
         {

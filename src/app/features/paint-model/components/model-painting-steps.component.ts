@@ -4,7 +4,7 @@ import {
   ModelPaintingArea,
   ModelPaintingStep,
 } from '../../../core/models/catalog.models';
-import { normalizePaintingStageLabel } from '../../../core/services/catalog.service';
+import { normalizePaintingStageLabel } from '../../../core/utils/catalog-normalizer.util';
 import { ImageService } from '../../../core/services/image.service';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';

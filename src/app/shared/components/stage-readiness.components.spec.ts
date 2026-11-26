@@ -7,6 +7,7 @@ import {
   UserProject,
 } from '../../core/models/catalog.models';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { HobbyDeskProjectsTabComponent } from '../../features/hobby-desk/tabs/hobby-desk-projects-tab.component';
 import { StageReadinessBarsComponent } from './stage-readiness-bars/stage-readiness-bars.component';
@@ -125,7 +126,6 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
           useValue: {
             projects,
             limits: { MAX_PROJECTS: 200 },
-            resolveProjectCoverUrl: () => '/logo.svg',
             getTargetPhotoCount: () => 0,
             getProjectTotalMiniatures: (p: UserProject) =>
               p.models.reduce((sum, m) => sum + m.quantity, 0),
@@ -133,6 +133,12 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
             createProject: () => null,
             deleteProject: () => {},
             duplicateProject: () => {},
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectCoverUrl: () => '/logo.svg',
           },
         },
         {
@@ -176,13 +182,18 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
           useValue: {
             projects: signal<UserProject[]>([]),
             limits: { MAX_PROJECTS: 50 },
-            resolveProjectCoverUrl: () => '/logo.svg',
             getTargetPhotoCount: () => 0,
             getProjectTotalMiniatures: () => 0,
             getProjectTotalPhotoCount: () => 0,
             createProject: () => null,
             deleteProject: () => {},
             duplicateProject: () => {},
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectCoverUrl: () => '/logo.svg',
           },
         },
         {

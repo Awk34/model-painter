@@ -36,37 +36,37 @@
       <button
         type="button"
         class="kpi-pill owned"
-        [title]="userState.state().inventoryModelIds.length + ' / ' + userState.limits.MAX_INVENTORY_MODELS + ' owned models'"
+        [title]="userState.inventoryModelIds().length + ' / ' + userState.limits.MAX_INVENTORY_MODELS + ' owned models'"
         (click)="openModelsTab('inventory')"
       >
-        <span class="kpi-num">{{ userState.state().inventoryModelIds.length }}</span>
+        <span class="kpi-num">{{ userState.inventoryModelIds().length }}</span>
         <span class="kpi-label">Owned Models</span>
       </button>
       <button
         type="button"
         class="kpi-pill wishlist"
-        [title]="userState.state().wishlistModelIds.length + ' / ' + userState.limits.MAX_WISHLIST_MODELS + ' wishlist models'"
+        [title]="userState.wishlistModelIds().length + ' / ' + userState.limits.MAX_WISHLIST_MODELS + ' wishlist models'"
         (click)="openModelsTab('wishlist')"
       >
-        <span class="kpi-num">{{ userState.state().wishlistModelIds.length }}</span>
+        <span class="kpi-num">{{ userState.wishlistModelIds().length }}</span>
         <span class="kpi-label">Model Wishlist</span>
       </button>
       <button
         type="button"
         class="kpi-pill owned"
-        [title]="userState.state().inventoryPaintIds.length + ' / ' + userState.limits.MAX_INVENTORY_PAINTS + ' owned paints'"
+        [title]="userState.inventoryPaintIds().length + ' / ' + userState.limits.MAX_INVENTORY_PAINTS + ' owned paints'"
         (click)="openPaintsTab('inventory')"
       >
-        <span class="kpi-num">{{ userState.state().inventoryPaintIds.length }}</span>
+        <span class="kpi-num">{{ userState.inventoryPaintIds().length }}</span>
         <span class="kpi-label">Owned Paints</span>
       </button>
       <button
         type="button"
         class="kpi-pill wishlist"
-        [title]="userState.state().wishlistPaintIds.length + ' / ' + userState.limits.MAX_WISHLIST_PAINTS + ' wishlist paints'"
+        [title]="userState.wishlistPaintIds().length + ' / ' + userState.limits.MAX_WISHLIST_PAINTS + ' wishlist paints'"
         (click)="openPaintsTab('wishlist')"
       >
-        <span class="kpi-num">{{ userState.state().wishlistPaintIds.length }}</span>
+        <span class="kpi-num">{{ userState.wishlistPaintIds().length }}</span>
         <span class="kpi-label">Paint Wishlist</span>
       </button>
       <div
@@ -102,7 +102,7 @@
         (click)="activeTab.set('models')"
       >
         <app-icon name="models" class="tab-ic" />
-        <span>My Models ({{ userState.state().inventoryModelIds.length }} / {{ userState.state().wishlistModelIds.length }}★)</span>
+        <span>My Models ({{ userState.inventoryModelIds().length }} / {{ userState.wishlistModelIds().length }}★)</span>
       </button>
 
       <button

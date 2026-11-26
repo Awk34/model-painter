@@ -386,4 +386,39 @@ describe('idb.util', () => {
     await expectAsync(client.clearStore('s1')).toBeResolved();
     expect(warnSpy).toHaveBeenCalledTimes(3);
   });
+
+  it('fast-returns an empty Map from getMany when keys array is empty without opening IndexedDB', async () => {
+    const openSpy = spyOn(indexedDB, 'open').and.callThrough();
+    const client = createIdbStoreClient(uniqueDbName('idb_getmany_empty'), 1, ['s1']);
+
+    const res = await client.getMany<string>('s1', []);
+    expect(res.size).toBe(0);
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  it('reads multiple keys via getMany over a single readonly transaction and ignores missing keys', async () => {
+    const client = createIdbStoreClient(uniqueDbName('idb_getmany_single_tx'), 1, ['s1']);
+    await client.put('s1', 'k1', { v: 1 });
+    await client.put('s1', 'k2', { v: 2 });
+
+    expect(await client.get<{ v: number }>('s1', 'k1')).toEqual({ v: 1 });
+
+    const origTx = IDBDatabase.prototype.transaction;
+    let txCount = 0;
+    spyOn(IDBDatabase.prototype, 'transaction').and.callFake(function (
+      this: IDBDatabase,
+      storeNames: string | Iterable<string>,
+      mode?: IDBTransactionMode
+    ) {
+      txCount++;
+      return origTx.call(this, storeNames, mode);
+    });
+
+    const result = await client.getMany<{ v: number }>('s1', ['k1', 'missing', 'k2', 'k1']);
+    expect(txCount).toBe(1);
+    expect(result.size).toBe(2);
+    expect(result.get('k1')).toEqual({ v: 1 });
+    expect(result.get('k2')).toEqual({ v: 2 });
+    expect(result.has('missing')).toBeFalse();
+  });
 });

@@ -1,5 +1,6 @@
 export interface IdbStoreClient {
   get<T>(storeName: string, key: string): Promise<T | null>;
+  getMany<T>(storeName: string, keys: readonly string[]): Promise<Map<string, T>>;
   put<T>(storeName: string, key: string, value: T): Promise<void>;
   delete(storeName: string, key: string): Promise<void>;
   clearStore(storeName: string): Promise<void>;
@@ -142,6 +143,51 @@ export function createIdbStoreClient(
       } catch (err) {
         console.warn(`IDB get(${storeName}, ${key}) failed:`, err);
         return null;
+      }
+    },
+
+    async getMany<T>(storeName: string, keys: readonly string[]): Promise<Map<string, T>> {
+      const results = new Map<string, T>();
+      if (keys.length === 0) {
+        return results;
+      }
+      const uniqueKeys = Array.from(new Set(keys));
+      try {
+        const db = await openDb();
+        return await new Promise<Map<string, T>>((resolve) => {
+          let settled = false;
+          const finish = () => {
+            if (!settled) {
+              settled = true;
+              resolve(results);
+            }
+          };
+          const tx = db.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          for (const key of uniqueKeys) {
+            const req = store.get(key);
+            req.onsuccess = () => {
+              if (req.result !== undefined && req.result !== null) {
+                results.set(key, req.result as T);
+              }
+            };
+            req.onerror = () => {
+              console.warn(`IDB getMany(${storeName}, ${key}) error:`, req.error);
+            };
+          }
+          tx.oncomplete = finish;
+          tx.onerror = () => {
+            console.warn(`IDB getMany(${storeName}) tx error:`, tx.error);
+            finish();
+          };
+          tx.onabort = () => {
+            console.warn(`IDB getMany(${storeName}) tx aborted:`, tx.error);
+            finish();
+          };
+        });
+      } catch (err) {
+        console.warn(`IDB getMany(${storeName}) failed:`, err);
+        return results;
       }
     },
 

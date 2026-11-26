@@ -1,5 +1,13 @@
 import {
+  getFirebaseApp,
+  getFirebaseAuth,
+  getFirebaseFirestore,
+  getFirebaseFunctions,
+  getFirebaseStorage,
+  getLoadedFirebaseAuth,
+  getRuntimeConfigEndpoints,
   getStoredFirebaseConfig,
+  invalidateLocalFirebaseConfigCache,
   isRevokedApiKey,
   loadRuntimeFirebaseConfig,
   resetRuntimeFirebaseConfigForTests,
@@ -22,9 +30,11 @@ describe('firebase.config', () => {
     resetRuntimeFirebaseConfigForTests();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     localStorage.removeItem(FIREBASE_CONFIG_STORAGE_KEY);
     resetRuntimeFirebaseConfigForTests();
+    const { deleteApp, getApps } = await import('firebase/app');
+    await Promise.all(getApps().map((app) => deleteApp(app)));
   });
 
   it('detects the revoked API key via digest without rejecting unrelated keys', () => {
@@ -46,6 +56,7 @@ describe('firebase.config', () => {
     expect(getStoredFirebaseConfig()).toBeNull();
     expect(localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY)).toBeNull();
 
+    resetRuntimeFirebaseConfigForTests();
     const validCfg = {
       apiKey: buildValidTestKey(),
       authDomain: 'model-painter-a8724.firebaseapp.com',
@@ -109,5 +120,71 @@ describe('firebase.config', () => {
 
     await loadRuntimeFirebaseConfig();
     expect(getStoredFirebaseConfig()).toEqual(validCfg);
+  });
+
+  it('caches both null and valid localStorage config reads until invalidated', () => {
+    const getItemSpy = spyOn(Storage.prototype, 'getItem').and.callThrough();
+
+    // Null result is cached after first read
+    expect(getStoredFirebaseConfig()).toBeNull();
+    expect(getStoredFirebaseConfig()).toBeNull();
+    expect(getItemSpy).toHaveBeenCalledTimes(1);
+
+    const validCfg = {
+      apiKey: buildValidTestKey(),
+      authDomain: 'model-painter-a8724.firebaseapp.com',
+      projectId: 'model-painter-a8724',
+    };
+    localStorage.setItem(FIREBASE_CONFIG_STORAGE_KEY, JSON.stringify(validCfg));
+
+    // Cached null persists until invalidateLocalFirebaseConfigCache()
+    expect(getStoredFirebaseConfig()).toBeNull();
+    expect(getItemSpy).toHaveBeenCalledTimes(1);
+
+    invalidateLocalFirebaseConfigCache();
+    expect(getStoredFirebaseConfig()).toEqual(validCfg);
+    expect(getStoredFirebaseConfig()).toEqual(validCfg);
+    expect(getItemSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('orders runtime config endpoints with /__/firebase/init.json first in production and /firebase-config.local.json first on localhost', () => {
+    expect(getRuntimeConfigEndpoints(false)).toEqual([
+      '/__/firebase/init.json',
+      '/firebase-config.json',
+    ]);
+    expect(getRuntimeConfigEndpoints(true)).toEqual([
+      '/firebase-config.local.json',
+      '/__/firebase/init.json',
+    ]);
+  });
+
+  it('returns null from lazy Firebase SDK loaders when unconfigured and deduplicates concurrent loads when configured', async () => {
+    expect(getLoadedFirebaseAuth()).toBeNull();
+    expect(await getFirebaseApp()).toBeNull();
+    expect(await getFirebaseAuth()).toBeNull();
+    expect(await getFirebaseFirestore()).toBeNull();
+    expect(await getFirebaseStorage()).toBeNull();
+    expect(await getFirebaseFunctions()).toBeNull();
+    expect(getLoadedFirebaseAuth()).toBeNull();
+
+    localStorage.setItem(
+      FIREBASE_CONFIG_STORAGE_KEY,
+      JSON.stringify({
+        apiKey: buildValidTestKey(),
+        authDomain: 'model-painter-a8724.firebaseapp.com',
+        projectId: 'model-painter-a8724',
+        storageBucket: 'model-painter-a8724.appspot.com',
+      })
+    );
+    invalidateLocalFirebaseConfigCache();
+
+    const [app1, app2] = await Promise.all([getFirebaseApp(), getFirebaseApp()]);
+    expect(app1).not.toBeNull();
+    expect(app2).toBe(app1);
+
+    const [auth1, auth2] = await Promise.all([getFirebaseAuth(), getFirebaseAuth()]);
+    expect(auth1).not.toBeNull();
+    expect(auth2).toBe(auth1);
+    expect(getLoadedFirebaseAuth()).toBe(auth1!.auth);
   });
 });
