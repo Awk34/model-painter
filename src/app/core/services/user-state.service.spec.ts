@@ -1,4 +1,4 @@
-import { WritableSignal, signal } from '@angular/core';
+import { WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { User } from 'firebase/auth';
 import { USER_LIMITS } from '../config/user-limits.config';

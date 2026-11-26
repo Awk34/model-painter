@@ -5,15 +5,54 @@ Android VectorDrawables (ic_*.xml) into standard web SVGs, including external
 <gradient> drawable references (such as the Warhammer Pro rainbow brush stroke).
 """
 
+from __future__ import annotations
+
+import argparse
 import os
 import shutil
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-JADX_RES = Path("/home/antigravity/apk_analysis/jadx_out/resources/res")
-WEBAPP_PUBLIC = Path("/home/antigravity/warhammer_webapp/public")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_PUBLIC_DIR = Path(
+    os.environ.get("WARHAMMER_PUBLIC_DIR", str(BASE_DIR / "public"))
+)
+DEFAULT_JADX_RES = (
+    Path(os.environ["JADX_RES_DIR"])
+    if os.environ.get("JADX_RES_DIR")
+    else BASE_DIR / "apk_analysis" / "jadx_out" / "resources" / "res"
+)
 
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Extract APK fonts and convert Android VectorDrawables (ic_*.xml) "
+            "into web SVGs under public/."
+        )
+    )
+    parser.add_argument(
+        "--jadx-res",
+        type=Path,
+        default=DEFAULT_JADX_RES,
+        help=(
+            "Path to decompiled jadx res/ directory "
+            "(defaults to JADX_RES_DIR env var or <repo>/apk_analysis/jadx_out/resources/res)."
+        ),
+    )
+    parser.add_argument(
+        "--public-dir",
+        type=Path,
+        default=DEFAULT_PUBLIC_DIR,
+        help=(
+            "Destination Angular public/ directory "
+            "(defaults to WARHAMMER_PUBLIC_DIR env var or <repo>/public)."
+        ),
+    )
+    return parser
 
 
 def argb_to_svg_color(color_str: str):
@@ -141,34 +180,52 @@ def convert_vector_to_svg(xml_path: Path, drawable_dir: Path) -> str:
     )
 
 
-def main():
-    fonts_out = WEBAPP_PUBLIC / "fonts"
-    icons_out = WEBAPP_PUBLIC / "icons"
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    jadx_res: Path = args.jadx_res
+    webapp_public: Path = args.public_dir
+
+    if not jadx_res.is_dir():
+        print(
+            f"ERROR: jadx res directory not found: {jadx_res}. "
+            "Pass --jadx-res or set JADX_RES_DIR.",
+            file=sys.stderr,
+        )
+        return 1
+
+    fonts_out = webapp_public / "fonts"
+    icons_out = webapp_public / "icons"
     fonts_out.mkdir(parents=True, exist_ok=True)
     icons_out.mkdir(parents=True, exist_ok=True)
 
     # 1. Copy APK fonts
-    font_src = JADX_RES / "font"
+    font_src = jadx_res / "font"
     copied_fonts = 0
-    for f in sorted(font_src.glob("*.*")):
-        shutil.copy2(f, fonts_out / f.name)
-        copied_fonts += 1
+    if font_src.is_dir():
+        for f in sorted(font_src.glob("*.*")):
+            shutil.copy2(f, fonts_out / f.name)
+            copied_fonts += 1
 
     # 2. Convert ic_*.xml drawables to SVG
-    drawable_dir = JADX_RES / "drawable"
+    drawable_dir = jadx_res / "drawable"
     converted_icons = 0
-    for xml_file in sorted(drawable_dir.glob("ic_*.xml")):
-        try:
-            svg_content = convert_vector_to_svg(xml_file, drawable_dir)
-            if svg_content:
-                out_file = icons_out / f"{xml_file.stem}.svg"
-                out_file.write_text(svg_content, encoding="utf-8")
-                converted_icons += 1
-        except Exception as e:
-            print(f"Warning: skipped {xml_file.name}: {e}")
+    if drawable_dir.is_dir():
+        for xml_file in sorted(drawable_dir.glob("ic_*.xml")):
+            try:
+                svg_content = convert_vector_to_svg(xml_file, drawable_dir)
+                if svg_content:
+                    out_file = icons_out / f"{xml_file.stem}.svg"
+                    out_file.write_text(svg_content, encoding="utf-8")
+                    converted_icons += 1
+            except Exception as e:
+                print(f"Warning: skipped {xml_file.name}: {e}")
 
-    print(f"[DONE] Copied {copied_fonts} APK fonts to {fonts_out} and converted {converted_icons} APK vector icons to {icons_out}")
+    print(
+        f"[DONE] Copied {copied_fonts} APK fonts to {fonts_out} and converted "
+        f"{converted_icons} APK vector icons to {icons_out}"
+    )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

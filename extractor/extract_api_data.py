@@ -8,6 +8,7 @@ Extracts:
   2. Personal Account: Inventory paints, Wishlist paints, and User Projects (with notes, colours, recipes).
 """
 
+import argparse
 import json
 import os
 import sys
@@ -17,23 +18,55 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-BASE_DIR = Path("/home/antigravity/warhammer_extractor")
-RAW_DIR = BASE_DIR / "data" / "raw"
-TOKENS_FILE = BASE_DIR / "tokens.json"
-PKCE_FILE = BASE_DIR / "pkce_state.json"
+REPO_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_BASE_DIR = Path(
+    os.environ.get("WARHAMMER_EXTRACTOR_DIR", str(REPO_DIR))
+)
 
 API_BASE = "https://api.apps.paint.warhammer.com"
 MAX_WORKERS = 20
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Extract catalog and personal account data from the Paint Warhammer API."
+        )
+    )
+    parser.add_argument(
+        "--base-dir",
+        type=Path,
+        default=DEFAULT_BASE_DIR,
+        help=(
+            "Base directory for data/raw output "
+            "(defaults to WARHAMMER_EXTRACTOR_DIR env var or repo root)."
+        ),
+    )
+    parser.add_argument(
+        "--tokens-file",
+        type=Path,
+        default=None,
+        help="Path to tokens.json (defaults to <base-dir>/tokens.json).",
+    )
+    parser.add_argument(
+        "--pkce-file",
+        type=Path,
+        default=None,
+        help="Path to pkce_state.json (defaults to <base-dir>/pkce_state.json).",
+    )
+    return parser
+
+
 class WarhammerApiClient:
-    def __init__(self):
-        with open(TOKENS_FILE, "r", encoding="utf-8") as f:
+    def __init__(self, tokens_file: Path, pkce_file: Path):
+        self.tokens_file = tokens_file
+        self.pkce_file = pkce_file
+        with open(self.tokens_file, "r", encoding="utf-8") as f:
             self.tokens = json.load(f)
         self.access_token = self.tokens["access_token"]
 
     def refresh_access_token(self):
-        with open(PKCE_FILE, "r", encoding="utf-8") as f:
+        with open(self.pkce_file, "r", encoding="utf-8") as f:
             pkce = json.load(f)
         payload = json.dumps({
             "grant_type": "refresh_token",
@@ -50,7 +83,7 @@ class WarhammerApiClient:
             new_tokens = json.loads(r.read().decode("utf-8"))
         self.tokens.update(new_tokens)
         self.access_token = self.tokens["access_token"]
-        with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+        with open(self.tokens_file, "w", encoding="utf-8") as f:
             json.dump(self.tokens, f, indent=2)
         print("[AUTH] Refreshed access_token successfully.", flush=True)
 
@@ -104,53 +137,59 @@ def load_json(path: Path):
         return json.load(f)
 
 
-def main():
+def main(argv: list[str] | None = None):
+    args = build_parser().parse_args(argv)
+    base_dir: Path = args.base_dir
+    raw_dir = base_dir / "data" / "raw"
+    tokens_file = args.tokens_file if args.tokens_file is not None else base_dir / "tokens.json"
+    pkce_file = args.pkce_file if args.pkce_file is not None else base_dir / "pkce_state.json"
+
     t0 = time.time()
     for sub in ["paint_details", "paint_compatibles", "colour_details", "recipes", "projects"]:
-        (RAW_DIR / sub).mkdir(parents=True, exist_ok=True)
+        (raw_dir / sub).mkdir(parents=True, exist_ok=True)
 
-    client = WarhammerApiClient()
+    client = WarhammerApiClient(tokens_file=tokens_file, pkce_file=pkce_file)
 
     # 1. Core Index & Filter Endpoints
     print("=== Step 1: Fetching Core Indexes & Personal Lists ===", flush=True)
     games = client.request("GET", "/games?locale=en")
-    save_json(RAW_DIR / "games.json", games)
+    save_json(raw_dir / "games.json", games)
     print(f"  Games: {len(games)}", flush=True)
 
     factions = client.request("GET", "/factions?locale=en")
-    save_json(RAW_DIR / "factions.json", factions)
+    save_json(raw_dir / "factions.json", factions)
     print(f"  Faction Game Trees: {len(factions)}", flush=True)
 
     colour_groups = client.request("GET", "/colour-groups?locale=en")
-    save_json(RAW_DIR / "colour_groups.json", colour_groups)
+    save_json(raw_dir / "colour_groups.json", colour_groups)
     print(f"  Colour Groups: {len(colour_groups)}", flush=True)
 
     paints = client.request("POST", "/paints?locale=en", {})
-    save_json(RAW_DIR / "paints_list.json", paints)
+    save_json(raw_dir / "paints_list.json", paints)
     print(f"  Paints (catalog list): {len(paints)}", flush=True)
 
     compat_paints = client.request("POST", "/paints/compatibility?locale=en", {})
-    save_json(RAW_DIR / "paints_compatibility_list.json", compat_paints)
+    save_json(raw_dir / "paints_compatibility_list.json", compat_paints)
     print(f"  Paints (compatibility base/layer list): {len(compat_paints)}", flush=True)
 
     colours = client.request("POST", "/colours?locale=en", {})
-    save_json(RAW_DIR / "colours_list.json", colours)
+    save_json(raw_dir / "colours_list.json", colours)
     print(f"  Colours (all): {len(colours)}", flush=True)
 
     basing_colours = client.request("POST", "/colours?locale=en", {"guideType": "basing"})
-    save_json(RAW_DIR / "colours_basing.json", basing_colours)
+    save_json(raw_dir / "colours_basing.json", basing_colours)
     print(f"  Colours (basing guides): {len(basing_colours)}", flush=True)
 
     inventory = client.request("POST", "/inventory/paints?locale=en", {})
-    save_json(RAW_DIR / "user_inventory.json", inventory)
+    save_json(raw_dir / "user_inventory.json", inventory)
     print(f"  User Inventory Paints: {len(inventory)}", flush=True)
 
     wishlist = client.request("POST", "/wishlist/paints?locale=en", {})
-    save_json(RAW_DIR / "user_wishlist.json", wishlist)
+    save_json(raw_dir / "user_wishlist.json", wishlist)
     print(f"  User Wishlist Paints: {len(wishlist)}", flush=True)
 
     projects_list = client.request("GET", "/projects?locale=en")
-    save_json(RAW_DIR / "user_projects_list.json", projects_list)
+    save_json(raw_dir / "user_projects_list.json", projects_list)
     print(f"  User Projects: {len(projects_list)}", flush=True)
 
     # Fetch full details for each user project
@@ -158,9 +197,9 @@ def main():
     for p in projects_list:
         pid = p["id"]
         p_det = client.request("GET", f"/projects/{pid}?locale=en")
-        save_json(RAW_DIR / "projects" / f"{pid}.json", p_det)
+        save_json(raw_dir / "projects" / f"{pid}.json", p_det)
         projects_detailed.append(p_det)
-    save_json(RAW_DIR / "user_projects_detailed.json", projects_detailed)
+    save_json(raw_dir / "user_projects_detailed.json", projects_detailed)
     print(f"  Fetched {len(projects_detailed)} full user project records.", flush=True)
 
     # 2. Colour Group -> Colour IDs mapping
@@ -175,7 +214,7 @@ def main():
             "hex": cg.get("hex"),
             "colourIds": [c["id"] for c in (cg_res or [])],
         }
-    save_json(RAW_DIR / "colour_group_mappings.json", colour_group_mappings)
+    save_json(raw_dir / "colour_group_mappings.json", colour_group_mappings)
     print(f"  Mapped {len(colour_group_mappings)} colour groups.", flush=True)
 
     # 3. Game & Faction -> Recipe IDs mapping
@@ -202,7 +241,7 @@ def main():
             if r["id"] not in all_recipe_summaries:
                 all_recipe_summaries[r["id"]] = r
 
-    save_json(RAW_DIR / "game_recipes_map.json", game_recipes_map)
+    save_json(raw_dir / "game_recipes_map.json", game_recipes_map)
 
     # Flatten all faction queries (gameId, parentFaction, leafFaction)
     faction_queries = []
@@ -254,8 +293,8 @@ def main():
                     all_recipe_summaries[r["id"]] = r
             faction_recipes_map.append(item)
 
-    save_json(RAW_DIR / "faction_recipes_map.json", faction_recipes_map)
-    save_json(RAW_DIR / "all_recipe_summaries.json", list(all_recipe_summaries.values()))
+    save_json(raw_dir / "faction_recipes_map.json", faction_recipes_map)
+    save_json(raw_dir / "all_recipe_summaries.json", list(all_recipe_summaries.values()))
     print(f"  Completed faction-recipe mapping. Total unique recipes discovered: {len(all_recipe_summaries)}", flush=True)
 
     # 4. Fetch Paint Details (487) & Paint Compatibles (128)
@@ -263,7 +302,7 @@ def main():
 
     def fetch_paint_detail(p):
         pid = p["id"]
-        out_path = RAW_DIR / "paint_details" / f"{pid}.json"
+        out_path = raw_dir / "paint_details" / f"{pid}.json"
         if out_path.exists():
             return load_json(out_path)
         det = client.request("GET", f"/paints/{pid}?locale=en")
@@ -277,7 +316,7 @@ def main():
 
     def fetch_paint_compat(p):
         pid = p["id"]
-        out_path = RAW_DIR / "paint_compatibles" / f"{pid}.json"
+        out_path = raw_dir / "paint_compatibles" / f"{pid}.json"
         if out_path.exists():
             return load_json(out_path)
         comp = client.request("GET", f"/paints/{pid}/compatibles?locale=en") or []
@@ -293,7 +332,7 @@ def main():
 
     def fetch_colour_detail(c):
         cid = c["id"]
-        out_path = RAW_DIR / "colour_details" / f"{cid}.json"
+        out_path = raw_dir / "colour_details" / f"{cid}.json"
         if out_path.exists():
             return load_json(out_path)
         det = client.request("GET", f"/colours/{cid}?locale=en")
@@ -315,7 +354,7 @@ def main():
     print(f"\n=== Step 6: Fetching {len(recipe_ids)} Full Progressive Miniature Recipes ===", flush=True)
 
     def fetch_recipe_detail(rid):
-        out_path = RAW_DIR / "recipes" / f"{rid}.json"
+        out_path = raw_dir / "recipes" / f"{rid}.json"
         if out_path.exists():
             return True
         det = client.request("GET", f"/recipes/{rid}?locale=en")
@@ -338,7 +377,7 @@ def main():
     extra_colour_ids = set()
     known_colour_ids = {c["id"] for c in colours}
     for rid in recipe_ids:
-        r_path = RAW_DIR / "recipes" / f"{rid}.json"
+        r_path = raw_dir / "recipes" / f"{rid}.json"
         if r_path.exists():
             r_data = load_json(r_path)
             for cp in r_data.get("colourPoints") or []:
@@ -355,7 +394,8 @@ def main():
 
     total_time = time.time() - t0
     print(f"\n[DONE] Phase 2 API Data Extraction completed in {total_time:.1f}s!", flush=True)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

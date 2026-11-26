@@ -4,7 +4,7 @@ This folder packages the visual design references, typography, iconography, stud
 
 ## Contents
 
-1. **[`DESIGN.md`](../DESIGN.md)** (also copied to [`./DESIGN.md`](./DESIGN.md))
+1. **[`DESIGN.md`](../DESIGN.md)** (single source of truth)
    - Complete, Stitch-ready design system specification covering the *Citadel Studio Dark* theme (plus the original mobile app's Light Gallery tokens), surface & semantic hex tokens, `Anton` + `Bitter` typography scale, responsive desktop/mobile shell, and signature hobbyist components.
 2. **`fonts/`**
    - `anton_regular.ttf` — Authentic APK uppercase display font (`Anton`).

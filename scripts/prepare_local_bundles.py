@@ -26,9 +26,26 @@ RECIPES_OUT = DATA_OUT / "recipes"
 COLOURS_OUT = DATA_OUT / "colours"
 
 
+MAX_FIRESTORE_DOC_BYTES = 950_000
+
+
 def sha256_json(obj) -> str:
     raw = json.dumps(obj, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return "sha256:" + hashlib.sha256(raw).hexdigest()[:24]
+
+
+def write_bundle_and_meta(meta_out: Path, bundle_key: str, payload: dict) -> str | dict:
+    out_path = meta_out / f"{bundle_key}.json"
+    out_path.write_text(json.dumps(payload), encoding="utf-8")
+    file_size = out_path.stat().st_size
+    bundle_hash = sha256_json(payload)
+    if bundle_key.startswith("models_index_") or file_size > MAX_FIRESTORE_DOC_BYTES:
+        return {
+            "hash": bundle_hash,
+            "sizeBytes": file_size,
+            "staticOnly": True,
+        }
+    return bundle_hash
 
 
 def main():
@@ -54,8 +71,7 @@ def main():
         "paints": clean_paints,
         "compatibility": compat,
     }
-    manifest_bundles["paints_bundle"] = sha256_json(paints_bundle)
-    (META_OUT / "paints_bundle.json").write_text(json.dumps(paints_bundle), encoding="utf-8")
+    manifest_bundles["paints_bundle"] = write_bundle_and_meta(META_OUT, "paints_bundle", paints_bundle)
 
     print("2. Building third_party_paints_bundle.json...")
     tp_data = json.loads((JSON_DIR / "third_party_paints.json").read_text(encoding="utf-8"))
@@ -64,8 +80,9 @@ def main():
         "thirdPartyPaints": tp_data["thirdPartyPaints"],
         "citadelToThirdPartyMap": tp_data["citadelToThirdPartyMap"],
     }
-    manifest_bundles["third_party_paints_bundle"] = sha256_json(tp_bundle)
-    (META_OUT / "third_party_paints_bundle.json").write_text(json.dumps(tp_bundle), encoding="utf-8")
+    manifest_bundles["third_party_paints_bundle"] = write_bundle_and_meta(
+        META_OUT, "third_party_paints_bundle", tp_bundle
+    )
 
     print("3. Building colours_bundle.json & split colours/{id}.json...")
     colours = json.loads((JSON_DIR / "colours.json").read_text(encoding="utf-8"))
@@ -116,8 +133,7 @@ def main():
         "colourGroups": colour_groups,
         "colours": colour_summaries,
     }
-    manifest_bundles["colours_bundle"] = sha256_json(colours_bundle)
-    (META_OUT / "colours_bundle.json").write_text(json.dumps(colours_bundle), encoding="utf-8")
+    manifest_bundles["colours_bundle"] = write_bundle_and_meta(META_OUT, "colours_bundle", colours_bundle)
 
     print("4. Building games_factions_bundle.json...")
     games = json.loads((JSON_DIR / "games.json").read_text(encoding="utf-8"))
@@ -125,8 +141,9 @@ def main():
         "updatedAt": now_iso,
         "games": games,
     }
-    manifest_bundles["games_factions_bundle"] = sha256_json(games_bundle)
-    (META_OUT / "games_factions_bundle.json").write_text(json.dumps(games_bundle), encoding="utf-8")
+    manifest_bundles["games_factions_bundle"] = write_bundle_and_meta(
+        META_OUT, "games_factions_bundle", games_bundle
+    )
 
     print("5. Building models_index_0..5.json & split recipes/{id}.json (4,531 models)...")
     models_recipes = json.loads((JSON_DIR / "models_recipes.json").read_text(encoding="utf-8"))
@@ -206,8 +223,7 @@ def main():
             "updatedAt": now_iso,
             "models": chunk,
         }
-        manifest_bundles[chunk_key] = sha256_json(chunk_doc)
-        (META_OUT / f"{chunk_key}.json").write_text(json.dumps(chunk_doc), encoding="utf-8")
+        manifest_bundles[chunk_key] = write_bundle_and_meta(META_OUT, chunk_key, chunk_doc)
 
     print("6. Writing catalog_meta/manifest.json...")
     manifest_doc = {

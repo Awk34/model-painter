@@ -17,9 +17,11 @@ import {
 import { mergeCatalogBrands } from '../utils/catalog-filter.util';
 import {
   RawColorSummary,
+  RawThirdPartyBundle,
   normalizeColorSummary,
   normalizeModelSummary,
   normalizePaintingStageLabel,
+  normalizeThirdPartyBundle,
 } from '../utils/catalog-normalizer.util';
 import { CatalogRepository } from './catalog.repository';
 
@@ -264,21 +266,14 @@ export class CatalogService {
     }
 
     const thirdPartyBundle = bundles.get('third_party_paints_bundle') as
-      | {
-          brands?: string[];
-          thirdPartyPaints: ThirdPartyPaint[];
-          citadelToThirdParty?: Record<string, CitadelThirdPartyMatchRef[]>;
-          citadelToThirdPartyMap?: Record<string, CitadelThirdPartyMatchRef[]>;
-        }
+      | RawThirdPartyBundle
       | undefined;
     if (thirdPartyBundle) {
-      const tpList = thirdPartyBundle.thirdPartyPaints ?? [];
-      const brands = mergeCatalogBrands(thirdPartyBundle.brands, tpList);
+      const normalizedTp = normalizeThirdPartyBundle(thirdPartyBundle);
+      const brands = mergeCatalogBrands(thirdPartyBundle.brands, normalizedTp.thirdPartyPaints);
       this._thirdPartyBrands.set(brands);
-      this._thirdPartyPaints.set(tpList);
-      this._citadelToThirdPartyMap.set(
-        thirdPartyBundle.citadelToThirdPartyMap ?? thirdPartyBundle.citadelToThirdParty ?? {}
-      );
+      this._thirdPartyPaints.set(normalizedTp.thirdPartyPaints);
+      this._citadelToThirdPartyMap.set(normalizedTp.citadelToThirdPartyMap);
     }
 
     const colorsBundle = bundles.get('colours_bundle') as

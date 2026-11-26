@@ -26,7 +26,6 @@ import {
   normalizeAccountState,
   normalizeConfigurations,
   normalizeFeaturedImage,
-  normalizeIncomingProject,
   normalizePreferences,
   optionalTrimmedString,
 } from '../utils/user-state-normalizer.util';

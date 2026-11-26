@@ -6,12 +6,24 @@ CIELAB perceptual color-distance (Delta-E) matching against all 487 extracted
 Citadel paints (Warhammer Colour & Warhammer Pro).
 """
 
+from __future__ import annotations
+
+import argparse
 import json
 import math
+import os
+import sys
 from pathlib import Path
 
-RAW_PAINTS_JSON = Path("/home/antigravity/warhammer_extractor/data/export/json/paints.json")
-OUT_DIR = Path("/home/antigravity/warhammer_extractor/data/export/json")
+BASE_DIR = Path(__file__).resolve().parent.parent
+EXPORT_DIR = Path(
+    os.environ.get("WARHAMMER_EXPORT_DIR", str(BASE_DIR / "data" / "export"))
+)
+DEFAULT_RAW_PAINTS_JSON = EXPORT_DIR / "json" / "paints.json"
+FALLBACK_PAINTS_BUNDLE_JSON = (
+    BASE_DIR / "public" / "data" / "catalog_meta" / "paints_bundle.json"
+)
+DEFAULT_OUT_DIR = EXPORT_DIR / "json"
 
 CURATED_THIRD_PARTY_PAINTS = [
     # THE ARMY PAINTER - WARPAINTS FANATIC & ORIGINAL
@@ -173,6 +185,15 @@ CURATED_THIRD_PARTY_PAINTS = [
 ]
 
 
+def compute_match_quality(delta_e: float) -> str:
+    """Map CIELAB Delta-E to PaintModels MatchQuality ('exact' | 'close' | 'similar')."""
+    if delta_e <= 5.0:
+        return "exact"
+    if delta_e <= 12.0:
+        return "close"
+    return "similar"
+
+
 def hex_to_lab(hex_str: str):
     h = (hex_str or "#808080").lstrip("#")
     if len(h) != 6:
@@ -198,7 +219,9 @@ def hex_to_lab(hex_str: str):
 
 
 def delta_e_cie76(lab1, lab2) -> float:
-    return math.sqrt((lab1[0] - lab2[0]) ** 2 + (lab1[1] - lab2[1]) ** 2 + (lab1[2] - lab2[2]) ** 2)
+    return math.sqrt(
+        (lab1[0] - lab2[0]) ** 2 + (lab1[1] - lab2[1]) ** 2 + (lab1[2] - lab2[2]) ** 2
+    )
 
 
 def is_finish_compatible(citadel_paint: dict, tp_paint: dict) -> bool:
@@ -237,21 +260,49 @@ def get_representative_hex(cp: dict) -> str:
     return start or cp.get("hex") or "#808080"
 
 
-def main():
-    citadel_paints = json.loads(RAW_PAINTS_JSON.read_text(encoding="utf-8"))
+def _make_citadel_ref(tp: dict, delta_e: float) -> dict:
+    ref = {
+        "thirdPartyPaintId": tp["id"],
+        "brand": tp["brand"],
+        "range": tp["range"],
+        "code": tp["code"],
+        "name": tp["name"],
+        "category": tp["category"],
+        "hex": tp["hex"],
+        "deltaE": delta_e,
+        "matchQuality": compute_match_quality(delta_e),
+    }
+    if tp.get("potStyle") is not None:
+        ref["potStyle"] = tp["potStyle"]
+    return ref
+
+
+def build_third_party_paints_payload(
+    citadel_paints: list[dict],
+    third_party_defs: list[dict] | None = None,
+) -> dict:
+    """Build the normalized thirdPartyPaints + citadelToThirdPartyMap payload."""
+    tp_defs = third_party_defs if third_party_defs is not None else CURATED_THIRD_PARTY_PAINTS
+    enriched_citadel = []
+    name_to_citadel: dict[str, list[dict]] = {}
     for cp in citadel_paints:
         c_hex = get_representative_hex(cp)
-        cp["_hex"] = c_hex
-        cp["_lab"] = hex_to_lab(c_hex)
+        entry = {
+            **cp,
+            "_hex": c_hex,
+            "_lab": hex_to_lab(c_hex),
+        }
+        enriched_citadel.append(entry)
+        name_to_citadel.setdefault(cp["name"].strip().lower(), []).append(entry)
 
-    name_to_citadel = {}
-    for cp in citadel_paints:
-        name_to_citadel.setdefault(cp["name"].strip().lower(), []).append(cp)
-
-    citadel_to_tp_matches = {cp["id"]: [] for cp in citadel_paints}
+    # Track (is_curated, delta_e, ref_dict) per Citadel paint so curated matches sort first
+    # without leaking legacy matchType keys into serialized JSON.
+    citadel_to_tp_sortable: dict[str, list[tuple[int, float, dict]]] = {
+        cp["id"]: [] for cp in enriched_citadel
+    }
     enriched_tp_paints = []
 
-    for tp in CURATED_THIRD_PARTY_PAINTS:
+    for tp in tp_defs:
         tp_lab = hex_to_lab(tp["hex"])
         matches = []
         seen_citadel_ids = set()
@@ -265,23 +316,14 @@ def main():
                     "citadelRange": cp["range"],
                     "citadelCategory": cp["category"],
                     "citadelHex": cp["_hex"],
-                    "matchType": "curated",
                     "deltaE": de,
+                    "matchQuality": compute_match_quality(de),
                 })
                 seen_citadel_ids.add(cp["id"])
-                citadel_to_tp_matches[cp["id"]].append({
-                    "thirdPartyPaintId": tp["id"],
-                    "brand": tp["brand"],
-                    "range": tp["range"],
-                    "code": tp["code"],
-                    "name": tp["name"],
-                    "hex": tp["hex"],
-                    "matchType": "curated",
-                    "deltaE": de,
-                })
+                citadel_to_tp_sortable[cp["id"]].append((0, de, _make_citadel_ref(tp, de)))
 
         scored = []
-        for cp in citadel_paints:
+        for cp in enriched_citadel:
             if cp["id"] in seen_citadel_ids:
                 continue
             if not is_finish_compatible(cp, tp):
@@ -298,19 +340,10 @@ def main():
                 "citadelRange": cp["range"],
                 "citadelCategory": cp["category"],
                 "citadelHex": cp["_hex"],
-                "matchType": "color_match",
                 "deltaE": de,
+                "matchQuality": compute_match_quality(de),
             })
-            citadel_to_tp_matches[cp["id"]].append({
-                "thirdPartyPaintId": tp["id"],
-                "brand": tp["brand"],
-                "range": tp["range"],
-                "code": tp["code"],
-                "name": tp["name"],
-                "hex": tp["hex"],
-                "matchType": "color_match",
-                "deltaE": de,
-            })
+            citadel_to_tp_sortable[cp["id"]].append((1, de, _make_citadel_ref(tp, de)))
 
         enriched_tp_paints.append({
             "id": tp["id"],
@@ -325,8 +358,10 @@ def main():
         })
 
     tp_with_lab = [(tp, hex_to_lab(tp["hex"])) for tp in enriched_tp_paints]
-    for cp in citadel_paints:
-        existing_tp_ids = {m["thirdPartyPaintId"] for m in citadel_to_tp_matches[cp["id"]]}
+    citadel_to_tp_matches: dict[str, list[dict]] = {}
+    for cp in enriched_citadel:
+        cid = cp["id"]
+        existing_tp_ids = {ref["thirdPartyPaintId"] for _, _, ref in citadel_to_tp_sortable[cid]}
         if len(existing_tp_ids) < 3:
             candidates = []
             for tp, tp_lab in tp_with_lab:
@@ -338,31 +373,86 @@ def main():
                 candidates.append((de, tp))
             candidates.sort(key=lambda x: x[0])
             for de, tp in candidates[: (3 - len(existing_tp_ids))]:
-                citadel_to_tp_matches[cp["id"]].append({
-                    "thirdPartyPaintId": tp["id"],
-                    "brand": tp["brand"],
-                    "range": tp["range"],
-                    "code": tp["code"],
-                    "name": tp["name"],
-                    "hex": tp["hex"],
-                    "matchType": "color_match",
-                    "deltaE": de,
-                })
+                citadel_to_tp_sortable[cid].append((1, de, _make_citadel_ref(tp, de)))
 
-        citadel_to_tp_matches[cp["id"]].sort(
-            key=lambda m: (0 if m["matchType"] == "curated" else 1, m["deltaE"])
-        )
+        citadel_to_tp_sortable[cid].sort(key=lambda item: (item[0], item[1]))
+        citadel_to_tp_matches[cid] = [item[2] for item in citadel_to_tp_sortable[cid]]
 
-    out_payload = {
+    return {
         "thirdPartyPaints": enriched_tp_paints,
         "citadelToThirdPartyMap": citadel_to_tp_matches,
     }
-    out_file = OUT_DIR / "third_party_paints.json"
+
+
+def _load_citadel_paints(input_path: Path) -> list[dict]:
+    data = json.loads(input_path.read_text(encoding="utf-8"))
+    if isinstance(data, dict) and isinstance(data.get("paints"), list):
+        return data["paints"]
+    if isinstance(data, list):
+        return data
+    raise ValueError(f"Unexpected paints JSON structure in {input_path}")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Build third_party_paints.json from Citadel paints JSON using curated "
+            "equivalents and CIELAB Delta-E matching."
+        )
+    )
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=None,
+        help=(
+            "Path to Citadel paints.json or paints_bundle.json "
+            "(defaults to $WARHAMMER_EXPORT_DIR/json/paints.json or "
+            "public/data/catalog_meta/paints_bundle.json)."
+        ),
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=DEFAULT_OUT_DIR,
+        help=(
+            "Output directory for third_party_paints.json "
+            "(defaults to $WARHAMMER_EXPORT_DIR/json)."
+        ),
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    input_path: Path | None = args.input
+    if input_path is None:
+        if DEFAULT_RAW_PAINTS_JSON.is_file():
+            input_path = DEFAULT_RAW_PAINTS_JSON
+        elif FALLBACK_PAINTS_BUNDLE_JSON.is_file():
+            input_path = FALLBACK_PAINTS_BUNDLE_JSON
+        else:
+            input_path = DEFAULT_RAW_PAINTS_JSON
+
+    if not input_path.is_file():
+        print(
+            f"ERROR: Citadel paints input not found: {input_path}. "
+            "Pass --input or set WARHAMMER_EXPORT_DIR.",
+            file=sys.stderr,
+        )
+        return 1
+
+    citadel_paints = _load_citadel_paints(input_path)
+    out_payload = build_third_party_paints_payload(citadel_paints)
+    out_dir: Path = args.out_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / "third_party_paints.json"
     out_file.write_text(json.dumps(out_payload, indent=2), encoding="utf-8")
     print(
-        f"[DONE] Wrote {len(enriched_tp_paints)} 3rd-party paints across 5 brands and mapped all {len(citadel_to_tp_matches)} Citadel paints -> {out_file}"
+        f"[DONE] Wrote {len(out_payload['thirdPartyPaints'])} 3rd-party paints across 5 brands "
+        f"and mapped all {len(out_payload['citadelToThirdPartyMap'])} Citadel paints -> {out_file}"
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
