@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 import {
   CloudSyncStatus,
   ModelRecipe,
@@ -26,7 +26,10 @@ import {
   extractAccountDocPayload,
   normalizeAccountState,
   normalizeConfigurations,
+  normalizeFeaturedImage,
   normalizeIncomingProject,
+  normalizePreferences,
+  optionalTrimmedString,
   stripUndefinedDeep,
 } from '../utils/user-state-normalizer.util';
 import { CatalogService } from './catalog.service';
@@ -43,6 +46,13 @@ import {
   signOut,
 } from 'firebase/auth';
 import {
+  CollectionReference,
+  DocumentData,
+  DocumentReference,
+  DocumentSnapshot,
+  FirestoreError,
+  QuerySnapshot,
+  WriteBatch,
   collection,
   deleteDoc,
   doc,
@@ -73,7 +83,7 @@ type PhotoOwnerLocation =
 @Injectable({
   providedIn: 'root',
 })
-export class UserStateService {
+export class UserStateService implements OnDestroy {
   readonly media = inject(UserMediaService);
   private readonly catalog = inject(CatalogService);
   private readonly img = inject(ImageService);
@@ -112,9 +122,29 @@ export class UserStateService {
 
   private unsubscribeUserFirestore: (() => void) | null = null;
   private unsubscribeProjectsFirestore: (() => void) | null = null;
+  private unsubscribeAuth: (() => void) | null = null;
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  private authGeneration = 0;
+  private activeSyncedUid: string | null = null;
+  private pendingAccountWrites = 0;
+  private pendingBatchWrites = 0;
+  private readonly pendingProjectWrites = new Map<string, number>();
+  private readonly pendingProjectDeletes = new Map<string, number>();
 
   constructor() {
     this.initAuthListener();
+  }
+
+  ngOnDestroy(): void {
+    if (this.unsubscribeAuth) {
+      this.unsubscribeAuth();
+      this.unsubscribeAuth = null;
+    }
+    this.clearFirestoreListeners();
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
   }
 
   private loadInitialState(): UserAccountState {
@@ -139,8 +169,13 @@ export class UserStateService {
   }
 
   showToast(msg: string): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
     this.toastMessage.set(msg);
-    setTimeout(() => {
+    this.toastTimer = setTimeout(() => {
+      this.toastTimer = null;
       if (this.toastMessage() === msg) {
         this.toastMessage.set(null);
       }
@@ -151,29 +186,36 @@ export class UserStateService {
     updater: (prev: UserAccountState) => UserAccountState,
     syncPlan: CloudSyncPlan = { account: true }
   ): void {
-    const prevProjects = this.state().projects;
-    const next = updater(this.state());
-    next.schemaVersion = CURRENT_SCHEMA_VERSION;
-    next.updatedAt = new Date().toISOString();
-    this.state.set(next);
-    this.persistLocalState(next);
+    const prev = this.state();
+    const prevProjects = prev.projects;
+    const next = updater(prev);
+    if (next === prev) {
+      return;
+    }
+    const committed: UserAccountState = {
+      ...next,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      updatedAt: new Date().toISOString(),
+    };
+    this.state.set(committed);
+    this.persistLocalState(committed);
 
     if (syncPlan === 'none' || !this.currentUser()) {
       return;
     }
 
     if (syncPlan === 'all') {
-      const nextIds = new Set(next.projects.map((p) => p.id));
+      const nextIds = new Set(committed.projects.map((p) => p.id));
       const removedIds = prevProjects.filter((p) => !nextIds.has(p.id)).map((p) => p.id);
-      void this.pushAllToFirestore(next, removedIds);
+      void this.pushAllToFirestore(committed, removedIds);
       return;
     }
 
     if (syncPlan.account) {
-      void this.pushAccountDocToFirestore(next);
+      void this.pushAccountDocToFirestore(committed);
     }
     for (const projectId of syncPlan.projectIds ?? []) {
-      const proj = next.projects.find((p) => p.id === projectId);
+      const proj = committed.projects.find((p) => p.id === projectId);
       if (proj) {
         void this.pushProjectToFirestore(proj);
       }
@@ -231,10 +273,23 @@ export class UserStateService {
   ): void {
     const now = new Date().toISOString();
     this.commit(
-      (prev) => ({
-        ...prev,
-        projects: prev.projects.map((p) => (p.id === projectId ? updater(p, now) : p)),
-      }),
+      (prev) => {
+        const idx = prev.projects.findIndex((p) => p.id === projectId);
+        if (idx === -1) {
+          return prev;
+        }
+        const existing = prev.projects[idx];
+        const updated = updater(existing, now);
+        if (updated === existing) {
+          return prev;
+        }
+        const nextProjects = [...prev.projects];
+        nextProjects[idx] = updated;
+        return {
+          ...prev,
+          projects: nextProjects,
+        };
+      },
       { projectIds: [projectId] }
     );
   }
@@ -244,11 +299,24 @@ export class UserStateService {
     entryId: string,
     updater: (entry: ProjectModelEntry, now: string) => ProjectModelEntry
   ): void {
-    this.updateProjectById(projectId, (p, now) => ({
-      ...p,
-      updatedAt: now,
-      models: p.models.map((m) => (m.id === entryId ? updater(m, now) : m)),
-    }));
+    this.updateProjectById(projectId, (p, now) => {
+      const idx = p.models.findIndex((m) => m.id === entryId);
+      if (idx === -1) {
+        return p;
+      }
+      const existing = p.models[idx];
+      const updated = updater(existing, now);
+      if (updated === existing) {
+        return p;
+      }
+      const nextModels = [...p.models];
+      nextModels[idx] = updated;
+      return {
+        ...p,
+        updatedAt: now,
+        models: nextModels,
+      };
+    });
   }
 
   /* ========================================================================
@@ -298,6 +366,9 @@ export class UserStateService {
           added++;
         }
       }
+      if (added === 0) {
+        return prev;
+      }
       return {
         ...prev,
         wishlistPaintIds: Array.from(wish),
@@ -332,6 +403,9 @@ export class UserStateService {
           wish.delete(pid);
           added++;
         }
+      }
+      if (added === 0) {
+        return prev;
       }
       return {
         ...prev,
@@ -508,8 +582,42 @@ export class UserStateService {
     if (!modelId || !stepId) {
       return;
     }
-    const currentlyDone = this.isStepDone(modelId, stepId);
-    this.setStepsDone(modelId, [stepId], !currentlyDone);
+    this.commit((prev) => {
+      const currentMap = prev.modelProgress ?? {};
+      const existing = currentMap[modelId] ?? [];
+      const nextSet = new Set(existing);
+      if (nextSet.has(stepId)) {
+        nextSet.delete(stepId);
+      } else {
+        if (
+          existing.length === 0 &&
+          Object.keys(currentMap).length >= USER_LIMITS.MAX_MODEL_PROGRESS_KEYS
+        ) {
+          this.showToast(
+            `Model progress limit reached (${USER_LIMITS.MAX_MODEL_PROGRESS_KEYS} models max).`
+          );
+          return prev;
+        }
+        nextSet.add(stepId);
+      }
+      const nextList = Array.from(nextSet).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+      if (
+        nextList.length === existing.length &&
+        nextList.every((id, idx) => id === existing[idx])
+      ) {
+        return prev;
+      }
+      const nextMap = { ...currentMap };
+      if (nextList.length > 0) {
+        nextMap[modelId] = nextList;
+      } else {
+        delete nextMap[modelId];
+      }
+      return {
+        ...prev,
+        modelProgress: nextMap,
+      };
+    });
   }
 
   setStepsDone(modelId: string, stepIds: string[], done: boolean): void {
@@ -541,6 +649,12 @@ export class UserStateService {
       }
 
       const nextList = Array.from(nextSet).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+      if (
+        nextList.length === existing.length &&
+        nextList.every((id, idx) => id === existing[idx])
+      ) {
+        return prev;
+      }
       const nextMap = { ...currentMap };
       if (nextList.length > 0) {
         nextMap[modelId] = nextList;
@@ -559,11 +673,13 @@ export class UserStateService {
     if (!modelId) {
       return;
     }
+    let cleared = false;
     this.commit((prev) => {
       const currentMap = prev.modelProgress ?? {};
       if (!(modelId in currentMap)) {
         return prev;
       }
+      cleared = true;
       const nextMap = { ...currentMap };
       delete nextMap[modelId];
       return {
@@ -571,7 +687,9 @@ export class UserStateService {
         modelProgress: nextMap,
       };
     });
-    this.showToast('Cleared painting progress for this model');
+    if (cleared) {
+      this.showToast('Cleared painting progress for this model');
+    }
   }
 
   /* ========================================================================
@@ -586,8 +704,26 @@ export class UserStateService {
     if (!projectId || !entryId || !stepId) {
       return;
     }
-    const done = this.getProjectModelCompletedStepIds(projectId, entryId).includes(stepId);
-    this.setProjectModelStepsDone(projectId, entryId, [stepId], !done);
+    this.updateProjectModelById(projectId, entryId, (entry, now) => {
+      const nextSet = new Set(entry.completedStepIds);
+      if (nextSet.has(stepId)) {
+        nextSet.delete(stepId);
+      } else {
+        nextSet.add(stepId);
+      }
+      const nextList = Array.from(nextSet).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+      if (
+        nextList.length === entry.completedStepIds.length &&
+        nextList.every((id, idx) => id === entry.completedStepIds[idx])
+      ) {
+        return entry;
+      }
+      return {
+        ...entry,
+        completedStepIds: nextList,
+        updatedAt: now,
+      };
+    });
   }
 
   setProjectModelStepsDone(
@@ -880,7 +1016,7 @@ export class UserStateService {
         next.notes = patch.notes.slice(0, USER_LIMITS.MAX_MODEL_NOTE_LENGTH);
       }
       if ('featuredImage' in patch) {
-        next.featuredImage = patch.featuredImage;
+        next.featuredImage = normalizeFeaturedImage(patch.featuredImage);
       }
       if ('configurations' in patch) {
         next.configurations = normalizeConfigurations(patch.configurations);
@@ -967,6 +1103,7 @@ export class UserStateService {
       .slice(0, USER_LIMITS.MAX_NOTE_BLOCKS_PER_NOTE)
       .map((c) => ({
         ...c,
+        id: optionalTrimmedString(c.id, 120) ?? createEntityId('blk'),
         value: c.value.slice(0, USER_LIMITS.MAX_NOTE_TEXT_LENGTH),
       }));
     const safeTitle = (title.trim() || (noteId ? 'Untitled Note' : 'Hobby Note')).slice(
@@ -1100,38 +1237,135 @@ export class UserStateService {
     return null;
   }
 
-  private commitUploadedPhotos(
-    targetType: UserPhotoTargetType,
-    targetId: string,
-    resolvedProjectId: string | undefined,
-    uploaded: UserUploadedPhoto[]
-  ): void {
-    if (targetType === 'project' && resolvedProjectId) {
-      this.updateProjectById(resolvedProjectId, (p, now) => ({
-        ...p,
-        photos: [...uploaded, ...p.photos].slice(0, USER_LIMITS.MAX_PROJECT_PHOTOS_PER_PROJECT),
-        updatedAt: now,
-      }));
-      return;
+  private commitUploadedPhotos(params: {
+    targetType: UserPhotoTargetType;
+    targetId: string;
+    kind: UserPhotoKind;
+    resolvedProjectId: string | undefined;
+    uploaded: UserUploadedPhoto[];
+    startAuthGen: number;
+    startUid: string | null;
+  }): { accepted: UserUploadedPhoto[]; rejected: UserUploadedPhoto[]; abortReason?: string } {
+    const {
+      targetType,
+      targetId,
+      kind,
+      resolvedProjectId,
+      uploaded,
+      startAuthGen,
+      startUid,
+    } = params;
+    const currentUid = this.currentUser()?.uid ?? null;
+    if (startAuthGen !== this.authGeneration || currentUid !== startUid) {
+      return {
+        accepted: [],
+        rejected: uploaded,
+        abortReason: 'Account session changed during upload; discarded pending photos.',
+      };
     }
-    if (targetType === 'project_model' && resolvedProjectId) {
-      this.updateProjectModelById(resolvedProjectId, targetId, (entry, now) => ({
-        ...entry,
-        photos: [...uploaded, ...entry.photos].slice(0, USER_LIMITS.MAX_PHOTOS_PER_PROJECT_MODEL),
-        updatedAt: now,
-      }));
-      return;
-    }
-    this.commit(
-      (prev) => ({
-        ...prev,
-        uploadedPhotos: [...uploaded, ...prev.uploadedPhotos].slice(
+
+    const sectionLimit = this.getPhotoQuotaLimit(targetType, kind);
+    let accepted: UserUploadedPhoto[] = [];
+    let rejected: UserUploadedPhoto[] = uploaded;
+    let targetMissing = false;
+
+    const commitTarget = (prev: UserAccountState): UserAccountState => {
+      const totalAccountCount =
+        prev.uploadedPhotos.length +
+        prev.projects.reduce((sum, p) => sum + collectProjectPhotos(p).length, 0);
+      const remainingAccount = Math.max(0, USER_LIMITS.MAX_TOTAL_USER_PHOTOS - totalAccountCount);
+
+      let remainingSection = 0;
+      if (targetType === 'project' && resolvedProjectId) {
+        const proj = prev.projects.find((p) => p.id === resolvedProjectId);
+        if (!proj) {
+          targetMissing = true;
+          return prev;
+        }
+        const kindCount = proj.photos.filter((ph) => ph.kind === kind).length;
+        const remainingKind = Math.max(0, sectionLimit - kindCount);
+        const remainingContainer = Math.max(
           0,
-          USER_LIMITS.MAX_TOTAL_USER_PHOTOS
-        ),
-      }),
-      { account: true }
-    );
+          USER_LIMITS.MAX_PROJECT_PHOTOS_PER_PROJECT - proj.photos.length
+        );
+        remainingSection = Math.min(remainingKind, remainingContainer);
+      } else if (targetType === 'project_model' && resolvedProjectId) {
+        const proj = prev.projects.find((p) => p.id === resolvedProjectId);
+        const entry = proj?.models.find((m) => m.id === targetId);
+        if (!proj || !entry) {
+          targetMissing = true;
+          return prev;
+        }
+        const kindCount = entry.photos.filter((ph) => ph.kind === kind).length;
+        const remainingKind = Math.max(0, sectionLimit - kindCount);
+        const remainingContainer = Math.max(
+          0,
+          USER_LIMITS.MAX_PHOTOS_PER_PROJECT_MODEL - entry.photos.length
+        );
+        remainingSection = Math.min(remainingKind, remainingContainer);
+      } else {
+        const kindCount = prev.uploadedPhotos.filter(
+          (ph) => ph.targetType === targetType && ph.targetId === targetId && ph.kind === kind
+        ).length;
+        remainingSection = Math.max(0, sectionLimit - kindCount);
+      }
+
+      const allowedCount = Math.min(uploaded.length, remainingSection, remainingAccount);
+      accepted = uploaded.slice(0, allowedCount);
+      rejected = uploaded.slice(allowedCount);
+      if (accepted.length === 0) {
+        return prev;
+      }
+
+      const now = new Date().toISOString();
+      if (targetType === 'project' && resolvedProjectId) {
+        return {
+          ...prev,
+          projects: prev.projects.map((p) =>
+            p.id === resolvedProjectId
+              ? { ...p, photos: [...accepted, ...p.photos], updatedAt: now }
+              : p
+          ),
+        };
+      }
+      if (targetType === 'project_model' && resolvedProjectId) {
+        return {
+          ...prev,
+          projects: prev.projects.map((p) =>
+            p.id === resolvedProjectId
+              ? {
+                  ...p,
+                  updatedAt: now,
+                  models: p.models.map((entry) =>
+                    entry.id === targetId
+                      ? { ...entry, photos: [...accepted, ...entry.photos], updatedAt: now }
+                      : entry
+                  ),
+                }
+              : p
+          ),
+        };
+      }
+      return {
+        ...prev,
+        uploadedPhotos: [...accepted, ...prev.uploadedPhotos],
+      };
+    };
+
+    const syncPlan: CloudSyncPlan =
+      (targetType === 'project' || targetType === 'project_model') && resolvedProjectId
+        ? { projectIds: [resolvedProjectId] }
+        : { account: true };
+
+    this.commit(commitTarget, syncPlan);
+
+    return {
+      accepted,
+      rejected,
+      abortReason: targetMissing
+        ? 'Target project or model was deleted before upload completed.'
+        : undefined,
+    };
   }
 
   async uploadPhotos(params: {
@@ -1187,8 +1421,9 @@ export class UserStateService {
     const safeCaption = params.caption
       ? params.caption.trim().slice(0, USER_LIMITS.MAX_PHOTO_CAPTION_LENGTH)
       : undefined;
-    const uid = this.currentUser()?.uid;
-    let downscaledCount = 0;
+    const startAuthGen = this.authGeneration;
+    const startUid = this.currentUser()?.uid ?? null;
+    const downscaledPhotoIds = new Set<string>();
 
     for (const file of files) {
       if (remainingSectionSlots <= 0) {
@@ -1211,10 +1446,10 @@ export class UserStateService {
           targetId,
           kind,
           caption: safeCaption || undefined,
-          uid,
+          uid: startUid ?? undefined,
         });
         if (result.wasDownscaled) {
-          downscaledCount++;
+          downscaledPhotoIds.add(result.photo.id);
         }
         uploaded.push(result.photo);
         remainingSectionSlots--;
@@ -1224,20 +1459,46 @@ export class UserStateService {
       }
     }
 
-    if (uploaded.length > 0) {
-      this.commitUploadedPhotos(targetType, targetId, resolvedProjectId, uploaded);
+    if (uploaded.length === 0) {
+      return { uploaded, errors };
+    }
+
+    const { accepted, rejected, abortReason } = this.commitUploadedPhotos({
+      targetType,
+      targetId,
+      kind,
+      resolvedProjectId,
+      uploaded,
+      startAuthGen,
+      startUid,
+    });
+
+    for (const orphan of rejected) {
+      void this.media.deletePhotoAssets(orphan);
+    }
+
+    if (abortReason) {
+      errors.push(abortReason);
+    } else if (rejected.length > 0) {
+      errors.push(
+        `Skipped ${rejected.length} photo${rejected.length > 1 ? 's' : ''}: quota reached while uploading.`
+      );
+    }
+
+    if (accepted.length > 0) {
+      const acceptedDownscaled = accepted.filter((ph) => downscaledPhotoIds.has(ph.id)).length;
       const resizeNote =
-        downscaledCount > 0
-          ? ` (${downscaledCount} auto-downscaled to ≤ ${USER_LIMITS.MAX_PHOTO_FILE_SIZE_MB} MB)`
+        acceptedDownscaled > 0
+          ? ` (${acceptedDownscaled} auto-downscaled to ≤ ${USER_LIMITS.MAX_PHOTO_FILE_SIZE_MB} MB)`
           : '';
       this.showToast(
-        `Uploaded ${uploaded.length} ${kind === 'reference' ? 'private reference ' : ''}photo${
-          uploaded.length > 1 ? 's' : ''
+        `Uploaded ${accepted.length} ${kind === 'reference' ? 'private reference ' : ''}photo${
+          accepted.length > 1 ? 's' : ''
         }${resizeNote}`
       );
     }
 
-    return { uploaded, errors };
+    return { uploaded: accepted, errors };
   }
 
   private async uploadSingleValidatedPhoto(params: {
@@ -1257,10 +1518,10 @@ export class UserStateService {
       targetType: params.targetType,
       targetId: params.targetId,
       kind: params.kind,
-      isPrivate: true,
+      isPrivate: params.kind === 'reference',
       fileName: safeFileName,
       mimeType: info.mimeType,
-      sizeBytes: info.blob.size,
+      sizeBytes: Math.trunc(info.blob.size),
       width: info.width,
       height: info.height,
       caption: params.caption,
@@ -1359,11 +1620,26 @@ export class UserStateService {
       );
       return null;
     }
+    const safeName = (paint.name ?? '').trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH);
+    if (!safeName) {
+      this.showToast('Custom paint name is required.');
+      return null;
+    }
     const created: ThirdPartyPaint = {
       ...paint,
-      name: paint.name.trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH),
-      brand: paint.brand.trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH),
-      range: paint.range.trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH),
+      name: safeName,
+      brand:
+        (paint.brand ?? '').trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH) || 'Custom Brand',
+      range:
+        (paint.range ?? '').trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH) || 'Custom Range',
+      code: optionalTrimmedString(paint.code, 64),
+      category: (paint.category ?? '').trim().slice(0, 64) || 'Layer',
+      potStyle: optionalTrimmedString(paint.potStyle, 64),
+      hex: (paint.hex ?? '').trim().slice(0, 16) || '#888888',
+      citadelMatches: (paint.citadelMatches ?? []).slice(
+        0,
+        USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT
+      ),
       id: createEntityId('custom'),
       isCustom: true,
     };
@@ -1468,7 +1744,10 @@ export class UserStateService {
           const existing = projectMap.get(incomingP.id);
           if (existing) {
             if (incomingP.updatedAt >= existing.updatedAt) {
-              projectMap.set(incomingP.id, incomingP);
+              projectMap.set(incomingP.id, {
+                ...incomingP,
+                createdAt: existing.createdAt,
+              });
             }
           } else if (projectMap.size < USER_LIMITS.MAX_PROJECTS) {
             projectMap.set(incomingP.id, incomingP);
@@ -1488,7 +1767,10 @@ export class UserStateService {
             ph.targetType === 'model' &&
             (photoMap.has(ph.id) || photoMap.size < USER_LIMITS.MAX_TOTAL_USER_PHOTOS)
           ) {
-            photoMap.set(ph.id, { ...ph, isPrivate: true });
+            photoMap.set(ph.id, {
+              ...ph,
+              isPrivate: ph.kind === 'reference' ? true : Boolean(ph.isPrivate),
+            });
           }
         }
 
@@ -1508,6 +1790,38 @@ export class UserStateService {
           }
         }
 
+        const mergedOverrides: Record<string, string[]> = {
+          ...(base.customCompatibilityOverrides ?? {}),
+        };
+        for (const [paintId, incomingIds] of Object.entries(
+          incoming.customCompatibilityOverrides ?? {}
+        )) {
+          if (
+            !(paintId in mergedOverrides) &&
+            Object.keys(mergedOverrides).length >= USER_LIMITS.MAX_COMPATIBILITY_OVERRIDE_KEYS
+          ) {
+            break;
+          }
+          const combined = Array.from(
+            new Set([...(mergedOverrides[paintId] ?? []), ...incomingIds])
+          ).slice(0, USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT);
+          if (combined.length > 0) {
+            mergedOverrides[paintId] = combined;
+          }
+        }
+
+        const hasRawPreferences =
+          'preferences' in rawPayload &&
+          Boolean(rawPayload['preferences']) &&
+          typeof rawPayload['preferences'] === 'object' &&
+          !Array.isArray(rawPayload['preferences']);
+        const mergedPreferences = hasRawPreferences
+          ? normalizePreferences(rawPayload['preferences'], base.preferences)
+          : {
+              ...base.preferences,
+              preferredThirdPartyBrands: [...base.preferences.preferredThirdPartyBrands],
+            };
+
         return {
           ...base,
           inventoryPaintIds: Array.from(invSet).slice(0, USER_LIMITS.MAX_INVENTORY_PAINTS),
@@ -1515,9 +1829,11 @@ export class UserStateService {
           inventoryModelIds: Array.from(modelInvSet).slice(0, USER_LIMITS.MAX_INVENTORY_MODELS),
           wishlistModelIds: Array.from(modelWishSet).slice(0, USER_LIMITS.MAX_WISHLIST_MODELS),
           customPaints: Array.from(customPaintMap.values()),
+          customCompatibilityOverrides: mergedOverrides,
           modelProgress: mergedProgress,
           projects: Array.from(projectMap.values()),
           uploadedPhotos: Array.from(photoMap.values()),
+          preferences: mergedPreferences,
         };
       },
       syncCloud ? 'all' : 'none'
@@ -1547,7 +1863,7 @@ export class UserStateService {
     a.href = url;
     a.download = `model_painter_backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     this.showToast('Exported JSON backup');
   }
 
@@ -1565,6 +1881,77 @@ export class UserStateService {
      Project docs: `/users/{uid}/projects/{projectId}`
      ======================================================================== */
 
+  protected getFbHandles(): FirebaseHandles | null {
+    return getFirebaseHandles();
+  }
+
+  protected getUserDocRef(db: FirebaseHandles['db'], uid: string): DocumentReference {
+    return doc(db, 'users', uid);
+  }
+
+  protected getProjectsColRef(db: FirebaseHandles['db'], uid: string): CollectionReference {
+    return collection(db, 'users', uid, 'projects');
+  }
+
+  protected getProjectDocRef(
+    db: FirebaseHandles['db'],
+    uid: string,
+    projectId: string
+  ): DocumentReference {
+    return doc(db, 'users', uid, 'projects', projectId);
+  }
+
+  protected subscribeAuthState(
+    auth: FirebaseHandles['auth'],
+    callback: (user: User | null) => void
+  ): () => void {
+    return onAuthStateChanged(auth, callback);
+  }
+
+  protected fetchDocSnap(ref: DocumentReference): Promise<DocumentSnapshot> {
+    return getDoc(ref);
+  }
+
+  protected fetchQuerySnap(ref: CollectionReference): Promise<QuerySnapshot> {
+    return getDocs(ref);
+  }
+
+  protected subscribeDocSnapshot(
+    ref: DocumentReference,
+    onNext: (snap: DocumentSnapshot) => void,
+    onError: (err: FirestoreError) => void
+  ): () => void {
+    return onSnapshot(ref, onNext, onError);
+  }
+
+  protected subscribeQuerySnapshot(
+    ref: CollectionReference,
+    onNext: (snap: QuerySnapshot) => void,
+    onError: (err: FirestoreError) => void
+  ): () => void {
+    return onSnapshot(ref, onNext, onError);
+  }
+
+  protected writeDoc(
+    ref: DocumentReference,
+    data: DocumentData,
+    options?: { merge?: boolean }
+  ): Promise<void> {
+    return options ? setDoc(ref, data, options) : setDoc(ref, data);
+  }
+
+  protected removeDoc(ref: DocumentReference): Promise<void> {
+    return deleteDoc(ref);
+  }
+
+  protected createWriteBatch(db: FirebaseHandles['db']): WriteBatch {
+    return writeBatch(db);
+  }
+
+  protected sdkSignOut(auth: FirebaseHandles['auth']): Promise<void> {
+    return signOut(auth);
+  }
+
   private clearFirestoreListeners(): void {
     if (this.unsubscribeUserFirestore) {
       this.unsubscribeUserFirestore();
@@ -1577,19 +1964,25 @@ export class UserStateService {
   }
 
   initAuthListener(): void {
-    const fb = getFirebaseHandles();
+    if (this.unsubscribeAuth) {
+      this.unsubscribeAuth();
+      this.unsubscribeAuth = null;
+    }
+    this.clearFirestoreListeners();
+    const fb = this.getFbHandles();
     if (!fb) {
       this.cloudSyncStatus.set(CloudSyncStatus.LocalOnly);
       return;
     }
-    onAuthStateChanged(fb.auth, async (user) => {
+    this.unsubscribeAuth = this.subscribeAuthState(fb.auth, (user) => {
+      const authGen = ++this.authGeneration;
       this.currentUser.set(user);
       this.clearFirestoreListeners();
       if (!user) {
         this.cloudSyncStatus.set(CloudSyncStatus.LocalOnly);
         return;
       }
-      await this.syncSignedInUser(fb, user);
+      void this.syncSignedInUser(fb, user, authGen);
     });
   }
 
@@ -1619,16 +2012,34 @@ export class UserStateService {
     );
   }
 
-  private async syncSignedInUser(fb: FirebaseHandles, user: User): Promise<void> {
+  private async syncSignedInUser(
+    fb: FirebaseHandles,
+    user: User,
+    authGen: number
+  ): Promise<void> {
     this.cloudSyncStatus.set(CloudSyncStatus.Syncing);
-    const userDocRef = doc(fb.db, 'users', user.uid);
-    const projectsColRef = collection(fb.db, 'users', user.uid, 'projects');
+    const userDocRef = this.getUserDocRef(fb.db, user.uid);
+    const projectsColRef = this.getProjectsColRef(fb.db, user.uid);
 
     try {
+      if (this.activeSyncedUid && this.activeSyncedUid !== user.uid) {
+        const fresh = createDefaultState();
+        this.state.set(fresh);
+        this.persistLocalState(fresh);
+        await this.media.clearAllLocalMedia();
+        if (authGen !== this.authGeneration) {
+          return;
+        }
+      }
+
       const [userSnap, projectsSnap] = await Promise.all([
-        getDoc(userDocRef),
-        getDocs(projectsColRef),
+        this.fetchDocSnap(userDocRef),
+        this.fetchQuerySnap(projectsColRef),
       ]);
+      if (authGen !== this.authGeneration) {
+        return;
+      }
+      this.activeSyncedUid = user.uid;
 
       const remoteUserData = userSnap.exists()
         ? (userSnap.data() as Record<string, unknown>)
@@ -1651,45 +2062,93 @@ export class UserStateService {
         this.allUploadedPhotos(),
         user.uid
       );
+      if (authGen !== this.authGeneration) {
+        return;
+      }
       this.applyUploadedPhotoPaths(uploadedMap);
 
       await this.pushAllToFirestore(this.state());
+      if (authGen !== this.authGeneration) {
+        return;
+      }
 
-      this.unsubscribeUserFirestore = onSnapshot(userDocRef, (docSnap) => {
-        if (!docSnap.exists() || docSnap.metadata.hasPendingWrites) {
-          return;
+      this.unsubscribeUserFirestore = this.subscribeDocSnapshot(
+        userDocRef,
+        (docSnap) => {
+          if (
+            authGen !== this.authGeneration ||
+            !docSnap.exists() ||
+            docSnap.metadata.hasPendingWrites ||
+            this.pendingAccountWrites > 0 ||
+            this.pendingBatchWrites > 0
+          ) {
+            return;
+          }
+          const remote = docSnap.data() as Partial<UserAccountState>;
+          if (remote.updatedAt && remote.updatedAt > this.state().updatedAt) {
+            const normalized = normalizeAccountState({
+              ...remote,
+              projects: this.state().projects,
+            });
+            this.state.set(normalized);
+            this.persistLocalState(normalized);
+          }
+        },
+        (err) => {
+          if (authGen !== this.authGeneration) {
+            return;
+          }
+          console.warn('Firestore user listener error:', err);
+          this.cloudSyncStatus.set(CloudSyncStatus.Error);
         }
-        const remote = docSnap.data() as Partial<UserAccountState>;
-        if (remote.updatedAt && remote.updatedAt > this.state().updatedAt) {
-          const normalized = normalizeAccountState({
-            ...remote,
-            projects: this.state().projects,
+      );
+
+      this.unsubscribeProjectsFirestore = this.subscribeQuerySnapshot(
+        projectsColRef,
+        (querySnap) => {
+          if (
+            authGen !== this.authGeneration ||
+            querySnap.metadata.hasPendingWrites ||
+            this.pendingBatchWrites > 0
+          ) {
+            return;
+          }
+          const remoteMap = new Map<string, UserProject>();
+          querySnap.forEach((docSnap) => {
+            if ((this.pendingProjectDeletes.get(docSnap.id) ?? 0) > 0) {
+              return;
+            }
+            const raw = docSnap.data() as Record<string, unknown>;
+            remoteMap.set(docSnap.id, normalizeIncomingProject({ ...raw, id: docSnap.id }));
           });
-          this.state.set(normalized);
-          this.persistLocalState(normalized);
+          for (const localProj of this.state().projects) {
+            if ((this.pendingProjectWrites.get(localProj.id) ?? 0) > 0) {
+              remoteMap.set(localProj.id, localProj);
+            }
+          }
+          const remoteProjects = Array.from(remoteMap.values());
+          remoteProjects.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+          const next: UserAccountState = {
+            ...this.state(),
+            projects: remoteProjects.slice(0, USER_LIMITS.MAX_PROJECTS),
+          };
+          this.state.set(next);
+          this.persistLocalState(next);
+        },
+        (err) => {
+          if (authGen !== this.authGeneration) {
+            return;
+          }
+          console.warn('Firestore projects listener error:', err);
+          this.cloudSyncStatus.set(CloudSyncStatus.Error);
         }
-      });
-
-      this.unsubscribeProjectsFirestore = onSnapshot(projectsColRef, (querySnap) => {
-        if (querySnap.metadata.hasPendingWrites) {
-          return;
-        }
-        const remoteProjects: UserProject[] = [];
-        querySnap.forEach((docSnap) => {
-          const raw = docSnap.data() as Record<string, unknown>;
-          remoteProjects.push(normalizeIncomingProject({ ...raw, id: docSnap.id }));
-        });
-        remoteProjects.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-        const next: UserAccountState = {
-          ...this.state(),
-          projects: remoteProjects.slice(0, USER_LIMITS.MAX_PROJECTS),
-        };
-        this.state.set(next);
-        this.persistLocalState(next);
-      });
+      );
 
       this.cloudSyncStatus.set(CloudSyncStatus.Synced);
     } catch (err) {
+      if (authGen !== this.authGeneration) {
+        return;
+      }
       console.warn('Firestore user sync failed:', err);
       this.cloudSyncStatus.set(CloudSyncStatus.Error);
     }
@@ -1699,66 +2158,119 @@ export class UserStateService {
     errorLabel: string,
     op: (fb: FirebaseHandles, uid: string) => Promise<void>
   ): Promise<void> {
-    const fb = getFirebaseHandles();
+    const fb = this.getFbHandles();
     const user = this.currentUser();
     if (!fb || !user) {
       return;
     }
+    const startGen = this.authGeneration;
     try {
       this.cloudSyncStatus.set(CloudSyncStatus.Syncing);
       await op(fb, user.uid);
-      this.cloudSyncStatus.set(CloudSyncStatus.Synced);
+      if (startGen === this.authGeneration) {
+        this.cloudSyncStatus.set(CloudSyncStatus.Synced);
+      }
     } catch (err) {
       console.warn(errorLabel, err);
-      this.cloudSyncStatus.set(CloudSyncStatus.Error);
+      if (startGen === this.authGeneration) {
+        this.cloudSyncStatus.set(CloudSyncStatus.Error);
+      }
     }
   }
 
-  private pushAccountDocToFirestore(stateToSave: UserAccountState): Promise<void> {
-    return this.runFirestoreSync('Failed to sync account document to Firestore:', (fb, uid) =>
-      setDoc(doc(fb.db, 'users', uid), stripUndefinedDeep(extractAccountDocPayload(stateToSave)), {
-        merge: true,
-      })
-    );
+  private async pushAccountDocToFirestore(stateToSave: UserAccountState): Promise<void> {
+    this.pendingAccountWrites++;
+    try {
+      await this.runFirestoreSync('Failed to sync account document to Firestore:', (fb, uid) =>
+        this.writeDoc(
+          this.getUserDocRef(fb.db, uid),
+          stripUndefinedDeep(extractAccountDocPayload(stateToSave)),
+          { merge: true }
+        )
+      );
+    } finally {
+      this.pendingAccountWrites = Math.max(0, this.pendingAccountWrites - 1);
+    }
   }
 
-  private pushProjectToFirestore(project: UserProject): Promise<void> {
-    return this.runFirestoreSync(
-      `Failed to sync project ${project.id} to Firestore:`,
-      (fb, uid) => setDoc(doc(fb.db, 'users', uid, 'projects', project.id), stripUndefinedDeep(project))
+  private async pushProjectToFirestore(project: UserProject): Promise<void> {
+    this.pendingProjectWrites.set(
+      project.id,
+      (this.pendingProjectWrites.get(project.id) ?? 0) + 1
     );
+    try {
+      await this.runFirestoreSync(
+        `Failed to sync project ${project.id} to Firestore:`,
+        (fb, uid) =>
+          this.writeDoc(
+            this.getProjectDocRef(fb.db, uid, project.id),
+            stripUndefinedDeep(project)
+          )
+      );
+    } finally {
+      const remaining = (this.pendingProjectWrites.get(project.id) ?? 1) - 1;
+      if (remaining > 0) {
+        this.pendingProjectWrites.set(project.id, remaining);
+      } else {
+        this.pendingProjectWrites.delete(project.id);
+      }
+    }
   }
 
-  private deleteProjectFromFirestore(projectId: string): Promise<void> {
-    return this.runFirestoreSync(
-      `Failed to delete project ${projectId} from Firestore:`,
-      (fb, uid) => deleteDoc(doc(fb.db, 'users', uid, 'projects', projectId))
+  private async deleteProjectFromFirestore(projectId: string): Promise<void> {
+    this.pendingProjectDeletes.set(
+      projectId,
+      (this.pendingProjectDeletes.get(projectId) ?? 0) + 1
     );
+    try {
+      await this.runFirestoreSync(
+        `Failed to delete project ${projectId} from Firestore:`,
+        (fb, uid) => this.removeDoc(this.getProjectDocRef(fb.db, uid, projectId))
+      );
+    } finally {
+      const remaining = (this.pendingProjectDeletes.get(projectId) ?? 1) - 1;
+      if (remaining > 0) {
+        this.pendingProjectDeletes.set(projectId, remaining);
+      } else {
+        this.pendingProjectDeletes.delete(projectId);
+      }
+    }
   }
 
-  private pushAllToFirestore(
+  private async pushAllToFirestore(
     stateToSave: UserAccountState,
     deletedProjectIds: string[] = []
   ): Promise<void> {
-    return this.runFirestoreSync('Failed to batch-sync account & projects to Firestore:', (fb, uid) => {
-      const batch = writeBatch(fb.db);
-      batch.set(
-        doc(fb.db, 'users', uid),
-        stripUndefinedDeep(extractAccountDocPayload(stateToSave)),
-        { merge: true }
+    this.pendingBatchWrites++;
+    try {
+      await this.runFirestoreSync(
+        'Failed to batch-sync account & projects to Firestore:',
+        (fb, uid) => {
+          const batch = this.createWriteBatch(fb.db);
+          batch.set(
+            this.getUserDocRef(fb.db, uid),
+            stripUndefinedDeep(extractAccountDocPayload(stateToSave)),
+            { merge: true }
+          );
+          for (const proj of stateToSave.projects.slice(0, USER_LIMITS.MAX_PROJECTS)) {
+            batch.set(
+              this.getProjectDocRef(fb.db, uid, proj.id),
+              stripUndefinedDeep(proj)
+            );
+          }
+          for (const delId of deletedProjectIds) {
+            batch.delete(this.getProjectDocRef(fb.db, uid, delId));
+          }
+          return batch.commit();
+        }
       );
-      for (const proj of stateToSave.projects.slice(0, USER_LIMITS.MAX_PROJECTS)) {
-        batch.set(doc(fb.db, 'users', uid, 'projects', proj.id), stripUndefinedDeep(proj));
-      }
-      for (const delId of deletedProjectIds) {
-        batch.delete(doc(fb.db, 'users', uid, 'projects', delId));
-      }
-      return batch.commit();
-    });
+    } finally {
+      this.pendingBatchWrites = Math.max(0, this.pendingBatchWrites - 1);
+    }
   }
 
   async signInWithGoogle(): Promise<void> {
-    const fb = getFirebaseHandles();
+    const fb = this.getFbHandles();
     if (!fb) {
       throw new Error('Configure your Firebase Project credentials first to enable Cloud Auth.');
     }
@@ -1768,7 +2280,7 @@ export class UserStateService {
   }
 
   async signInWithEmail(email: string, pass: string, isSignUp = false): Promise<void> {
-    const fb = getFirebaseHandles();
+    const fb = this.getFbHandles();
     if (!fb) {
       throw new Error('Configure your Firebase Project credentials first to enable Cloud Auth.');
     }
@@ -1782,11 +2294,20 @@ export class UserStateService {
   }
 
   async signOutCloud(): Promise<void> {
-    const fb = getFirebaseHandles();
+    const fb = this.getFbHandles();
     if (!fb) {
       return;
     }
-    await signOut(fb.auth);
-    this.showToast('Signed out of Cloud Sync (local data preserved)');
+    this.authGeneration++;
+    this.activeSyncedUid = null;
+    this.clearFirestoreListeners();
+    await this.sdkSignOut(fb.auth);
+    this.currentUser.set(null);
+    this.cloudSyncStatus.set(CloudSyncStatus.LocalOnly);
+    const fresh = createDefaultState();
+    this.state.set(fresh);
+    this.persistLocalState(fresh);
+    await this.media.clearAllLocalMedia();
+    this.showToast('Signed out of Cloud Sync');
   }
 }

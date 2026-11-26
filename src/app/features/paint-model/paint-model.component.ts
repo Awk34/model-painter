@@ -83,8 +83,10 @@ export class PaintModelComponent {
       if (cFilter === 'wishlist' && !modelWish.has(m.id)) {
         return false;
       }
-      if (allowedRecipeSet && !allowedRecipeSet.has(m.id) && (!gid || !m.gameIds.includes(gid))) {
-        return false;
+      if (allowedRecipeSet && !allowedRecipeSet.has(m.id)) {
+        if (pfid || sfid || !gid || !m.gameIds.includes(gid)) {
+          return false;
+        }
       }
       if (range !== 'all' && m.range !== range) {
         return false;
@@ -124,6 +126,11 @@ export class PaintModelComponent {
   selectParentFaction(faction: FactionNode | null): void {
     this.selectedParentFactionId.set(faction ? faction.id : null);
     this.selectedSubFactionId.set(null);
+    this.visibleLimit.set(60);
+  }
+
+  selectSubFaction(subFactionId: string | null): void {
+    this.selectedSubFactionId.set(subFactionId);
     this.visibleLimit.set(60);
   }
 

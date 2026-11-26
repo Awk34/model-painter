@@ -1,5 +1,13 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, inject, input, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   UserProject,
@@ -7,6 +15,7 @@ import {
   UserProjectNoteComponent,
 } from '../../../core/models/catalog.models';
 import { UserStateService } from '../../../core/services/user-state.service';
+import { createEntityId } from '../../../core/utils/catalog-filter.util';
 
 @Component({
   selector: 'app-project-notes-section',
@@ -25,25 +34,61 @@ export class ProjectNotesSectionComponent {
   readonly editingNoteId = signal<string | null>(null);
   readonly noteTitleDraft = signal('');
   readonly noteBlocksDraft = signal<UserProjectNoteComponent[]>([]);
+  private lastProjectId: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const pid = this.project().id;
+      if (this.lastProjectId !== null && pid !== this.lastProjectId) {
+        this.closeNoteEditor();
+      }
+      this.lastProjectId = pid;
+    });
+  }
 
   openNoteEditor(note: UserProjectNote | null): void {
     if (note) {
       this.editingNoteId.set(note.id);
       this.noteTitleDraft.set(note.title);
-      this.noteBlocksDraft.set(structuredClone(note.components));
+      const seenBlockIds = new Set<string>();
+      this.noteBlocksDraft.set(
+        note.components.map((comp) => {
+          const clone = structuredClone(comp);
+          if (!clone.id || seenBlockIds.has(clone.id)) {
+            clone.id = createEntityId('blk');
+          }
+          seenBlockIds.add(clone.id);
+          return clone;
+        })
+      );
     } else {
       this.editingNoteId.set(null);
       this.noteTitleDraft.set('');
       this.noteBlocksDraft.set([
-        { type: 'text', value: '' },
-        { type: 'checkbox', value: 'Prime miniatures', checked: false },
+        { id: createEntityId('blk'), type: 'text', value: '' },
+        {
+          id: createEntityId('blk'),
+          type: 'checkbox',
+          value: 'Prime miniatures',
+          checked: false,
+        },
       ]);
     }
     this.editingNoteOpen.set(true);
   }
 
+  closeNoteEditor(): void {
+    this.editingNoteOpen.set(false);
+    this.editingNoteId.set(null);
+    this.noteTitleDraft.set('');
+    this.noteBlocksDraft.set([]);
+  }
+
   addNoteBlock(type: 'text' | 'checkbox'): void {
-    this.noteBlocksDraft.update((blocks) => [...blocks, { type, value: '', checked: false }]);
+    this.noteBlocksDraft.update((blocks) => [
+      ...blocks,
+      { id: createEntityId('blk'), type, value: '', checked: false },
+    ]);
   }
 
   removeNoteBlock(idx: number): void {
@@ -76,7 +121,7 @@ export class ProjectNotesSectionComponent {
       this.noteTitleDraft(),
       cleaned
     );
-    this.editingNoteOpen.set(false);
+    this.closeNoteEditor();
   }
 }
 

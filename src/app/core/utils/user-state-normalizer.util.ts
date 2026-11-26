@@ -3,9 +3,12 @@ import {
   ProjectModelConfiguration,
   ProjectModelEntry,
   ProjectModelFeaturedImage,
+  ThirdPartyCitadelMatch,
+  ThirdPartyPaint,
   UserAccountState,
   UserPhotoKind,
   UserPhotoTargetType,
+  UserPreferences,
   UserProject,
   UserProjectNote,
   UserProjectNoteComponent,
@@ -63,7 +66,17 @@ export function dedupeBoundedIds(raw: unknown, max: number): string[] {
   if (!Array.isArray(raw)) {
     return [];
   }
-  return Array.from(new Set(raw.map((id) => String(id)).filter(Boolean))).slice(0, max);
+  const normalized: string[] = [];
+  for (const id of raw) {
+    if (typeof id !== 'string' && typeof id !== 'number') {
+      continue;
+    }
+    const trimmed = String(id).trim();
+    if (trimmed) {
+      normalized.push(trimmed.slice(0, 200));
+    }
+  }
+  return Array.from(new Set(normalized)).slice(0, max);
 }
 
 export function clampModelQuantity(raw: unknown): number {
@@ -74,7 +87,7 @@ export function clampModelQuantity(raw: unknown): number {
   return Math.min(USER_LIMITS.MAX_MODEL_QUANTITY, Math.max(1, Math.trunc(parsed)));
 }
 
-function optionalTrimmedString(raw: unknown, maxLen: number): string | undefined {
+export function optionalTrimmedString(raw: unknown, maxLen: number): string | undefined {
   if (typeof raw !== 'string') {
     return undefined;
   }
@@ -98,40 +111,51 @@ function normalizePhotoEntry(
   raw: unknown,
   forcedTarget?: { targetType: UserPhotoTargetType; targetId: string }
 ): UserUploadedPhoto | null {
-  if (!raw || typeof raw !== 'object') {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return null;
   }
   const ph = raw as Partial<UserUploadedPhoto>;
-  if (!ph.id) {
+  const rawId = ph.id === undefined || ph.id === null ? '' : String(ph.id);
+  const id = optionalTrimmedString(rawId, 120);
+  if (!id) {
     return null;
   }
   const kind: UserPhotoKind = ph.kind === 'reference' ? 'reference' : 'showcase';
   const targetType: UserPhotoTargetType =
     forcedTarget?.targetType ??
     (ph.targetType === 'project' || ph.targetType === 'project_model' ? ph.targetType : 'model');
-  const targetId = forcedTarget?.targetId ?? String(ph.targetId ?? '');
+  const rawTargetId =
+    forcedTarget?.targetId ??
+    (ph.targetId === undefined || ph.targetId === null ? '' : String(ph.targetId));
+  const targetId = optionalTrimmedString(rawTargetId, 200);
   if (!targetId) {
     return null;
   }
 
+  const rawFileName =
+    ph.fileName === undefined || ph.fileName === null ? '' : String(ph.fileName);
+  const fileName = optionalTrimmedString(rawFileName, 255) ?? 'photo.jpg';
+  const rawWidth = typeof ph.width === 'number' && Number.isFinite(ph.width) ? Math.trunc(ph.width) : 0;
+  const rawHeight = typeof ph.height === 'number' && Number.isFinite(ph.height) ? Math.trunc(ph.height) : 0;
+
   return {
-    id: String(ph.id).slice(0, 120),
+    id,
     targetType,
-    targetId: targetId.slice(0, 200),
+    targetId,
     kind,
-    isPrivate: kind === 'reference' ? true : Boolean(ph.isPrivate ?? true),
-    fileName: String(ph.fileName || 'photo.jpg').slice(0, 255),
+    isPrivate: kind === 'reference' ? true : Boolean(ph.isPrivate ?? false),
+    fileName,
     mimeType:
       ph.mimeType === 'image/png' || ph.mimeType === 'image/webp' ? ph.mimeType : 'image/jpeg',
     sizeBytes:
-      typeof ph.sizeBytes === 'number' && ph.sizeBytes > 0
+      typeof ph.sizeBytes === 'number' && Number.isFinite(ph.sizeBytes) && ph.sizeBytes > 0
         ? Math.max(1, Math.min(Math.trunc(ph.sizeBytes), USER_LIMITS.MAX_PHOTO_FILE_SIZE_BYTES))
         : 1,
-    width: typeof ph.width === 'number' && ph.width > 0 ? Math.trunc(ph.width) : undefined,
-    height: typeof ph.height === 'number' && ph.height > 0 ? Math.trunc(ph.height) : undefined,
-    caption: ph.caption ? String(ph.caption).slice(0, USER_LIMITS.MAX_PHOTO_CAPTION_LENGTH) : undefined,
-    createdAt: String(ph.createdAt || new Date().toISOString()).slice(0, 64),
-    storagePath: ph.storagePath ? String(ph.storagePath).slice(0, 512) : undefined,
+    width: rawWidth > 0 && rawWidth <= 32768 ? rawWidth : undefined,
+    height: rawHeight > 0 && rawHeight <= 32768 ? rawHeight : undefined,
+    caption: optionalTrimmedString(ph.caption, USER_LIMITS.MAX_PHOTO_CAPTION_LENGTH),
+    createdAt: optionalTrimmedString(ph.createdAt, 64) ?? new Date().toISOString(),
+    storagePath: optionalTrimmedString(ph.storagePath, 512),
   };
 }
 
@@ -153,7 +177,7 @@ function normalizeBoundedPhotos(
   return Array.from(photoMap.values());
 }
 
-function normalizeFeaturedImage(raw: unknown): ProjectModelFeaturedImage | undefined {
+export function normalizeFeaturedImage(raw: unknown): ProjectModelFeaturedImage | undefined {
   if (!raw || typeof raw !== 'object') {
     return undefined;
   }
@@ -196,7 +220,7 @@ export function normalizeConfigurations(raw: unknown): ProjectModelConfiguration
   const normalized: ProjectModelConfiguration[] = [];
   for (let i = 0; i < raw.length && normalized.length < USER_LIMITS.MAX_CONFIGURATIONS_PER_MODEL; i++) {
     const item = raw[i];
-    if (!item || typeof item !== 'object') {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
       continue;
     }
     const rec = item as Record<string, unknown>;
@@ -206,11 +230,11 @@ export function normalizeConfigurations(raw: unknown): ProjectModelConfiguration
       continue;
     }
     normalized.push({
-      id: String(rec['id'] ?? `cfg_${i}`).slice(0, 120),
+      id: optionalTrimmedString(rec['id'], 120) ?? `cfg_${i}`,
       slot,
       option,
-      optionId: rec['optionId'] ? String(rec['optionId']).slice(0, 200) : undefined,
-      notes: rec['notes'] ? String(rec['notes']).slice(0, 500) : undefined,
+      optionId: optionalTrimmedString(rec['optionId'], 200),
+      notes: optionalTrimmedString(rec['notes'], 500),
     });
   }
   return normalized.length > 0 ? normalized : undefined;
@@ -222,25 +246,33 @@ function normalizeIncomingNote(
   idx: number,
   defaultTimestamp: string
 ): UserProjectNote {
+  const safeDefaultTs = optionalTrimmedString(defaultTimestamp, 64) ?? new Date().toISOString();
   const rawComps = Array.isArray(rn['components'])
-    ? (rn['components'] as Record<string, unknown>[])
+    ? rn['components'].filter(
+        (c): c is Record<string, unknown> => Boolean(c && typeof c === 'object' && !Array.isArray(c))
+      )
     : [];
   const components: UserProjectNoteComponent[] = rawComps
     .slice(0, USER_LIMITS.MAX_NOTE_BLOCKS_PER_NOTE)
-    .map((rc) => ({
-      type: rc['type'] === 'checkbox' ? 'checkbox' : 'text',
-      value: String(rc['value'] ?? rc['text'] ?? '').slice(0, USER_LIMITS.MAX_NOTE_TEXT_LENGTH),
-      checked: Boolean(rc['checked'] ?? false),
-    }));
+    .map((rc) => {
+      const compId = optionalTrimmedString(rc['id'], 120);
+      return {
+        ...(compId ? { id: compId } : {}),
+        type: rc['type'] === 'checkbox' ? 'checkbox' : 'text',
+        value: String(rc['value'] ?? rc['text'] ?? '').slice(0, USER_LIMITS.MAX_NOTE_TEXT_LENGTH),
+        checked: Boolean(rc['checked'] ?? false),
+      };
+    });
 
   return {
-    id: String(rn['id'] ?? `note_${projectId}_${idx}`),
-    title: String(rn['title'] ?? rn['name'] ?? 'Project Note').slice(
-      0,
-      USER_LIMITS.MAX_TITLE_LENGTH
-    ),
-    createdAt: String(rn['createdAt'] ?? defaultTimestamp),
-    updatedAt: String(rn['updatedAt'] ?? defaultTimestamp),
+    id:
+      optionalTrimmedString(rn['id'], 120) ??
+      `note_${projectId.slice(0, 90)}_${idx}`.slice(0, 120),
+    title:
+      optionalTrimmedString(rn['title'] ?? rn['name'], USER_LIMITS.MAX_TITLE_LENGTH) ??
+      'Project Note',
+    createdAt: optionalTrimmedString(rn['createdAt'], 64) ?? safeDefaultTs,
+    updatedAt: optionalTrimmedString(rn['updatedAt'], 64) ?? safeDefaultTs,
     components,
   };
 }
@@ -249,15 +281,24 @@ function normalizeProjectModelEntry(
   raw: Record<string, unknown>,
   projectId: string,
   idx: number,
-  defaultTimestamp: string
+  defaultTimestamp: string,
+  seenIds?: Set<string>
 ): ProjectModelEntry | null {
   const recipeId = optionalTrimmedString(raw['recipeId'], 200);
   if (!recipeId) {
     return null;
   }
-  const id = String(raw['id'] ?? `pmod_${projectId}_${idx}`).trim().slice(0, 120);
-  const createdAt = String(raw['createdAt'] ?? defaultTimestamp).slice(0, 64);
-  const updatedAt = String(raw['updatedAt'] ?? createdAt).slice(0, 64);
+  const fallbackId = `pmod_${projectId.slice(0, 90)}_${idx}`.slice(0, 120);
+  let id = optionalTrimmedString(raw['id'], 120) ?? fallbackId;
+  if (seenIds) {
+    if (seenIds.has(id)) {
+      id = createEntityId('pmod');
+    }
+    seenIds.add(id);
+  }
+  const safeDefaultTs = optionalTrimmedString(defaultTimestamp, 64) ?? new Date().toISOString();
+  const createdAt = optionalTrimmedString(raw['createdAt'], 64) ?? safeDefaultTs;
+  const updatedAt = optionalTrimmedString(raw['updatedAt'], 64) ?? createdAt;
   const rawPhotos = Array.isArray(raw['photos']) ? raw['photos'] : [];
   const photos = normalizeBoundedPhotos(
     rawPhotos,
@@ -278,7 +319,10 @@ function normalizeProjectModelEntry(
     recipeId,
     customName: optionalTrimmedString(raw['customName'], USER_LIMITS.MAX_TITLE_LENGTH),
     quantity: clampModelQuantity(raw['quantity']),
-    notes: String(raw['notes'] ?? '').slice(0, USER_LIMITS.MAX_MODEL_NOTE_LENGTH),
+    notes:
+      typeof raw['notes'] === 'string'
+        ? raw['notes'].slice(0, USER_LIMITS.MAX_MODEL_NOTE_LENGTH)
+        : '',
     completedStepIds: dedupeBoundedIds(
       raw['completedStepIds'],
       USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS
@@ -319,42 +363,46 @@ function normalizeProjectModels(
   const seenIds = new Set<string>();
   for (let i = 0; i < rp['models'].length && models.length < USER_LIMITS.MAX_MODELS_PER_PROJECT; i++) {
     const rawEntry = rp['models'][i];
-    if (!rawEntry || typeof rawEntry !== 'object') {
+    if (!rawEntry || typeof rawEntry !== 'object' || Array.isArray(rawEntry)) {
       continue;
     }
     const entry = normalizeProjectModelEntry(
       rawEntry as Record<string, unknown>,
       projectId,
       i,
-      updatedAt
+      updatedAt,
+      seenIds
     );
     if (!entry) {
       continue;
     }
-    if (seenIds.has(entry.id)) {
-      entry.id = createEntityId('pmod');
-    }
-    seenIds.add(entry.id);
     models.push(entry);
   }
   return models;
 }
 
 export function normalizeIncomingProject(rp: Record<string, unknown>): UserProject {
-  const id = String(rp['id'] ?? createEntityId('proj')).slice(0, 120);
-  const name = String(rp['name'] ?? 'Imported Project').slice(0, USER_LIMITS.MAX_TITLE_LENGTH);
-  const createdAt = String(rp['createdAt'] ?? new Date().toISOString()).slice(0, 64);
-  const updatedAt = String(rp['updatedAt'] ?? createdAt).slice(0, 64);
+  const safeNow = new Date().toISOString();
+  const id = optionalTrimmedString(rp['id'], 120) ?? createEntityId('proj');
+  const name =
+    optionalTrimmedString(rp['name'], USER_LIMITS.MAX_TITLE_LENGTH) ?? 'Imported Project';
+  const createdAt = optionalTrimmedString(rp['createdAt'], 64) ?? safeNow;
+  const updatedAt = optionalTrimmedString(rp['updatedAt'], 64) ?? createdAt;
 
   const models = normalizeProjectModels(rp, id, createdAt, updatedAt);
 
   const colorIds = Array.isArray(rp['colorIds'])
-    ? (rp['colorIds'] as string[])
+    ? rp['colorIds']
     : Array.isArray(rp['colourIds'])
-    ? (rp['colourIds'] as string[])
+    ? rp['colourIds']
     : extractIdArray(undefined, rp['colors'] ?? rp['colours']);
 
-  const rawNotes = Array.isArray(rp['notes']) ? (rp['notes'] as Record<string, unknown>[]) : [];
+  const rawNotes = Array.isArray(rp['notes'])
+    ? rp['notes'].filter(
+        (rn): rn is Record<string, unknown> =>
+          Boolean(rn && typeof rn === 'object' && !Array.isArray(rn))
+      )
+    : [];
   const notes = rawNotes
     .slice(0, USER_LIMITS.MAX_NOTES_PER_PROJECT)
     .map((rn, idx) => normalizeIncomingNote(rn, id, idx, updatedAt));
@@ -378,7 +426,7 @@ export function normalizeIncomingProject(rp: Record<string, unknown>): UserProje
 
   const thumbUrl = rp['thumbnailUrl'] ?? rp['imageUrl'] ?? firstRecipeImg;
   const localThumb = rp['localThumbnailPath'] ?? rp['localImagePath'] ?? firstRecipeLocalImg;
-  let coverPhotoId = rp['coverPhotoId'] ? String(rp['coverPhotoId']).slice(0, 120) : undefined;
+  let coverPhotoId = optionalTrimmedString(rp['coverPhotoId'], 120);
   if (coverPhotoId && !photos.some((ph) => ph.id === coverPhotoId)) {
     coverPhotoId = undefined;
   }
@@ -386,8 +434,8 @@ export function normalizeIncomingProject(rp: Record<string, unknown>): UserProje
   return {
     id,
     name,
-    thumbnailUrl: thumbUrl ? String(thumbUrl).slice(0, 2048) : undefined,
-    localThumbnailPath: localThumb ? String(localThumb).slice(0, 512) : undefined,
+    thumbnailUrl: optionalTrimmedString(thumbUrl, 2048),
+    localThumbnailPath: optionalTrimmedString(localThumb, 512),
     coverPhotoId,
     createdAt,
     updatedAt,
@@ -404,12 +452,13 @@ function normalizeModelProgress(raw: unknown): Record<string, string[]> {
   }
   const out: Record<string, string[]> = {};
   for (const [modelId, stepIds] of Object.entries(raw as Record<string, unknown>)) {
-    if (!modelId) {
+    const safeModelId = optionalTrimmedString(modelId, 200);
+    if (!safeModelId) {
       continue;
     }
     const normalized = dedupeBoundedIds(stepIds, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
     if (normalized.length > 0) {
-      out[modelId] = normalized;
+      out[safeModelId] = normalized;
     }
     if (Object.keys(out).length >= USER_LIMITS.MAX_MODEL_PROGRESS_KEYS) {
       break;
@@ -418,10 +467,149 @@ function normalizeModelProgress(raw: unknown): Record<string, string[]> {
   return out;
 }
 
+export function normalizeCustomPaints(raw: unknown): ThirdPartyPaint[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: ThirdPartyPaint[] = [];
+  const seenIds = new Set<string>();
+  for (const item of raw) {
+    if (out.length >= USER_LIMITS.MAX_CUSTOM_PAINTS) {
+      break;
+    }
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      continue;
+    }
+    const p = item as Record<string, unknown>;
+    const name = optionalTrimmedString(p['name'], USER_LIMITS.MAX_TITLE_LENGTH);
+    if (!name) {
+      continue;
+    }
+    const id = optionalTrimmedString(p['id'], 120) ?? createEntityId('custom');
+    if (seenIds.has(id)) {
+      continue;
+    }
+    seenIds.add(id);
+
+    const rawMatches = Array.isArray(p['citadelMatches']) ? p['citadelMatches'] : [];
+    const citadelMatches: ThirdPartyCitadelMatch[] = [];
+    for (const mItem of rawMatches) {
+      if (citadelMatches.length >= USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT) {
+        break;
+      }
+      if (!mItem || typeof mItem !== 'object' || Array.isArray(mItem)) {
+        continue;
+      }
+      const m = mItem as Record<string, unknown>;
+      const citadelPaintId = optionalTrimmedString(m['citadelPaintId'], 200);
+      if (!citadelPaintId) {
+        continue;
+      }
+      const quality =
+        m['matchQuality'] === 'exact' ||
+        m['matchQuality'] === 'close' ||
+        m['matchQuality'] === 'similar'
+          ? m['matchQuality']
+          : 'close';
+      const deltaE = typeof m['deltaE'] === 'number' && Number.isFinite(m['deltaE']) ? m['deltaE'] : 0;
+      citadelMatches.push({
+        citadelPaintId,
+        citadelPaintName:
+          optionalTrimmedString(m['citadelPaintName'], USER_LIMITS.MAX_TITLE_LENGTH) ?? '',
+        citadelRange:
+          optionalTrimmedString(m['citadelRange'], USER_LIMITS.MAX_TITLE_LENGTH) ?? '',
+        citadelCategory: optionalTrimmedString(m['citadelCategory'], 64) ?? '',
+        citadelHex: optionalTrimmedString(m['citadelHex'], 16) ?? '#888888',
+        deltaE,
+        matchQuality: quality,
+      });
+    }
+
+    out.push({
+      id,
+      brand: optionalTrimmedString(p['brand'], USER_LIMITS.MAX_TITLE_LENGTH) ?? 'Custom Brand',
+      range: optionalTrimmedString(p['range'], USER_LIMITS.MAX_TITLE_LENGTH) ?? 'Custom Range',
+      code: optionalTrimmedString(p['code'], 64),
+      name,
+      category: optionalTrimmedString(p['category'], 64) ?? 'Layer',
+      potStyle: optionalTrimmedString(p['potStyle'], 64),
+      hex: optionalTrimmedString(p['hex'], 16) ?? '#888888',
+      citadelMatches,
+      isCustom: typeof p['isCustom'] === 'boolean' ? p['isCustom'] : true,
+    });
+  }
+  return out;
+}
+
+export function normalizeCustomCompatibilityOverrides(raw: unknown): Record<string, string[]> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {};
+  }
+  const out: Record<string, string[]> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const safeKey = optionalTrimmedString(k, 200);
+    if (!safeKey) {
+      continue;
+    }
+    const ids = dedupeBoundedIds(v, USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT);
+    if (ids.length === 0) {
+      continue;
+    }
+    if (safeKey in out) {
+      out[safeKey] = Array.from(new Set([...out[safeKey], ...ids])).slice(
+        0,
+        USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT
+      );
+    } else if (Object.keys(out).length < USER_LIMITS.MAX_COMPATIBILITY_OVERRIDE_KEYS) {
+      out[safeKey] = ids;
+    }
+  }
+  return out;
+}
+
+export function normalizePreferences(
+  raw: unknown,
+  fallback: UserPreferences = createDefaultState().preferences
+): UserPreferences {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {
+      ...fallback,
+      preferredThirdPartyBrands: [...fallback.preferredThirdPartyBrands],
+    };
+  }
+  const rec = raw as Record<string, unknown>;
+  const rangeFilter =
+    rec['defaultRangeFilter'] === 'all' ||
+    rec['defaultRangeFilter'] === 'warhammer_colour' ||
+    rec['defaultRangeFilter'] === 'warhammer_pro'
+      ? rec['defaultRangeFilter']
+      : fallback.defaultRangeFilter;
+
+  return {
+    defaultRangeFilter: rangeFilter,
+    allowCompatibleSubstitutions:
+      typeof rec['allowCompatibleSubstitutions'] === 'boolean'
+        ? rec['allowCompatibleSubstitutions']
+        : fallback.allowCompatibleSubstitutions,
+    allowThirdPartySubstitutions:
+      typeof rec['allowThirdPartySubstitutions'] === 'boolean'
+        ? rec['allowThirdPartySubstitutions']
+        : fallback.allowThirdPartySubstitutions,
+    preferredThirdPartyBrands: Array.isArray(rec['preferredThirdPartyBrands'])
+      ? dedupeBoundedIds(rec['preferredThirdPartyBrands'], 50)
+      : [...fallback.preferredThirdPartyBrands],
+  };
+}
+
 export function normalizeAccountState(raw: Partial<UserAccountState>): UserAccountState {
   const def = createDefaultState();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return def;
+  }
   const rawProjects = Array.isArray(raw.projects)
-    ? (raw.projects as unknown as Record<string, unknown>[])
+    ? raw.projects.filter(
+        (p): p is UserProject => Boolean(p && typeof p === 'object' && !Array.isArray(p))
+      )
     : [];
   const rawPhotos = Array.isArray(raw.uploadedPhotos) ? raw.uploadedPhotos : [];
   const standalonePhotos = rawPhotos
@@ -431,29 +619,23 @@ export function normalizeAccountState(raw: Partial<UserAccountState>): UserAccou
 
   const projects = rawProjects
     .slice(0, USER_LIMITS.MAX_PROJECTS)
-    .map((p) => normalizeIncomingProject(p));
+    .map((p) => normalizeIncomingProject(p as unknown as Record<string, unknown>));
 
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
-    updatedAt: raw.updatedAt ?? def.updatedAt,
+    updatedAt: optionalTrimmedString(raw.updatedAt, 64) ?? def.updatedAt,
     inventoryPaintIds: dedupeBoundedIds(raw.inventoryPaintIds, USER_LIMITS.MAX_INVENTORY_PAINTS),
     wishlistPaintIds: dedupeBoundedIds(raw.wishlistPaintIds, USER_LIMITS.MAX_WISHLIST_PAINTS),
     inventoryModelIds: dedupeBoundedIds(raw.inventoryModelIds, USER_LIMITS.MAX_INVENTORY_MODELS),
     wishlistModelIds: dedupeBoundedIds(raw.wishlistModelIds, USER_LIMITS.MAX_WISHLIST_MODELS),
-    customPaints: Array.isArray(raw.customPaints)
-      ? raw.customPaints.slice(0, USER_LIMITS.MAX_CUSTOM_PAINTS)
-      : [],
-    customCompatibilityOverrides:
-      raw.customCompatibilityOverrides && typeof raw.customCompatibilityOverrides === 'object'
-        ? raw.customCompatibilityOverrides
-        : {},
+    customPaints: normalizeCustomPaints(raw.customPaints),
+    customCompatibilityOverrides: normalizeCustomCompatibilityOverrides(
+      raw.customCompatibilityOverrides
+    ),
     modelProgress: normalizeModelProgress(raw.modelProgress),
     projects,
     uploadedPhotos: standalonePhotos.slice(0, USER_LIMITS.MAX_TOTAL_USER_PHOTOS),
-    preferences: {
-      ...def.preferences,
-      ...(raw.preferences ?? {}),
-    },
+    preferences: normalizePreferences(raw.preferences, def.preferences),
   };
 }
 

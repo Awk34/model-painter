@@ -31,14 +31,7 @@ const STORE_RECIPES = 'recipes';
 const STORE_COLORS = 'colors';
 const SAFE_ENTITY_ID_RE = /^[a-zA-Z0-9_-]+$/;
 const PKCE_TOKEN_CACHE_KEY = 'whc_pkce_token_cache';
-const MODEL_BUNDLE_KEYS = [
-  'models_index_0',
-  'models_index_1',
-  'models_index_2',
-  'models_index_3',
-  'models_index_4',
-  'models_index_5',
-] as const;
+const MODEL_BUNDLE_PREFIX = 'models_index_';
 
 export function normalizePaintingStageLabel(stage: string | undefined): string {
   const normalized = (stage ?? '').trim().toLowerCase();
@@ -95,8 +88,8 @@ function readCachedWarhammerBearer(): string | null {
       const token = (parsed as { bearer: string }).bearer.trim();
       return token.length > 0 ? token : null;
     }
-  } catch {
-    // Ignore storage or JSON parse errors
+  } catch (err) {
+    console.warn('Failed to read cached Warhammer bearer token:', err);
   }
   return null;
 }
@@ -280,10 +273,18 @@ export class CatalogService {
         await Promise.all(
           staleBundles.map(async (bundleId) => {
             const data = await this.fetchMetaDoc<unknown>(bundleId);
-            await this.idb.put(STORE_BUNDLES, bundleId, data);
+            try {
+              await this.idb.put(STORE_BUNDLES, bundleId, data);
+            } catch (putErr) {
+              console.warn(`Failed to cache catalog bundle ${bundleId} in IndexedDB:`, putErr);
+            }
           })
         );
-        await this.idb.put(STORE_BUNDLES, 'manifest', remoteManifest);
+        try {
+          await this.idb.put(STORE_BUNDLES, 'manifest', remoteManifest);
+        } catch (putErr) {
+          console.warn('Failed to cache catalog manifest in IndexedDB:', putErr);
+        }
         await this.hydrateSignalsFromIdb(remoteManifest);
       } else {
         this.manifest.set(remoteManifest);
@@ -316,8 +317,22 @@ export class CatalogService {
     return staleBundles;
   }
 
+  private getModelBundleKeys(manifest: CatalogManifest): string[] {
+    return Object.keys(manifest.bundles ?? {})
+      .filter((key) => key.startsWith(MODEL_BUNDLE_PREFIX))
+      .sort((a, b) => {
+        const numA = Number.parseInt(a.slice(MODEL_BUNDLE_PREFIX.length), 10);
+        const numB = Number.parseInt(b.slice(MODEL_BUNDLE_PREFIX.length), 10);
+        if (Number.isFinite(numA) && Number.isFinite(numB)) {
+          return numA - numB;
+        }
+        return a.localeCompare(b);
+      });
+  }
+
   private async hydrateSignalsFromIdb(manifest: CatalogManifest): Promise<void> {
     this.manifest.set(manifest);
+    const modelBundleKeys = this.getModelBundleKeys(manifest);
 
     const [paintsBundle, thirdPartyBundle, colorsBundle, gamesBundle, modelBundles] =
       await Promise.all([
@@ -339,7 +354,7 @@ export class CatalogService {
         }>(STORE_BUNDLES, 'colours_bundle'),
         this.idb.get<{ games: GameSystem[] }>(STORE_BUNDLES, 'games_factions_bundle'),
         Promise.all(
-          MODEL_BUNDLE_KEYS.map((key) =>
+          modelBundleKeys.map((key) =>
             this.idb.get<{ models: (ModelSummary & { colourIds?: string[] })[] }>(
               STORE_BUNDLES,
               key
@@ -389,8 +404,8 @@ export class CatalogService {
         if (snap.exists()) {
           return snap.data() as T;
         }
-      } catch {
-        // Fallback to local static bundle
+      } catch (err) {
+        console.warn(`Firestore catalog_meta/${docId} fetch failed, falling back to static bundle:`, err);
       }
     }
     const resp = await fetch(`/data/catalog_meta/${docId}.json`, { cache: 'no-cache' });
@@ -425,9 +440,14 @@ export class CatalogService {
         return null;
       }
       const normalized = normalizeRemote(raw);
-      await this.idb.put(storeName, id, normalized);
+      try {
+        await this.idb.put(storeName, id, normalized);
+      } catch (putErr) {
+        console.warn(`Failed to cache ${storeName}/${id} in IndexedDB:`, putErr);
+      }
       return normalized;
-    } catch {
+    } catch (err) {
+      console.warn(`Failed to fetch catalog entity from ${url}:`, err);
       return null;
     }
   }
@@ -456,11 +476,15 @@ export class CatalogService {
         const snap = await getDoc(doc(fb.db, collectionName, id));
         if (snap.exists()) {
           const normalized = normalizeRemote(snap.data() as Record<string, unknown>, summary);
-          await this.idb.put(storeName, id, normalized);
+          try {
+            await this.idb.put(storeName, id, normalized);
+          } catch (putErr) {
+            console.warn(`Failed to cache ${collectionName}/${id} in IndexedDB:`, putErr);
+          }
           return normalized;
         }
-      } catch {
-        // Fallback to static bundle / live API proxy / summary synthesis
+      } catch (err) {
+        console.warn(`Firestore ${collectionName}/${id} fetch failed, falling back:`, err);
       }
     }
 

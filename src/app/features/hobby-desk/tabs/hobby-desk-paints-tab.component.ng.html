@@ -27,7 +27,7 @@
       </button>
     </div>
 
-    <button type="button" class="btn btn-secondary" (click)="showCustomPaintModal.set(true)">
+    <button type="button" class="btn btn-secondary" (click)="openCustomPaintModal()">
       + Add Custom 3rd-Party Paint
     </button>
   </div>
@@ -143,7 +143,8 @@
 
 <!-- Modal: Add Custom 3rd-Party Paint -->
 @if (showCustomPaintModal()) {
-  <div class="modal-backdrop" (click)="showCustomPaintModal.set(false)">
+  @let form = customPaintForm();
+  <div class="modal-backdrop" (click)="closeCustomPaintModal()">
     <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Add Custom 3rd-Party Paint</h3>
@@ -151,7 +152,7 @@
           type="button"
           class="close-btn"
           aria-label="Close"
-          (click)="showCustomPaintModal.set(false)"
+          (click)="closeCustomPaintModal()"
         >
           ✕
         </button>
@@ -165,7 +166,8 @@
               type="text"
               class="input-control"
               placeholder="e.g., The Army Painter, Scale75, Kimera..."
-              [(ngModel)]="customPaintForm.brand"
+              [ngModel]="form.brand"
+              (ngModelChange)="patchCustomPaintForm({ brand: $event })"
             />
           </div>
           <div>
@@ -175,7 +177,8 @@
               type="text"
               class="input-control"
               placeholder="e.g., Warpaints Fanatic, Speedpaint 2.0..."
-              [(ngModel)]="customPaintForm.range"
+              [ngModel]="form.range"
+              (ngModelChange)="patchCustomPaintForm({ range: $event })"
             />
           </div>
           <div>
@@ -185,7 +188,8 @@
               type="text"
               class="input-control"
               placeholder="e.g., Matt Black"
-              [(ngModel)]="customPaintForm.name"
+              [ngModel]="form.name"
+              (ngModelChange)="patchCustomPaintForm({ name: $event })"
             />
           </div>
           <div>
@@ -194,7 +198,8 @@
               <select
                 id="custom-paint-category"
                 class="input-control"
-                [(ngModel)]="customPaintForm.category"
+                [ngModel]="form.category"
+                (ngModelChange)="patchCustomPaintForm({ category: $event })"
               >
                 <option value="Base">Base</option>
                 <option value="Layer">Layer</option>
@@ -207,7 +212,8 @@
                 type="color"
                 class="color-picker"
                 aria-label="Custom paint hex color"
-                [(ngModel)]="customPaintForm.hex"
+                [ngModel]="form.hex"
+                (ngModelChange)="patchCustomPaintForm({ hex: $event })"
               />
             </div>
           </div>
@@ -220,7 +226,8 @@
           <select
             id="custom-paint-citadel-eq"
             class="input-control"
-            [(ngModel)]="customPaintForm.citadelPaintId"
+            [ngModel]="form.citadelPaintId"
+            (ngModelChange)="patchCustomPaintForm({ citadelPaintId: $event })"
           >
             <option value="">-- None / Standalone --</option>
             @for (cp of catalog.paints(); track cp.id) {
@@ -230,7 +237,7 @@
         </div>
 
         <div class="modal-footer-btns">
-          <button type="button" class="btn btn-ghost" (click)="showCustomPaintModal.set(false)">
+          <button type="button" class="btn btn-ghost" (click)="closeCustomPaintModal()">
             Cancel
           </button>
           <button type="button" class="btn btn-gold" (click)="saveCustomPaint()">

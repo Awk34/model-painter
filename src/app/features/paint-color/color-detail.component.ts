@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { from, of } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { ColorDetails, ColorStageStep, FinishStageKey } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
@@ -34,21 +37,46 @@ export class ColorDetailComponent {
   readonly img = inject(ImageService);
 
   readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
   readonly color = signal<ColorDetails | null>(null);
   readonly activeTier = signal<FinishStageKey>('base');
   readonly showProjectModal = signal(false);
 
   constructor() {
-    this.route.paramMap.subscribe(async (params) => {
-      const id = params.get('id');
-      if (!id) {
-        return;
-      }
-      this.loading.set(true);
-      const data = await this.catalog.getColorDetails(id);
-      this.color.set(data);
-      this.loading.set(false);
-    });
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id')),
+        tap(() => {
+          this.loading.set(true);
+          this.loadError.set(null);
+          this.activeTier.set('base');
+          this.showProjectModal.set(false);
+        }),
+        switchMap((id) => {
+          if (!id) {
+            return of<{ data: ColorDetails | null; error: string | null }>({
+              data: null,
+              error: null,
+            });
+          }
+          return from(this.catalog.getColorDetails(id)).pipe(
+            map((data) => ({ data, error: null as string | null })),
+            catchError((err: unknown) => {
+              console.warn(`Failed to load color guide ${id}:`, err);
+              return of({
+                data: null as ColorDetails | null,
+                error: 'Unable to load this color guide right now. Please try again.',
+              });
+            })
+          );
+        }),
+        takeUntilDestroyed()
+      )
+      .subscribe(({ data, error }) => {
+        this.color.set(data);
+        this.loadError.set(error);
+        this.loading.set(false);
+      });
   }
 
   readonly activeShowcaseImage = computed(() => {

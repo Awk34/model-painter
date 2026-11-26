@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -29,9 +36,16 @@ export class PaintDetailModalComponent {
   readonly getPaintRepresentativeHex = getPaintRepresentativeHex;
   private readonly router = inject(Router);
 
-  selectedOverridePaintId = '';
+  readonly selectedOverridePaintId = signal('');
 
   readonly activePaintId = this.modalService.activePaintId;
+
+  constructor() {
+    effect(() => {
+      this.activePaintId();
+      this.selectedOverridePaintId.set('');
+    });
+  }
 
   readonly citadelPaint = computed(() => {
     const id = this.activePaintId();
@@ -167,11 +181,12 @@ export class PaintDetailModalComponent {
   }
 
   addCustomLink(citadelPaintId: string): void {
-    if (!this.selectedOverridePaintId) {
+    const overrideId = this.selectedOverridePaintId();
+    if (!overrideId) {
       return;
     }
-    this.userState.linkCustomEquivalent(citadelPaintId, this.selectedOverridePaintId);
-    this.selectedOverridePaintId = '';
+    this.userState.linkCustomEquivalent(citadelPaintId, overrideId);
+    this.selectedOverridePaintId.set('');
   }
 
   goToColor(colorId: string): void {
@@ -185,6 +200,7 @@ export class PaintDetailModalComponent {
   }
 
   close(): void {
+    this.selectedOverridePaintId.set('');
     this.modalService.close();
   }
 }

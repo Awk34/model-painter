@@ -161,4 +161,44 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
       'p-zeta',
     ]);
   });
+
+  it('resets newProjectName when closing the new project modal in HobbyDeskProjectsTabComponent', () => {
+    TestBed.configureTestingModule({
+      imports: [HobbyDeskProjectsTabComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: UserStateService,
+          useValue: {
+            projects: signal<UserProject[]>([]),
+            limits: { MAX_PROJECTS: 50 },
+            resolveProjectCoverUrl: () => '/logo.svg',
+            getTargetPhotoCount: () => 0,
+            getProjectTotalMiniatures: () => 0,
+            getProjectTotalPhotoCount: () => 0,
+            createProject: () => null,
+            deleteProject: () => {},
+            duplicateProject: () => {},
+          },
+        },
+        {
+          provide: InventoryMatchService,
+          useValue: {
+            evaluateProjectStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(HobbyDeskProjectsTabComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
+
+    comp.openNewProjectModal();
+    comp.newProjectName.set('Stale Project Draft');
+    comp.closeNewProjectModal();
+
+    expect(comp.showNewProjectModal()).toBeFalse();
+    expect(comp.newProjectName()).toBe('');
+  });
 });

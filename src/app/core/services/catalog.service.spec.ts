@@ -412,6 +412,120 @@ describe('CatalogService', () => {
       'Kimera Kolors',
     ]);
   });
+
+  it('discovers models_index_* shards dynamically from manifest.bundles in numeric order without fetching nonexistent shards', async () => {
+    const shards: Record<string, string> = {
+      paints_bundle: 'sha256:paints_dyn',
+      third_party_paints_bundle: 'sha256:tp_dyn',
+      colours_bundle: 'sha256:colours_dyn',
+      games_factions_bundle: 'sha256:games_dyn',
+    };
+    for (let i = 0; i <= 7; i++) {
+      const key = `models_index_${i}`;
+      shards[key] = `sha256:${key}`;
+      routeResponses.set(`/data/catalog_meta/${key}.json`, () =>
+        jsonResponse({
+          models: [
+            {
+              id: `model-${i}`,
+              name: `Model ${i}`,
+              range: 'warhammer_colour',
+              gameIds: [],
+              gameNames: [],
+              factionIds: [],
+              factionNames: [],
+              colourIds: [],
+            },
+          ],
+        })
+      );
+    }
+    shards['models_index_10'] = 'sha256:models_index_10';
+    routeResponses.set('/data/catalog_meta/models_index_10.json', () =>
+      jsonResponse({
+        models: [
+          {
+            id: 'model-10',
+            name: 'Model 10',
+            range: 'warhammer_colour',
+            gameIds: [],
+            gameNames: [],
+            factionIds: [],
+            factionNames: [],
+            colourIds: [],
+          },
+        ],
+      })
+    );
+    routeResponses.set('/data/catalog_meta/manifest.json', () =>
+      jsonResponse({
+        schemaVersion: 1,
+        updatedAt: '2026-11-20T00:00:00Z',
+        bundles: shards,
+      })
+    );
+
+    const service = TestBed.inject(CatalogService);
+    await service.initializeCatalog(true);
+
+    expect(service.models().map((m) => m.id)).toEqual([
+      'model-0',
+      'model-1',
+      'model-2',
+      'model-3',
+      'model-4',
+      'model-5',
+      'model-6',
+      'model-7',
+      'model-10',
+    ]);
+
+    // When manifest only defines models_index_0, models_index_1..5 are NOT requested
+    fetchSpy.calls.reset();
+    routeResponses.set('/data/catalog_meta/manifest.json', () =>
+      jsonResponse({
+        schemaVersion: 1,
+        updatedAt: '2026-11-21T00:00:00Z',
+        bundles: {
+          paints_bundle: 'sha256:paints_single',
+          third_party_paints_bundle: 'sha256:tp_single',
+          colours_bundle: 'sha256:colours_single',
+          games_factions_bundle: 'sha256:games_single',
+          models_index_0: 'sha256:models_0_single',
+        },
+      })
+    );
+    await service.initializeCatalog(true);
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).not.toContain('/data/catalog_meta/models_index_1.json');
+    expect(requestedUrls).not.toContain('/data/catalog_meta/models_index_5.json');
+  });
+
+  it('logs console.warn on malformed entity JSON and still returns fetched recipe when idb.put fails', async () => {
+    const warnSpy = spyOn(console, 'warn');
+    const service = TestBed.inject(CatalogService);
+    await service.initializeCatalog(true);
+    await service.clearEntityCaches();
+
+    // 1. Malformed JSON logs console.warn
+    routeResponses.set('/data/recipes/bad-json.json', () =>
+      new Response('{not-json', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    const bad = await service.getModelRecipe('bad-json');
+    expect(bad).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+
+    // 2. idb.put rejection does NOT discard fetched ModelRecipe
+    const idbClient = (service as unknown as { idb: { put: jasmine.Spy } }).idb;
+    spyOn(idbClient, 'put').and.rejectWith(new DOMException('Quota exceeded', 'QuotaExceededError'));
+
+    const recipe = await service.getModelRecipe('model-dante');
+    expect(recipe).not.toBeNull();
+    expect(recipe!.id).toBe('model-dante');
+  });
 });
 
 describe('ModelPaintingStepsComponent stage filtering', () => {

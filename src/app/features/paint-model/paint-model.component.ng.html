@@ -90,7 +90,7 @@
             <button
               class="chip"
               [class.active]="!selectedSubFactionId()"
-              (click)="selectedSubFactionId.set(null)"
+              (click)="selectSubFaction(null)"
             >
               All {{ selectedParentFaction()!.name }}
             </button>
@@ -98,7 +98,7 @@
               <button
                 class="chip"
                 [class.active]="selectedSubFactionId() === sf.id"
-                (click)="selectedSubFactionId.set(sf.id)"
+                (click)="selectSubFaction(sf.id)"
               >
                 <span>{{ sf.name }} ({{ sf.recipeCount }})</span>
               </button>

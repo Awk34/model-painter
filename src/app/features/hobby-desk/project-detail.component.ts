@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
@@ -71,16 +72,20 @@ export class ProjectDetailComponent {
   readonly activePickerModal = signal<ProjectPickerMode>(null);
 
   readonly editingTitle = signal(false);
-  titleDraft = '';
+  readonly titleDraft = signal('');
 
   constructor() {
-    this.route.paramMap.subscribe((params) => {
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.projectId.set(params.get('id') ?? '');
       this.modelsExpanded.set(true);
       this.paintsExpanded.set(true);
       this.photosExpanded.set(true);
       this.colorsExpanded.set(true);
       this.notesExpanded.set(true);
+      this.editingTitle.set(false);
+      this.titleDraft.set('');
+      this.activePickerModal.set(null);
+      this.selectedRollupStage.set('base');
     });
   }
 
@@ -176,12 +181,12 @@ export class ProjectDetailComponent {
   }
 
   startEditTitle(current: string): void {
-    this.titleDraft = current;
+    this.titleDraft.set(current);
     this.editingTitle.set(true);
   }
 
   saveTitle(projectId: string): void {
-    this.userState.renameProject(projectId, this.titleDraft);
+    this.userState.renameProject(projectId, this.titleDraft());
     this.editingTitle.set(false);
   }
 

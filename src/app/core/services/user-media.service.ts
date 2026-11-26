@@ -12,6 +12,7 @@ import { deleteObject, getBlob, ref, uploadBytes } from 'firebase/storage';
 const MEDIA_DB_NAME = 'whc_user_media_v1';
 const MEDIA_DB_VERSION = 1;
 const STORE_PHOTO_BLOBS = 'photo_blobs';
+const MAX_STORAGE_DIMENSION_PX = 32768;
 
 export interface ValidatedImageInfo {
   blob: Blob;
@@ -30,6 +31,68 @@ export class UserMediaService {
 
   private readonly idb = createIdbStoreClient(MEDIA_DB_NAME, MEDIA_DB_VERSION, [STORE_PHOTO_BLOBS]);
   private readonly loadingIds = new Set<string>();
+  private readonly failedAttemptKeys = new Map<string, string>();
+  private readonly deletedIds = new Set<string>();
+  private readonly photoGenerations = new Map<string, number>();
+  private mediaEpoch = 0;
+
+  protected getFbHandles() {
+    return getFirebaseHandles();
+  }
+
+  protected getCurrentUid(): string | null {
+    return this.getFbHandles()?.auth.currentUser?.uid ?? null;
+  }
+
+  protected async fetchRemoteBlob(storagePath: string): Promise<Blob | null> {
+    const fb = this.getFbHandles();
+    if (!fb || !fb.auth.currentUser) {
+      return null;
+    }
+    return getBlob(ref(fb.storage, storagePath));
+  }
+
+  protected async deleteRemoteObject(storagePath: string): Promise<void> {
+    const fb = this.getFbHandles();
+    if (!fb || !fb.auth.currentUser) {
+      return;
+    }
+    await deleteObject(ref(fb.storage, storagePath));
+  }
+
+  protected async uploadStorageBytes(
+    storagePath: string,
+    blob: Blob,
+    photo: UserUploadedPhoto
+  ): Promise<void> {
+    const fb = this.getFbHandles();
+    if (!fb) {
+      throw new Error('Firebase handles unavailable.');
+    }
+    const storageRef = ref(fb.storage, storagePath);
+    await uploadBytes(storageRef, blob, {
+      contentType: photo.mimeType,
+      customMetadata: {
+        kind: photo.kind,
+        targetType: photo.targetType,
+        targetId: photo.targetId,
+      },
+    });
+  }
+
+  private nextPhotoGeneration(photoId: string): number {
+    const next = (this.photoGenerations.get(photoId) ?? 0) + 1;
+    this.photoGenerations.set(photoId, next);
+    return next;
+  }
+
+  private isHydrationCurrent(photoId: string, startEpoch: number, startGen: number): boolean {
+    return (
+      !this.deletedIds.has(photoId) &&
+      this.mediaEpoch === startEpoch &&
+      (this.photoGenerations.get(photoId) ?? 0) === startGen
+    );
+  }
 
   /**
    * Validates MIME type, magic-byte file signature, and image dimensions.
@@ -69,6 +132,11 @@ export class UserMediaService {
     const overDimLimit = Math.max(width, height) > USER_LIMITS.MAX_PHOTO_DIMENSION_PX;
 
     if (!overByteLimit && !overDimLimit) {
+      if (Math.max(width, height) > MAX_STORAGE_DIMENSION_PX) {
+        throw new Error(
+          `"${file.name}" exceeds the ${MAX_STORAGE_DIMENSION_PX}px maximum image dimension.`
+        );
+      }
       return {
         blob: file,
         mimeType: detectedMime,
@@ -79,14 +147,14 @@ export class UserMediaService {
     }
 
     const downscaled = await this.downscaleImageToLimit(img, width, height, detectedMime);
-    if (!overByteLimit && downscaled.blob.size >= file.size) {
-      return {
-        blob: file,
-        mimeType: detectedMime,
-        width,
-        height,
-        wasDownscaled: false,
-      };
+    if (
+      Math.max(downscaled.width, downscaled.height) > USER_LIMITS.MAX_PHOTO_DIMENSION_PX ||
+      Math.max(downscaled.width, downscaled.height) > MAX_STORAGE_DIMENSION_PX ||
+      downscaled.blob.size > USER_LIMITS.MAX_PHOTO_FILE_SIZE_BYTES
+    ) {
+      throw new Error(
+        `Could not downscale "${file.name}" within ${USER_LIMITS.MAX_PHOTO_DIMENSION_PX}px and ${USER_LIMITS.MAX_PHOTO_FILE_SIZE_MB} MB limits.`
+      );
     }
 
     return {
@@ -243,6 +311,9 @@ export class UserMediaService {
   }
 
   private registerObjectUrl(photoId: string, blob: Blob): string {
+    if (this.deletedIds.has(photoId)) {
+      return '';
+    }
     const existing = this.photoUrls()[photoId];
     if (existing) {
       return existing;
@@ -256,7 +327,16 @@ export class UserMediaService {
   }
 
   async storeLocalBlob(photoId: string, blob: Blob): Promise<string> {
+    this.deletedIds.delete(photoId);
+    this.failedAttemptKeys.delete(photoId);
+    const startEpoch = this.mediaEpoch;
+    const startGen = this.nextPhotoGeneration(photoId);
+
     await this.idb.put(STORE_PHOTO_BLOBS, photoId, blob);
+    if (!this.isHydrationCurrent(photoId, startEpoch, startGen)) {
+      void this.idb.delete(STORE_PHOTO_BLOBS, photoId);
+      return '';
+    }
     return this.registerObjectUrl(photoId, blob);
   }
 
@@ -265,7 +345,7 @@ export class UserMediaService {
     blob: Blob,
     uid: string
   ): Promise<string | undefined> {
-    const fb = getFirebaseHandles();
+    const fb = this.getFbHandles();
     if (!fb) {
       return undefined;
     }
@@ -277,17 +357,10 @@ export class UserMediaService {
         ? 'webp'
         : 'jpg';
     const safeTargetId = photo.targetId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 100) || 'item';
-    const storagePath = `users/${uid}/${folder}/${photo.targetType}/${safeTargetId}/${photo.id}.${ext}`;
+    const safePhotoId = photo.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 110) || 'photo';
+    const storagePath = `users/${uid}/${folder}/${photo.targetType}/${safeTargetId}/${safePhotoId}.${ext}`;
     try {
-      const storageRef = ref(fb.storage, storagePath);
-      await uploadBytes(storageRef, blob, {
-        contentType: photo.mimeType,
-        customMetadata: {
-          kind: photo.kind,
-          targetType: photo.targetType,
-          targetId: photo.targetId,
-        },
-      });
+      await this.uploadStorageBytes(storagePath, blob, photo);
       return storagePath;
     } catch (err) {
       console.warn('Cloud Storage photo upload skipped/failed (kept locally in IndexedDB):', err);
@@ -312,26 +385,58 @@ export class UserMediaService {
   }
 
   hydratePhotoUrl(photo: UserUploadedPhoto): void {
-    if (this.photoUrls()[photo.id] || this.loadingIds.has(photo.id)) {
+    const uid = this.getCurrentUid() ?? '';
+    const attemptKey = `${photo.storagePath ?? ''}|${uid}`;
+    if (
+      this.photoUrls()[photo.id] ||
+      this.loadingIds.has(photo.id) ||
+      this.deletedIds.has(photo.id) ||
+      this.failedAttemptKeys.get(photo.id) === attemptKey
+    ) {
       return;
     }
+
+    const startEpoch = this.mediaEpoch;
+    const startGen = this.photoGenerations.get(photo.id) ?? 0;
     this.loadingIds.add(photo.id);
     void (async () => {
       try {
         const localBlob = await this.idb.get<Blob>(STORE_PHOTO_BLOBS, photo.id);
+        if (!this.isHydrationCurrent(photo.id, startEpoch, startGen)) {
+          return;
+        }
         if (localBlob) {
+          this.failedAttemptKeys.delete(photo.id);
           this.registerObjectUrl(photo.id, localBlob);
           return;
         }
-        if (photo.storagePath) {
-          const fb = getFirebaseHandles();
-          if (fb && fb.auth.currentUser) {
-            const remoteBlob = await getBlob(ref(fb.storage, photo.storagePath));
-            await this.idb.put(STORE_PHOTO_BLOBS, photo.id, remoteBlob);
+        if (photo.storagePath && uid) {
+          const remoteBlob = await this.fetchRemoteBlob(photo.storagePath);
+          if (!this.isHydrationCurrent(photo.id, startEpoch, startGen)) {
+            return;
+          }
+          if (remoteBlob) {
+            try {
+              await this.idb.put(STORE_PHOTO_BLOBS, photo.id, remoteBlob);
+            } catch (putErr) {
+              console.warn(`Could not cache photo ${photo.id} in IndexedDB:`, putErr);
+            }
+            if (!this.isHydrationCurrent(photo.id, startEpoch, startGen)) {
+              void this.idb.delete(STORE_PHOTO_BLOBS, photo.id);
+              return;
+            }
+            this.failedAttemptKeys.delete(photo.id);
             this.registerObjectUrl(photo.id, remoteBlob);
+            return;
           }
         }
+        if (this.isHydrationCurrent(photo.id, startEpoch, startGen)) {
+          this.failedAttemptKeys.set(photo.id, attemptKey);
+        }
       } catch (err) {
+        if (this.isHydrationCurrent(photo.id, startEpoch, startGen)) {
+          this.failedAttemptKeys.set(photo.id, attemptKey);
+        }
         console.warn(`Could not hydrate photo ${photo.id}:`, err);
       } finally {
         this.loadingIds.delete(photo.id);
@@ -364,6 +469,10 @@ export class UserMediaService {
   }
 
   async deletePhotoAssets(photo: UserUploadedPhoto): Promise<void> {
+    this.deletedIds.add(photo.id);
+    this.nextPhotoGeneration(photo.id);
+    this.failedAttemptKeys.delete(photo.id);
+
     const existingUrl = this.photoUrls()[photo.id];
     if (existingUrl) {
       URL.revokeObjectURL(existingUrl);
@@ -375,18 +484,19 @@ export class UserMediaService {
     }
     await this.idb.delete(STORE_PHOTO_BLOBS, photo.id);
     if (photo.storagePath) {
-      const fb = getFirebaseHandles();
-      if (fb && fb.auth.currentUser) {
-        try {
-          await deleteObject(ref(fb.storage, photo.storagePath));
-        } catch {
-          // Ignore if already deleted or offline
-        }
+      try {
+        await this.deleteRemoteObject(photo.storagePath);
+      } catch (err) {
+        console.warn(`Could not delete remote photo ${photo.storagePath}:`, err);
       }
     }
   }
 
   async clearAllLocalMedia(): Promise<void> {
+    this.mediaEpoch++;
+    this.failedAttemptKeys.clear();
+    this.deletedIds.clear();
+    this.photoGenerations.clear();
     const urls = Object.values(this.photoUrls());
     for (const u of urls) {
       URL.revokeObjectURL(u);

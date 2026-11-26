@@ -479,3 +479,102 @@ describe('ModelDetailComponent User Photo Thumbnails', () => {
     expect(fixture.nativeElement.querySelectorAll('.color-pin').length).toBe(2);
   });
 });
+
+describe('ModelDetailComponent Error & Not-Found States', () => {
+  async function createWithRecipeResult(getRecipeImpl: jasmine.Spy) {
+    TestBed.configureTestingModule({
+      imports: [ModelDetailComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ id: 'invalid-model-id' })),
+          },
+        },
+        {
+          provide: CatalogService,
+          useValue: {
+            modelById: signal(new Map()),
+            getModelRecipe: getRecipeImpl,
+          },
+        },
+        {
+          provide: UserStateService,
+          useValue: {
+            projects: signal([]),
+            uploadedPhotos: signal([]),
+            allUploadedPhotos: signal([]),
+            limits: USER_LIMITS,
+            isModelOwned: () => false,
+            isModelWishlisted: () => false,
+            toggleModelInventory: () => {},
+            toggleModelWishlist: () => {},
+            addManyToWishlist: () => {},
+            getTargetPhotoCount: () => 0,
+            getPhotoQuotaLimit: () => 5,
+            getPhotosForTarget: () => [],
+            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
+            isOwned: () => false,
+            isWishlisted: () => false,
+          },
+        },
+        {
+          provide: UserMediaService,
+          useValue: {
+            resolvePhotoUrl: () => '/icons/ic_models.svg',
+          },
+        },
+        {
+          provide: InventoryMatchService,
+          useValue: {
+            evaluateStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ImageService,
+          useValue: {
+            resolve: (localPath?: string | null, remoteUrl?: string | null) =>
+              localPath || remoteUrl || '/icons/ic_models.svg',
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ModelDetailComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('clears loading() and renders error state with <h1> when getModelRecipe rejects', async () => {
+    spyOn(console, 'warn');
+    const fixture = await createWithRecipeResult(
+      jasmine.createSpy('getModelRecipe').and.rejectWith(new Error('Fetch failed'))
+    );
+
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.componentInstance.loadError()).toBeTruthy();
+
+    const alertEl: HTMLElement | null = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alertEl).not.toBeNull();
+    expect(alertEl?.querySelector('h1')?.textContent).toContain('Model Guide Unavailable');
+  });
+
+  it('renders standalone not-found @else state with <h1> and /models link when getModelRecipe returns null', async () => {
+    const fixture = await createWithRecipeResult(
+      jasmine.createSpy('getModelRecipe').and.resolveTo(null)
+    );
+
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.componentInstance.recipe()).toBeNull();
+    expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain(
+      'Model Guide Not Found'
+    );
+    const links = Array.from(
+      fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>
+    );
+    expect(links.some((a) => a.getAttribute('href')?.includes('/models'))).toBeTrue();
+  });
+});

@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   FinishStageKey,
@@ -81,6 +82,7 @@ export class ModelDetailComponent {
   readonly entryId = signal<string | null>(null);
 
   readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
   readonly recipe = signal<ModelRecipe | null>(null);
   readonly selectedImageIndex = signal(0);
   readonly viewingCustomFeatured = signal(false);
@@ -288,7 +290,7 @@ export class ModelDetailComponent {
   readonly readiness = computed(() => this.stagedReadiness().overall);
 
   constructor() {
-    this.route.paramMap.subscribe((params) => {
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const pid = params.get('projectId');
       const eid = params.get('entryId');
       const standaloneId = params.get('id');
@@ -296,6 +298,7 @@ export class ModelDetailComponent {
       this.projectId.set(pid);
       this.entryId.set(eid);
       this.standaloneModelId.set(pid && eid ? null : standaloneId);
+      this.loadError.set(null);
       this.zoomModalOpen.set(false);
       this.showFeaturedImageModal.set(false);
       this.selectedUserPhotoId.set(null);
@@ -310,6 +313,7 @@ export class ModelDetailComponent {
       if (!targetRecipeId) {
         this.lastLoadedRecipeId = null;
         this.recipe.set(null);
+        this.loadError.set(null);
         this.loading.set(false);
         return;
       }
@@ -349,18 +353,31 @@ export class ModelDetailComponent {
 
   private async loadRecipe(recipeId: string): Promise<void> {
     this.loading.set(true);
+    this.loadError.set(null);
     if (!this.isProjectMode()) {
       this.selectedImageIndex.set(0);
       this.viewingCustomFeatured.set(false);
       this.selectedUserPhotoId.set(null);
     }
-    const data = await this.catalog.getModelRecipe(recipeId);
-    if (this.activeRecipeId() !== recipeId) {
-      return;
+    try {
+      const data = await this.catalog.getModelRecipe(recipeId);
+      if (this.activeRecipeId() !== recipeId) {
+        return;
+      }
+      this.recipe.set(data);
+      this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
+    } catch (err) {
+      console.warn(`Failed to load model recipe ${recipeId}:`, err);
+      if (this.activeRecipeId() === recipeId) {
+        this.recipe.set(null);
+        this.selectedColorPointId.set(null);
+        this.loadError.set('Unable to load this model guide right now. Please try again.');
+      }
+    } finally {
+      if (this.activeRecipeId() === recipeId) {
+        this.loading.set(false);
+      }
     }
-    this.recipe.set(data);
-    this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
-    this.loading.set(false);
   }
 
   private resetPan(): void {

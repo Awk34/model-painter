@@ -60,7 +60,7 @@
 
   @if (isProjectMode() && (!project() || !projectModelEntry())) {
     <div class="empty-box studio-card">
-      <h3>Project Model Not Found</h3>
+      <h1>Project Model Not Found</h1>
       <p>This model entry could not be found in the selected project.</p>
       @if (project(); as proj) {
         <a [routerLink]="['/projects', proj.id]" class="btn btn-gold">Return to {{ proj.name }}</a>
@@ -521,6 +521,18 @@
           </div>
         </div>
       }
+    } @else if (loadError()) {
+      <div class="empty-box studio-card" role="alert">
+        <h1>Model Guide Unavailable</h1>
+        <p>{{ loadError() }}</p>
+        <a routerLink="/models" class="btn btn-gold">Back to Paint A Model</a>
+      </div>
+    } @else {
+      <div class="empty-box studio-card">
+        <h1>Model Guide Not Found</h1>
+        <p>No painting guide matches this model ID.</p>
+        <a routerLink="/models" class="btn btn-gold">Back to Paint A Model</a>
+      </div>
     }
   }
 </div>

@@ -1,12 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -26,6 +28,7 @@ import { UserStateService } from '../../../core/services/user-state.service';
 })
 export class ProjectModelWorkspaceBarComponent {
   readonly userState = inject(UserStateService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly project = input.required<UserProject>();
   readonly entry = input.required<ProjectModelEntry>();
@@ -41,6 +44,7 @@ export class ProjectModelWorkspaceBarComponent {
   readonly notesSaved = signal(false);
   private lastSyncedEntryId: string | null = null;
   private lastSyncedNotes: string | null = null;
+  private savedTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly displayName = computed(() => {
     const custom = this.entry().customName?.trim();
@@ -55,21 +59,32 @@ export class ProjectModelWorkspaceBarComponent {
 
   readonly hasCustomFeaturedImage = computed(() => Boolean(this.entry().featuredImage));
 
-  readonly hasUnsavedNotes = computed(() => this.notesDraft() !== this.entry().notes);
+  readonly hasUnsavedNotes = computed(() => this.notesDraft() !== (this.entry().notes ?? ''));
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.savedTimer) {
+        clearTimeout(this.savedTimer);
+        this.savedTimer = null;
+      }
+    });
+
     effect(() => {
       const currentEntry = this.entry();
-      const entryChanged = currentEntry.id !== this.lastSyncedEntryId;
-      const externalNotesChanged = currentEntry.notes !== this.lastSyncedNotes;
-      if (entryChanged) {
+      const currentNotes = currentEntry.notes ?? '';
+      if (currentEntry.id !== this.lastSyncedEntryId) {
         this.lastSyncedEntryId = currentEntry.id;
-        this.lastSyncedNotes = currentEntry.notes ?? '';
-        this.notesDraft.set(this.lastSyncedNotes);
+        this.lastSyncedNotes = currentNotes;
+        this.notesDraft.set(currentNotes);
         this.editingName.set(false);
-      } else if (externalNotesChanged && !this.hasUnsavedNotes()) {
-        this.lastSyncedNotes = currentEntry.notes ?? '';
-        this.notesDraft.set(this.lastSyncedNotes);
+        this.notesSaved.set(false);
+      } else if (currentNotes !== this.lastSyncedNotes) {
+        const localDraft = untracked(() => this.notesDraft());
+        const hadLocalEdits = localDraft !== (this.lastSyncedNotes ?? '');
+        if (!hadLocalEdits || localDraft === currentNotes) {
+          this.lastSyncedNotes = currentNotes;
+          this.notesDraft.set(currentNotes);
+        }
       }
     });
   }
@@ -124,7 +139,13 @@ export class ProjectModelWorkspaceBarComponent {
     this.userState.updateProjectModel(this.project().id, this.entry().id, {
       notes: nextNotes,
     });
+    if (this.savedTimer) {
+      clearTimeout(this.savedTimer);
+    }
     this.notesSaved.set(true);
-    setTimeout(() => this.notesSaved.set(false), 2000);
+    this.savedTimer = setTimeout(() => {
+      this.savedTimer = null;
+      this.notesSaved.set(false);
+    }, 2000);
   }
 }

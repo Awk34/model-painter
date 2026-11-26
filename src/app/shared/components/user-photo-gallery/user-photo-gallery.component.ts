@@ -123,7 +123,11 @@ export class UserPhotoGalleryComponent {
 
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
-    this.dragActive.set(false);
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    const relatedTarget = event.relatedTarget;
+    if (!(relatedTarget instanceof Node && currentTarget?.contains(relatedTarget))) {
+      this.dragActive.set(false);
+    }
   }
 
   async onDrop(event: DragEvent): Promise<void> {
