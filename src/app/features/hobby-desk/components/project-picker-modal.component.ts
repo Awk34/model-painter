@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { UserProject } from '../../../core/models/catalog.models';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -27,6 +36,22 @@ export class ProjectPickerModalComponent {
   readonly closed = output<void>();
 
   readonly pickerSearch = signal('');
+
+  private lastProjectId: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const currentMode = this.mode();
+      const currentProjectId = this.project().id;
+      if (
+        currentMode === null ||
+        (this.lastProjectId !== null && currentProjectId !== this.lastProjectId)
+      ) {
+        this.pickerSearch.set('');
+      }
+      this.lastProjectId = currentProjectId;
+    });
+  }
 
   readonly modalTitle = computed(() => {
     const m = this.mode();

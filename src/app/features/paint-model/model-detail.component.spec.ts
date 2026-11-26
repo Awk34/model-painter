@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
 import {
   InventoryReadinessResult,
   ModelRecipe,
@@ -576,5 +576,204 @@ describe('ModelDetailComponent Error & Not-Found States', () => {
       fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>
     );
     expect(links.some((a) => a.getAttribute('href')?.includes('/models'))).toBeTrue();
+  });
+});
+
+describe('ModelDetailComponent Async Re-Entry Race & Route Transitions', () => {
+  function createHarness(
+    initialParams: Record<string, string>,
+    getRecipeImpl: jasmine.Spy,
+    projects: UserProject[] = []
+  ) {
+    const paramMap$ = new BehaviorSubject<ParamMap>(convertToParamMap(initialParams));
+    TestBed.configureTestingModule({
+      imports: [ModelDetailComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { paramMap: paramMap$.asObservable() },
+        },
+        {
+          provide: CatalogService,
+          useValue: {
+            modelById: signal(new Map()),
+            getModelRecipe: getRecipeImpl,
+          },
+        },
+        {
+          provide: UserStateService,
+          useValue: {
+            projects: signal(projects),
+            uploadedPhotos: signal([]),
+            allUploadedPhotos: signal([]),
+            limits: USER_LIMITS,
+            isModelOwned: () => false,
+            isModelWishlisted: () => false,
+            toggleModelInventory: () => {},
+            toggleModelWishlist: () => {},
+            addManyToWishlist: () => {},
+            getTargetPhotoCount: () => 0,
+            getPhotoQuotaLimit: () => 5,
+            getPhotosForTarget: () => [],
+            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
+            getProjectModelCompletedStepIds: () => [],
+            isOwned: () => false,
+            isWishlisted: () => false,
+          },
+        },
+        {
+          provide: UserMediaService,
+          useValue: {
+            resolvePhotoUrl: () => '/icons/ic_models.svg',
+          },
+        },
+        {
+          provide: InventoryMatchService,
+          useValue: {
+            evaluateStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ImageService,
+          useValue: {
+            resolve: (localPath?: string | null, remoteUrl?: string | null) =>
+              localPath || remoteUrl || '/icons/ic_models.svg',
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ModelDetailComponent);
+    return { fixture, paramMap$ };
+  }
+
+  it('ignores late resolution of an earlier request during A -> B -> A re-entry', async () => {
+    let resolveFirstA!: (val: ModelRecipe | null) => void;
+    let callNum = 0;
+    const getRecipeSpy = jasmine.createSpy('getModelRecipe').and.callFake((id: string) => {
+      callNum++;
+      if (id === 'model-a' && callNum === 1) {
+        return new Promise<ModelRecipe | null>((res) => {
+          resolveFirstA = res;
+        });
+      }
+      if (id === 'model-b') {
+        return Promise.resolve({ ...SAMPLE_RECIPE, id: 'model-b', name: 'Model B' });
+      }
+      return Promise.resolve({ ...SAMPLE_RECIPE, id: 'model-a', name: 'Model A Fresh' });
+    });
+
+    const { fixture, paramMap$ } = createHarness({ id: 'model-a' }, getRecipeSpy);
+    fixture.detectChanges();
+
+    paramMap$.next(convertToParamMap({ id: 'model-b' }));
+    fixture.detectChanges();
+
+    paramMap$.next(convertToParamMap({ id: 'model-a' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.recipe()?.name).toBe('Model A Fresh');
+    expect(fixture.componentInstance.loading()).toBeFalse();
+
+    // Now resolve the stale first request for model-a
+    resolveFirstA({ ...SAMPLE_RECIPE, id: 'model-a', name: 'Model A STALE' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.recipe()?.name).toBe('Model A Fresh');
+    expect(fixture.componentInstance.loadError()).toBeNull();
+    expect(fixture.componentInstance.loading()).toBeFalse();
+  });
+
+  it('ignores late rejection of an earlier request during A -> B -> A re-entry', async () => {
+    spyOn(console, 'warn');
+    let rejectFirstA!: (err: unknown) => void;
+    let callNum = 0;
+    const getRecipeSpy = jasmine.createSpy('getModelRecipe').and.callFake((id: string) => {
+      callNum++;
+      if (id === 'model-a' && callNum === 1) {
+        return new Promise<ModelRecipe | null>((_res, rej) => {
+          rejectFirstA = rej;
+        });
+      }
+      if (id === 'model-b') {
+        return Promise.resolve({ ...SAMPLE_RECIPE, id: 'model-b', name: 'Model B' });
+      }
+      return Promise.resolve({ ...SAMPLE_RECIPE, id: 'model-a', name: 'Model A Fresh' });
+    });
+
+    const { fixture, paramMap$ } = createHarness({ id: 'model-a' }, getRecipeSpy);
+    fixture.detectChanges();
+
+    paramMap$.next(convertToParamMap({ id: 'model-b' }));
+    fixture.detectChanges();
+
+    paramMap$.next(convertToParamMap({ id: 'model-a' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.recipe()?.name).toBe('Model A Fresh');
+
+    // Now reject the stale first request for model-a
+    rejectFirstA(new Error('Stale network error'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.recipe()?.name).toBe('Model A Fresh');
+    expect(fixture.componentInstance.loadError()).toBeNull();
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('resets selectedImageIndex to 0 when navigating from project-model mode to standalone mode on the same recipeId', async () => {
+    const projects: UserProject[] = [
+      {
+        id: 'proj_1',
+        name: 'Project One',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+        colorIds: [],
+        notes: [],
+        photos: [],
+        models: [
+          {
+            id: 'pmod_1',
+            recipeId: SAMPLE_RECIPE.id,
+            quantity: 1,
+            notes: '',
+            completedStepIds: [],
+            featuredImage: { source: 'catalog_angle', imageIndex: 1 },
+            photos: [],
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-01T00:00:00Z',
+          },
+        ],
+      },
+    ];
+    const getRecipeSpy = jasmine.createSpy('getModelRecipe').and.resolveTo(SAMPLE_RECIPE);
+    const { fixture, paramMap$ } = createHarness(
+      { projectId: 'proj_1', entryId: 'pmod_1' },
+      getRecipeSpy,
+      projects
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isProjectMode()).toBeTrue();
+    expect(fixture.componentInstance.selectedImageIndex()).toBe(1);
+
+    paramMap$.next(convertToParamMap({ id: SAMPLE_RECIPE.id }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isProjectMode()).toBeFalse();
+    expect(fixture.componentInstance.selectedImageIndex()).toBe(0);
+    expect(fixture.componentInstance.viewingCustomFeatured()).toBeFalse();
   });
 });

@@ -89,6 +89,35 @@ describe('idb.util', () => {
     expect(await client.get<string>('s1', 'k')).toBe('val');
   });
 
+  it('propagates original error and recovers openDb() when indexedDB.open() throws synchronously', async () => {
+    const dbName = uniqueDbName('idb_sync_throw');
+    const client = createIdbStoreClient(dbName, 1, ['s1']);
+    const originalOpen = indexedDB.open.bind(indexedDB);
+
+    let callCount = 0;
+    const syncError = new DOMException('Blocked by storage policy', 'SecurityError');
+    spyOn(indexedDB, 'open').and.callFake((name: string, version?: number) => {
+      callCount++;
+      if (callCount === 1) {
+        throw syncError;
+      }
+      return originalOpen(name, version);
+    });
+
+    let caught: unknown;
+    try {
+      await client.put('s1', 'k', 'val');
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBe(syncError);
+    expect(callCount).toBe(1);
+
+    await expectAsync(client.put('s1', 'k', 'val')).toBeResolved();
+    expect(callCount).toBe(2);
+    expect(await client.get<string>('s1', 'k')).toBe('val');
+  });
+
   it('rejects on req.onblocked, resets dbPromise, and closes a late onsuccess DB', async () => {
     const dbName = uniqueDbName('idb_blocked');
     const client = createIdbStoreClient(dbName, 1, ['s1']);

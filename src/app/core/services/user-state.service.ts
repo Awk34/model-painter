@@ -24,6 +24,7 @@ import {
   collectProjectPhotos,
   createDefaultState,
   extractAccountDocPayload,
+  isSafeRecordKey,
   normalizeAccountState,
   normalizeConfigurations,
   normalizeFeaturedImage,
@@ -565,26 +566,27 @@ export class UserStateService implements OnDestroy {
      ======================================================================== */
 
   getCompletedStepIds(modelId: string): string[] {
-    if (!modelId) {
+    if (!modelId || !isSafeRecordKey(modelId)) {
       return [];
     }
-    return this.modelProgress()[modelId] ?? [];
+    const progress = this.modelProgress();
+    return Object.hasOwn(progress, modelId) ? progress[modelId] : [];
   }
 
   isStepDone(modelId: string, stepId: string): boolean {
-    if (!modelId || !stepId) {
+    if (!modelId || !stepId || !isSafeRecordKey(modelId)) {
       return false;
     }
     return this.getCompletedStepIds(modelId).includes(stepId);
   }
 
   toggleStepDone(modelId: string, stepId: string): void {
-    if (!modelId || !stepId) {
+    if (!modelId || !stepId || !isSafeRecordKey(modelId)) {
       return;
     }
     this.commit((prev) => {
       const currentMap = prev.modelProgress ?? {};
-      const existing = currentMap[modelId] ?? [];
+      const existing = Object.hasOwn(currentMap, modelId) ? currentMap[modelId] : [];
       const nextSet = new Set(existing);
       if (nextSet.has(stepId)) {
         nextSet.delete(stepId);
@@ -622,12 +624,12 @@ export class UserStateService implements OnDestroy {
 
   setStepsDone(modelId: string, stepIds: string[], done: boolean): void {
     const validIds = stepIds.filter(Boolean);
-    if (!modelId || validIds.length === 0) {
+    if (!modelId || !isSafeRecordKey(modelId) || validIds.length === 0) {
       return;
     }
     this.commit((prev) => {
       const currentMap = prev.modelProgress ?? {};
-      const existing = currentMap[modelId] ?? [];
+      const existing = Object.hasOwn(currentMap, modelId) ? currentMap[modelId] : [];
       if (
         done &&
         existing.length === 0 &&
@@ -670,13 +672,13 @@ export class UserStateService implements OnDestroy {
   }
 
   clearModelProgress(modelId: string): void {
-    if (!modelId) {
+    if (!modelId || !isSafeRecordKey(modelId)) {
       return;
     }
     let cleared = false;
     this.commit((prev) => {
       const currentMap = prev.modelProgress ?? {};
-      if (!(modelId in currentMap)) {
+      if (!Object.hasOwn(currentMap, modelId)) {
         return prev;
       }
       cleared = true;
@@ -745,9 +747,16 @@ export class UserStateService implements OnDestroy {
           nextSet.delete(id);
         }
       }
+      const nextList = Array.from(nextSet).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
+      if (
+        nextList.length === entry.completedStepIds.length &&
+        nextList.every((id, idx) => id === entry.completedStepIds[idx])
+      ) {
+        return entry;
+      }
       return {
         ...entry,
-        completedStepIds: Array.from(nextSet).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS),
+        completedStepIds: nextList,
         updatedAt: now,
       };
     });
@@ -757,12 +766,21 @@ export class UserStateService implements OnDestroy {
     if (!projectId || !entryId) {
       return;
     }
-    this.updateProjectModelById(projectId, entryId, (entry, now) => ({
-      ...entry,
-      completedStepIds: [],
-      updatedAt: now,
-    }));
-    this.showToast('Cleared painting progress for this project model');
+    let cleared = false;
+    this.updateProjectModelById(projectId, entryId, (entry, now) => {
+      if (entry.completedStepIds.length === 0) {
+        return entry;
+      }
+      cleared = true;
+      return {
+        ...entry,
+        completedStepIds: [],
+        updatedAt: now,
+      };
+    });
+    if (cleared) {
+      this.showToast('Cleared painting progress for this project model');
+    }
   }
 
   /* ========================================================================
@@ -1521,7 +1539,7 @@ export class UserStateService implements OnDestroy {
       isPrivate: params.kind === 'reference',
       fileName: safeFileName,
       mimeType: info.mimeType,
-      sizeBytes: Math.trunc(info.blob.size),
+      sizeBytes: Math.max(1, Math.trunc(info.blob.size)),
       width: info.width,
       height: info.height,
       caption: params.caption,
@@ -1646,14 +1664,17 @@ export class UserStateService implements OnDestroy {
     this.commit((prev) => {
       const nextOverrides = { ...prev.customCompatibilityOverrides };
       for (const m of created.citadelMatches) {
-        const existingKeys = Object.keys(nextOverrides);
+        if (!isSafeRecordKey(m.citadelPaintId)) {
+          continue;
+        }
+        const hasKey = Object.hasOwn(nextOverrides, m.citadelPaintId);
         if (
-          !nextOverrides[m.citadelPaintId] &&
-          existingKeys.length >= USER_LIMITS.MAX_COMPATIBILITY_OVERRIDE_KEYS
+          !hasKey &&
+          Object.keys(nextOverrides).length >= USER_LIMITS.MAX_COMPATIBILITY_OVERRIDE_KEYS
         ) {
           continue;
         }
-        const list = new Set(nextOverrides[m.citadelPaintId] ?? []);
+        const list = new Set(hasKey ? nextOverrides[m.citadelPaintId] : []);
         if (list.size < USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT) {
           list.add(created.id);
           nextOverrides[m.citadelPaintId] = Array.from(list);
@@ -1670,10 +1691,14 @@ export class UserStateService implements OnDestroy {
   }
 
   linkCustomEquivalent(citadelPaintId: string, equivalentPaintId: string): void {
+    if (!citadelPaintId || !equivalentPaintId || !isSafeRecordKey(citadelPaintId)) {
+      return;
+    }
     const currentOverrides = this.state().customCompatibilityOverrides;
-    const existingList = currentOverrides[citadelPaintId] ?? [];
+    const hasKey = Object.hasOwn(currentOverrides, citadelPaintId);
+    const existingList = hasKey ? currentOverrides[citadelPaintId] : [];
     if (
-      !currentOverrides[citadelPaintId] &&
+      !hasKey &&
       Object.keys(currentOverrides).length >= USER_LIMITS.MAX_COMPATIBILITY_OVERRIDE_KEYS
     ) {
       this.showToast(
@@ -1692,7 +1717,13 @@ export class UserStateService implements OnDestroy {
     }
     this.commit((prev) => {
       const nextOverrides = { ...prev.customCompatibilityOverrides };
-      const list = new Set(nextOverrides[citadelPaintId] ?? []);
+      const existing = Object.hasOwn(nextOverrides, citadelPaintId)
+        ? nextOverrides[citadelPaintId]
+        : [];
+      const list = new Set(existing);
+      if (list.has(equivalentPaintId)) {
+        return prev;
+      }
       list.add(equivalentPaintId);
       nextOverrides[citadelPaintId] = Array.from(list);
       return {
@@ -1774,36 +1805,54 @@ export class UserStateService implements OnDestroy {
           }
         }
 
-        const mergedProgress: Record<string, string[]> = { ...(base.modelProgress ?? {}) };
+        const mergedProgress: Record<string, string[]> = {};
+        for (const [modelId, existingSteps] of Object.entries(base.modelProgress ?? {})) {
+          if (isSafeRecordKey(modelId)) {
+            mergedProgress[modelId] = existingSteps;
+          }
+        }
         for (const [modelId, incomingSteps] of Object.entries(incoming.modelProgress ?? {})) {
+          if (!isSafeRecordKey(modelId)) {
+            continue;
+          }
+          const hasModel = Object.hasOwn(mergedProgress, modelId);
           if (
-            !(modelId in mergedProgress) &&
+            !hasModel &&
             Object.keys(mergedProgress).length >= USER_LIMITS.MAX_MODEL_PROGRESS_KEYS
           ) {
             break;
           }
           const combined = Array.from(
-            new Set([...(mergedProgress[modelId] ?? []), ...incomingSteps])
+            new Set([...(hasModel ? mergedProgress[modelId] : []), ...incomingSteps])
           ).slice(0, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
           if (combined.length > 0) {
             mergedProgress[modelId] = combined;
           }
         }
 
-        const mergedOverrides: Record<string, string[]> = {
-          ...(base.customCompatibilityOverrides ?? {}),
-        };
+        const mergedOverrides: Record<string, string[]> = {};
+        for (const [paintId, existingIds] of Object.entries(
+          base.customCompatibilityOverrides ?? {}
+        )) {
+          if (isSafeRecordKey(paintId)) {
+            mergedOverrides[paintId] = existingIds;
+          }
+        }
         for (const [paintId, incomingIds] of Object.entries(
           incoming.customCompatibilityOverrides ?? {}
         )) {
+          if (!isSafeRecordKey(paintId)) {
+            continue;
+          }
+          const hasPaint = Object.hasOwn(mergedOverrides, paintId);
           if (
-            !(paintId in mergedOverrides) &&
+            !hasPaint &&
             Object.keys(mergedOverrides).length >= USER_LIMITS.MAX_COMPATIBILITY_OVERRIDE_KEYS
           ) {
             break;
           }
           const combined = Array.from(
-            new Set([...(mergedOverrides[paintId] ?? []), ...incomingIds])
+            new Set([...(hasPaint ? mergedOverrides[paintId] : []), ...incomingIds])
           ).slice(0, USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT);
           if (combined.length > 0) {
             mergedOverrides[paintId] = combined;
@@ -1811,7 +1860,7 @@ export class UserStateService implements OnDestroy {
         }
 
         const hasRawPreferences =
-          'preferences' in rawPayload &&
+          Object.hasOwn(rawPayload, 'preferences') &&
           Boolean(rawPayload['preferences']) &&
           typeof rawPayload['preferences'] === 'object' &&
           !Array.isArray(rawPayload['preferences']);

@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { USER_LIMITS } from '../../core/config/user-limits.config';
@@ -10,6 +11,7 @@ import { InventoryMatchService } from '../../core/services/inventory-match.servi
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
+import { ProjectPickerModalComponent } from './components/project-picker-modal.component';
 import { ProjectDetailComponent } from './project-detail.component';
 
 function makeReadiness(): InventoryReadinessResult {
@@ -124,10 +126,24 @@ describe('ProjectDetailComponent route switch state reset', () => {
     comp.selectedRollupStage.set('artificer');
     fixture.detectChanges();
 
+    const pickerModal = fixture.debugElement
+      .query(By.directive(ProjectPickerModalComponent))
+      .componentInstance as ProjectPickerModalComponent;
+    pickerModal.pickerSearch.set('Stale Search Text');
+    fixture.detectChanges();
+    expect(pickerModal.pickerSearch()).toBe('Stale Search Text');
+
     expect(comp.editingTitle()).toBeTrue();
     expect(comp.titleDraft()).toBe('Unsaved Title');
     expect(comp.activePickerModal()).toBe('model');
     expect(comp.selectedRollupStage()).toBe('artificer');
+
+    // Sibling update on same project.id while picker is open preserves pickerSearch
+    projects.update((list) =>
+      list.map((p) => (p.id === 'proj_a' ? { ...p, updatedAt: '2026-01-02T00:00:00Z' } : p))
+    );
+    fixture.detectChanges();
+    expect(pickerModal.pickerSearch()).toBe('Stale Search Text');
 
     paramMap$.next(convertToParamMap({ id: 'proj_b' }));
     fixture.detectChanges();
@@ -137,5 +153,15 @@ describe('ProjectDetailComponent route switch state reset', () => {
     expect(comp.titleDraft()).toBe('');
     expect(comp.activePickerModal()).toBeNull();
     expect(comp.selectedRollupStage()).toBe('base');
+    expect(pickerModal.pickerSearch()).toBe('');
+
+    // Closing directly via activePickerModal.set(null) on same project also clears pickerSearch
+    comp.activePickerModal.set('color');
+    fixture.detectChanges();
+    pickerModal.pickerSearch.set('Abaddon');
+    fixture.detectChanges();
+    comp.activePickerModal.set(null);
+    fixture.detectChanges();
+    expect(pickerModal.pickerSearch()).toBe('');
   });
 });

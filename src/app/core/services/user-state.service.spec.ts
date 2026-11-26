@@ -859,4 +859,71 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).inventoryPaintIds).toEqual([]);
     expect(mediaMock.clearAllLocalMedia).toHaveBeenCalled();
   });
+
+  it('guards prototype-named keys in importAccountPayload, toggleStepDone, setStepsDone, and linkCustomEquivalent', () => {
+    service = setupService();
+
+    const parsedPayload = JSON.parse(
+      '{"modelProgress":{"toString":["s_imp"],"constructor":["s_ctor"],"__proto__":["s_proto"]},"customCompatibilityOverrides":{"toString":["p_imp"],"constructor":["p_ctor"],"__proto__":["p_proto"]}}'
+    ) as Record<string, unknown>;
+
+    expect(() => service.importAccountPayload(parsedPayload, 'merge', false)).not.toThrow();
+    expect(service.getCompletedStepIds('toString')).toEqual(['s_imp']);
+    expect(service.getCompletedStepIds('constructor')).toEqual([]);
+    expect(service.getCompletedStepIds('__proto__')).toEqual([]);
+    expect(service.customCompatibilityOverrides()['toString']).toEqual(['p_imp']);
+    expect(Object.hasOwn(service.customCompatibilityOverrides(), 'constructor')).toBeFalse();
+    expect(Object.hasOwn(service.customCompatibilityOverrides(), '__proto__')).toBeFalse();
+
+    expect(() => service.toggleStepDone('toString', 's_toggle')).not.toThrow();
+    expect(service.isStepDone('toString', 's_toggle')).toBeTrue();
+    expect(() => service.toggleStepDone('constructor', 's_x')).not.toThrow();
+    expect(() => service.toggleStepDone('__proto__', 's_x')).not.toThrow();
+
+    expect(() => service.setStepsDone('constructor', ['s_a'], true)).not.toThrow();
+    expect(() => service.setStepsDone('prototype', ['s_a'], true)).not.toThrow();
+    expect(() => service.setStepsDone('toString', ['s_set'], true)).not.toThrow();
+    expect(service.isStepDone('toString', 's_set')).toBeTrue();
+
+    expect(() => service.linkCustomEquivalent('toString', 'p_link')).not.toThrow();
+    expect(service.customCompatibilityOverrides()['toString']).toEqual(['p_imp', 'p_link']);
+    expect(() => service.linkCustomEquivalent('constructor', 'p_bad')).not.toThrow();
+    expect(() => service.linkCustomEquivalent('__proto__', 'p_bad')).not.toThrow();
+    expect(Object.hasOwn(service.customCompatibilityOverrides(), 'constructor')).toBeFalse();
+    expect(Object.hasOwn(service.customCompatibilityOverrides(), '__proto__')).toBeFalse();
+  });
+
+  it('preserves state() reference and performs zero localStorage.setItem writes on no-op setProjectModelStepsDone and clearProjectModelProgress', () => {
+    service = setupService();
+    const proj = service.createProject('No-op Project')!;
+    const entry = service.addModelToProject(proj.id, 'model-1')!;
+
+    const baselineState = service.state();
+    const setItemSpy = spyOn(localStorage, 'setItem').and.callThrough();
+    const showToastSpy = spyOn(service, 'showToast').and.callThrough();
+
+    // Entry currently has completedStepIds: []
+    service.setProjectModelStepsDone(proj.id, entry.id, ['step-not-present'], false);
+    service.clearProjectModelProgress(proj.id, entry.id);
+
+    expect(service.state()).toBe(baselineState);
+    expect(setItemSpy).not.toHaveBeenCalled();
+    expect(showToastSpy).not.toHaveBeenCalled();
+
+    // Mark a step done, then verify idempotent setProjectModelStepsDone(..., true) is also a no-op
+    service.setProjectModelStepsDone(proj.id, entry.id, ['step-1'], true);
+    const afterAddState = service.state();
+    setItemSpy.calls.reset();
+
+    service.setProjectModelStepsDone(proj.id, entry.id, ['step-1'], true);
+    expect(service.state()).toBe(afterAddState);
+    expect(setItemSpy).not.toHaveBeenCalled();
+
+    // Clearing non-empty progress updates state and triggers toast once
+    service.clearProjectModelProgress(proj.id, entry.id);
+    expect(service.state()).not.toBe(afterAddState);
+    expect(service.getProjectModelCompletedStepIds(proj.id, entry.id)).toEqual([]);
+    expect(setItemSpy).toHaveBeenCalledTimes(1);
+    expect(service.toastMessage()).toContain('Cleared painting progress');
+  });
 });

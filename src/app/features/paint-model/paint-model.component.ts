@@ -67,9 +67,7 @@ export class PaintModelComponent {
     let allowedRecipeSet: Set<string> | null = null;
     if (sfid && parentFac) {
       const sub = parentFac.childFactions?.find((c) => c.id === sfid);
-      if (sub) {
-        allowedRecipeSet = new Set(sub.recipeIds);
-      }
+      allowedRecipeSet = sub ? new Set(sub.recipeIds) : new Set();
     } else if (pfid && parentFac) {
       allowedRecipeSet = new Set(parentFac.recipeIds);
     } else if (gid && game) {

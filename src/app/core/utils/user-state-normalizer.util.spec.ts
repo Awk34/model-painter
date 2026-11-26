@@ -3,6 +3,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   normalizeAccountState,
   normalizeConfigurations,
+  normalizeCustomCompatibilityOverrides,
   normalizeFeaturedImage,
   normalizeIncomingProject,
   normalizePreferences,
@@ -293,6 +294,61 @@ describe('user-state-normalizer.util', () => {
     });
     expect(normalizeFeaturedImage({ source: 'catalog_angle', imageIndex: -1 })).toBeUndefined();
     expect(normalizeFeaturedImage({ source: 'catalog_angle', imageIndex: 99 })).toBeUndefined();
+    expect(normalizeFeaturedImage({ source: 'catalog_angle', imageIndex: null })).toBeUndefined();
+    expect(normalizeFeaturedImage({ source: 'catalog_angle', imageIndex: '' })).toBeUndefined();
+    expect(normalizeFeaturedImage({ source: 'catalog_angle', imageIndex: false })).toBeUndefined();
+    expect(normalizeFeaturedImage({ source: 'catalog_angle', imageIndex: '2' })).toEqual({
+      source: 'catalog_angle',
+      imageIndex: 2,
+      localImagePath: undefined,
+      imageUrl: undefined,
+    });
     expect(normalizeConfigurations([{ slot: ' ', option: 'X' }])).toBeUndefined();
+  });
+
+  it('handles prototype-named keys safely in overrides/modelProgress and rejects non-string/non-number photo id or fileName', () => {
+    const parsedWithProto = JSON.parse(
+      '{"customCompatibilityOverrides":{"__proto__":["p_proto"],"constructor":["p_ctor"],"prototype":["p_proto2"],"toString":["p_str"]},"modelProgress":{"__proto__":["s_proto"],"constructor":["s_ctor"],"prototype":["s_proto2"],"toString":["s_str"]}}'
+    ) as Record<string, unknown>;
+
+    const overrides = normalizeCustomCompatibilityOverrides(
+      parsedWithProto['customCompatibilityOverrides']
+    );
+    expect(Object.hasOwn(overrides, 'constructor')).toBeFalse();
+    expect(Object.hasOwn(overrides, 'prototype')).toBeFalse();
+    expect(Object.hasOwn(overrides, '__proto__')).toBeFalse();
+    expect(overrides['toString']).toEqual(['p_str']);
+
+    const state = normalizeAccountState(parsedWithProto);
+    expect(Object.hasOwn(state.customCompatibilityOverrides, 'constructor')).toBeFalse();
+    expect(Object.hasOwn(state.customCompatibilityOverrides, 'prototype')).toBeFalse();
+    expect(Object.hasOwn(state.customCompatibilityOverrides, '__proto__')).toBeFalse();
+    expect(state.customCompatibilityOverrides['toString']).toEqual(['p_str']);
+    expect(Object.hasOwn(state.modelProgress, 'constructor')).toBeFalse();
+    expect(Object.hasOwn(state.modelProgress, 'prototype')).toBeFalse();
+    expect(Object.hasOwn(state.modelProgress, '__proto__')).toBeFalse();
+    expect(state.modelProgress['toString']).toEqual(['s_str']);
+
+    const photoState = normalizeAccountState({
+      uploadedPhotos: [
+        {
+          id: {} as never,
+          targetType: 'model',
+          targetId: 'm1',
+          kind: 'showcase',
+          fileName: 'bad-id.jpg',
+        } as never,
+        {
+          id: 'ph_obj_filename',
+          targetType: 'model',
+          targetId: 'm1',
+          kind: 'showcase',
+          fileName: {} as never,
+        } as never,
+      ],
+    });
+    expect(photoState.uploadedPhotos.length).toBe(1);
+    expect(photoState.uploadedPhotos[0].id).toBe('ph_obj_filename');
+    expect(photoState.uploadedPhotos[0].fileName).toBe('photo.jpg');
   });
 });

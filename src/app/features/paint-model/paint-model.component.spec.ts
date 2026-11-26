@@ -173,6 +173,19 @@ describe('PaintModelComponent faction/sub-faction filtering', () => {
     expect(comp.filteredModels().map((item) => item.model.id)).toEqual(['m-sm-um']);
   });
 
+  it('returns empty results instead of leaking parent/game models when sub-faction ID is missing from parentFaction.childFactions', () => {
+    const fixture = TestBed.createComponent(PaintModelComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
+
+    comp.selectGame(games[0]);
+    comp.selectParentFaction(games[0].factions[0]);
+    comp.selectSubFaction('non-existent-subfaction');
+    fixture.detectChanges();
+
+    expect(comp.filteredModels()).toEqual([]);
+  });
+
   it('keeps gameIds fallback active when only game is selected without faction/sub-faction', () => {
     const fixture = TestBed.createComponent(PaintModelComponent);
     const comp = fixture.componentInstance;

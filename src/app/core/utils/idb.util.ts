@@ -23,12 +23,15 @@ export function createIdbStoreClient(
     if (typeof indexedDB === 'undefined') {
       return Promise.reject(new Error('IndexedDB is unavailable.'));
     }
-    const pending = new Promise<IDBDatabase>((resolve, reject) => {
+    let pending: Promise<IDBDatabase> | null = null;
+    let failedBeforeAssign = false;
+    pending = new Promise<IDBDatabase>((resolve, reject) => {
       let settled = false;
       const fail = (err: unknown, fallback: string) => {
         if (!settled) {
           settled = true;
-          if (dbPromise === pending) {
+          failedBeforeAssign = true;
+          if (pending && dbPromise === pending) {
             dbPromise = null;
           }
           reject(err ?? new Error(fallback));
@@ -78,7 +81,9 @@ export function createIdbStoreClient(
         fail(req.error, `Failed to open IndexedDB ${dbName}`);
       };
     });
-    dbPromise = pending;
+    if (!failedBeforeAssign) {
+      dbPromise = pending;
+    }
     return pending;
   };
 

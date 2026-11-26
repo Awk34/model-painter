@@ -107,6 +107,7 @@ export class ModelDetailComponent {
   private activePointerId: number | null = null;
   private lastLoadedRecipeId: string | null = null;
   private lastFeaturedSignature: string | null = null;
+  private loadGeneration = 0;
 
   readonly isProjectMode = computed(() => Boolean(this.projectId() && this.entryId()));
 
@@ -305,12 +306,17 @@ export class ModelDetailComponent {
       this.isPanning.set(false);
       this.activePointerId = null;
       this.lastFeaturedSignature = null;
+      if (!(pid && eid)) {
+        this.selectedImageIndex.set(0);
+        this.viewingCustomFeatured.set(false);
+      }
     });
 
     // Load catalog recipe whenever activeRecipeId changes
     effect(() => {
       const targetRecipeId = this.activeRecipeId();
       if (!targetRecipeId) {
+        this.loadGeneration++;
         this.lastLoadedRecipeId = null;
         this.recipe.set(null);
         this.loadError.set(null);
@@ -352,6 +358,7 @@ export class ModelDetailComponent {
   }
 
   private async loadRecipe(recipeId: string): Promise<void> {
+    const reqGen = ++this.loadGeneration;
     this.loading.set(true);
     this.loadError.set(null);
     if (!this.isProjectMode()) {
@@ -361,20 +368,20 @@ export class ModelDetailComponent {
     }
     try {
       const data = await this.catalog.getModelRecipe(recipeId);
-      if (this.activeRecipeId() !== recipeId) {
+      if (reqGen !== this.loadGeneration || this.activeRecipeId() !== recipeId) {
         return;
       }
       this.recipe.set(data);
       this.selectedColorPointId.set(data?.colorPoints?.[0]?.id ?? null);
     } catch (err) {
       console.warn(`Failed to load model recipe ${recipeId}:`, err);
-      if (this.activeRecipeId() === recipeId) {
+      if (reqGen === this.loadGeneration && this.activeRecipeId() === recipeId) {
         this.recipe.set(null);
         this.selectedColorPointId.set(null);
         this.loadError.set('Unable to load this model guide right now. Please try again.');
       }
     } finally {
-      if (this.activeRecipeId() === recipeId) {
+      if (reqGen === this.loadGeneration && this.activeRecipeId() === recipeId) {
         this.loading.set(false);
       }
     }

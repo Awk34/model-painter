@@ -18,6 +18,12 @@ import { createEntityId } from './catalog-filter.util';
 
 export const CURRENT_SCHEMA_VERSION = 2;
 
+const UNSAFE_RECORD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+export function isSafeRecordKey(key: string): boolean {
+  return Boolean(key) && !UNSAFE_RECORD_KEYS.has(key);
+}
+
 export function createDefaultState(): UserAccountState {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -53,7 +59,7 @@ export function stripUndefinedDeep<T>(value: T): T {
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (v !== undefined) {
+      if (v !== undefined && isSafeRecordKey(k)) {
         out[k] = stripUndefinedDeep(v);
       }
     }
@@ -97,11 +103,17 @@ export function optionalTrimmedString(raw: unknown, maxLen: number): string | un
 
 function extractIdArray(primaryIds: unknown, legacyObjects?: unknown): string[] {
   if (Array.isArray(primaryIds)) {
-    return primaryIds.map((id) => String(id)).filter(Boolean);
+    return primaryIds
+      .filter((id): id is string | number => typeof id === 'string' || typeof id === 'number')
+      .map((id) => String(id))
+      .filter(Boolean);
   }
   if (Array.isArray(legacyObjects)) {
     return (legacyObjects as Record<string, unknown>[])
-      .map((item) => String(item['id'] ?? ''))
+      .map((item) => {
+        const rawId = item?.['id'];
+        return typeof rawId === 'string' || typeof rawId === 'number' ? String(rawId) : '';
+      })
       .filter(Boolean);
   }
   return [];
@@ -115,7 +127,7 @@ function normalizePhotoEntry(
     return null;
   }
   const ph = raw as Partial<UserUploadedPhoto>;
-  const rawId = ph.id === undefined || ph.id === null ? '' : String(ph.id);
+  const rawId = typeof ph.id === 'string' || typeof ph.id === 'number' ? String(ph.id) : '';
   const id = optionalTrimmedString(rawId, 120);
   if (!id) {
     return null;
@@ -126,14 +138,14 @@ function normalizePhotoEntry(
     (ph.targetType === 'project' || ph.targetType === 'project_model' ? ph.targetType : 'model');
   const rawTargetId =
     forcedTarget?.targetId ??
-    (ph.targetId === undefined || ph.targetId === null ? '' : String(ph.targetId));
+    (typeof ph.targetId === 'string' || typeof ph.targetId === 'number' ? String(ph.targetId) : '');
   const targetId = optionalTrimmedString(rawTargetId, 200);
   if (!targetId) {
     return null;
   }
 
   const rawFileName =
-    ph.fileName === undefined || ph.fileName === null ? '' : String(ph.fileName);
+    typeof ph.fileName === 'string' || typeof ph.fileName === 'number' ? String(ph.fileName) : '';
   const fileName = optionalTrimmedString(rawFileName, 255) ?? 'photo.jpg';
   const rawWidth = typeof ph.width === 'number' && Number.isFinite(ph.width) ? Math.trunc(ph.width) : 0;
   const rawHeight = typeof ph.height === 'number' && Number.isFinite(ph.height) ? Math.trunc(ph.height) : 0;
@@ -187,8 +199,15 @@ export function normalizeFeaturedImage(raw: unknown): ProjectModelFeaturedImage 
     return photoId ? { source: 'uploaded_photo', photoId } : undefined;
   }
   if (fi['source'] === 'catalog_angle') {
-    const idx = Math.trunc(Number(fi['imageIndex']));
-    if (!Number.isFinite(idx) || idx < 0 || idx > 50) {
+    const rawIdx = fi['imageIndex'];
+    let parsedIdx = Number.NaN;
+    if (typeof rawIdx === 'number') {
+      parsedIdx = rawIdx;
+    } else if (typeof rawIdx === 'string' && rawIdx.trim() !== '') {
+      parsedIdx = Number(rawIdx.trim());
+    }
+    const idx = Math.trunc(parsedIdx);
+    if (!Number.isFinite(parsedIdx) || idx < 0 || idx > 50) {
       return undefined;
     }
     return {
@@ -256,10 +275,13 @@ function normalizeIncomingNote(
     .slice(0, USER_LIMITS.MAX_NOTE_BLOCKS_PER_NOTE)
     .map((rc) => {
       const compId = optionalTrimmedString(rc['id'], 120);
+      const rawVal = rc['value'] ?? rc['text'];
+      const textVal =
+        typeof rawVal === 'string' || typeof rawVal === 'number' ? String(rawVal) : '';
       return {
         ...(compId ? { id: compId } : {}),
         type: rc['type'] === 'checkbox' ? 'checkbox' : 'text',
-        value: String(rc['value'] ?? rc['text'] ?? '').slice(0, USER_LIMITS.MAX_NOTE_TEXT_LENGTH),
+        value: textVal.slice(0, USER_LIMITS.MAX_NOTE_TEXT_LENGTH),
         checked: Boolean(rc['checked'] ?? false),
       };
     });
@@ -453,15 +475,20 @@ function normalizeModelProgress(raw: unknown): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const [modelId, stepIds] of Object.entries(raw as Record<string, unknown>)) {
     const safeModelId = optionalTrimmedString(modelId, 200);
-    if (!safeModelId) {
+    if (!safeModelId || !isSafeRecordKey(safeModelId)) {
       continue;
     }
     const normalized = dedupeBoundedIds(stepIds, USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS);
-    if (normalized.length > 0) {
-      out[safeModelId] = normalized;
+    if (normalized.length === 0) {
+      continue;
     }
-    if (Object.keys(out).length >= USER_LIMITS.MAX_MODEL_PROGRESS_KEYS) {
-      break;
+    if (Object.hasOwn(out, safeModelId)) {
+      out[safeModelId] = Array.from(new Set([...out[safeModelId], ...normalized])).slice(
+        0,
+        USER_LIMITS.MAX_STEPS_PER_MODEL_PROGRESS
+      );
+    } else if (Object.keys(out).length < USER_LIMITS.MAX_MODEL_PROGRESS_KEYS) {
+      out[safeModelId] = normalized;
     }
   }
   return out;
@@ -548,14 +575,14 @@ export function normalizeCustomCompatibilityOverrides(raw: unknown): Record<stri
   const out: Record<string, string[]> = {};
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
     const safeKey = optionalTrimmedString(k, 200);
-    if (!safeKey) {
+    if (!safeKey || !isSafeRecordKey(safeKey)) {
       continue;
     }
     const ids = dedupeBoundedIds(v, USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT);
     if (ids.length === 0) {
       continue;
     }
-    if (safeKey in out) {
+    if (Object.hasOwn(out, safeKey)) {
       out[safeKey] = Array.from(new Set([...out[safeKey], ...ids])).slice(
         0,
         USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT

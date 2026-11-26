@@ -87,7 +87,10 @@ export class InventoryMatchService {
     requiredPaintId: string,
     invSet: Set<string>
   ): PaintSubstituteMatch | null {
-    const userOverrideIds = this.userState.customCompatibilityOverrides()[requiredPaintId] ?? [];
+    const overrides = this.userState.customCompatibilityOverrides();
+    const userOverrideIds = Object.hasOwn(overrides, requiredPaintId)
+      ? overrides[requiredPaintId]
+      : [];
     if (userOverrideIds.length === 0) {
       return null;
     }
