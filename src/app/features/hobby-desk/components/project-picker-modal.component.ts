@@ -38,6 +38,7 @@ export class ProjectPickerModalComponent {
   readonly pickerSearch = signal('');
 
   private lastProjectId: string | null = null;
+  private lastMode: ProjectPickerMode = null;
 
   constructor() {
     effect(() => {
@@ -45,10 +46,12 @@ export class ProjectPickerModalComponent {
       const currentProjectId = this.project().id;
       if (
         currentMode === null ||
+        (this.lastMode !== null && currentMode !== this.lastMode) ||
         (this.lastProjectId !== null && currentProjectId !== this.lastProjectId)
       ) {
         this.pickerSearch.set('');
       }
+      this.lastMode = currentMode;
       this.lastProjectId = currentProjectId;
     });
   }

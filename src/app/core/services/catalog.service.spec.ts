@@ -526,6 +526,32 @@ describe('CatalogService', () => {
     expect(recipe).not.toBeNull();
     expect(recipe!.id).toBe('model-dante');
   });
+
+  it('ignores unsafe prototype keys in findStaleBundles and uses Object.hasOwn for cached manifest bundles', () => {
+    const service = TestBed.inject(CatalogService);
+    const findStaleBundles = (
+      service as unknown as {
+        findStaleBundles: (
+          remote: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> },
+          cached: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> } | null
+        ) => string[];
+      }
+    ).findStaleBundles.bind(service);
+
+    const remoteBundles = JSON.parse(
+      '{"__proto__":"sha256:evil","constructor":"sha256:evil2","prototype":"sha256:evil3","paints_bundle":"sha256:v2","toString":"sha256:custom"}'
+    ) as Record<string, string>;
+    const cachedBundles = {
+      paints_bundle: 'sha256:v2',
+    };
+
+    const stale = findStaleBundles(
+      { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: remoteBundles },
+      { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: cachedBundles }
+    );
+
+    expect(stale).toEqual(['toString']);
+  });
 });
 
 describe('ModelPaintingStepsComponent stage filtering', () => {

@@ -89,4 +89,78 @@ describe('PaintDetailModalComponent draft reset', () => {
     expect(comp.selectedOverridePaintId()).toBe('');
     expect(closeSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('returns [] from crossBrandMatches() without throwing when activePaintId is an Object.prototype key', async () => {
+    const protoIds = ['toString', 'constructor', 'valueOf', '__proto__'] as const;
+    const activePaintId = signal<string | null>(protoIds[0]);
+    const paintMap = new Map<string, Paint>(
+      protoIds.map((id) => [
+        id,
+        {
+          id,
+          name: `Paint ${id}`,
+          range: 'warhammer_colour',
+          category: 'Base',
+          gradientStartHex: '#123456',
+        },
+      ])
+    );
+
+    await TestBed.configureTestingModule({
+      imports: [PaintDetailModalComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: PaintModalService,
+          useValue: {
+            activePaintId,
+            openPaint: (id: string) => activePaintId.set(id),
+            close: () => activePaintId.set(null),
+          },
+        },
+        {
+          provide: CatalogService,
+          useValue: {
+            paintById: signal(paintMap),
+            thirdPartyPaintById: signal(new Map()),
+            thirdPartyPaints: signal([]),
+            classicToToneProMap: signal(new Map()),
+            toneProToClassicMap: signal(new Map()),
+            citadelToThirdPartyMap: signal({}),
+            colorsUsingPaintMap: signal(new Map()),
+            modelsUsingPaintMap: signal(new Map()),
+          },
+        },
+        {
+          provide: UserStateService,
+          useValue: {
+            customPaints: signal([]),
+            customPaintById: signal(new Map()),
+            customCompatibilityOverrides: signal({}),
+            isOwned: () => false,
+            isWishlisted: () => false,
+            toggleInventory: () => {},
+            toggleWishlist: () => {},
+            linkCustomEquivalent: () => {},
+          },
+        },
+        {
+          provide: ImageService,
+          useValue: {
+            resolve: (local?: string | null, remote?: string | null) => local || remote || '',
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(PaintDetailModalComponent);
+    const comp = fixture.componentInstance;
+
+    for (const key of protoIds) {
+      activePaintId.set(key);
+      fixture.detectChanges();
+      expect(comp.citadelPaint()?.id).toBe(key);
+      expect(comp.crossBrandMatches()).toEqual([]);
+    }
+  });
 });

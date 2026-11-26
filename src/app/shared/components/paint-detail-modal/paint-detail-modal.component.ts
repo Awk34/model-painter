@@ -117,9 +117,11 @@ export class PaintDetailModalComponent {
     if (!cp) {
       return [];
     }
-    const preseeded = this.catalog.citadelToThirdPartyMap()[cp.id] ?? [];
+    const preseededMap = this.catalog.citadelToThirdPartyMap();
+    const preseeded = (Object.hasOwn(preseededMap, cp.id) ? preseededMap[cp.id] : undefined) ?? [];
     const overrides = this.userState.customCompatibilityOverrides();
-    const userOverrideIds = Object.hasOwn(overrides, cp.id) ? overrides[cp.id] : [];
+    const userOverrideIds =
+      (Object.hasOwn(overrides, cp.id) ? overrides[cp.id] : undefined) ?? [];
     const tpById = this.catalog.thirdPartyPaintById();
     const customById = this.userState.customPaintById();
 

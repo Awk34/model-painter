@@ -163,5 +163,22 @@ describe('ProjectDetailComponent route switch state reset', () => {
     comp.activePickerModal.set(null);
     fixture.detectChanges();
     expect(pickerModal.pickerSearch()).toBe('');
+
+    // Switching directly between non-null modes ('model' -> 'color' -> 'thumbnail') clears pickerSearch
+    comp.activePickerModal.set('model');
+    fixture.detectChanges();
+    pickerModal.pickerSearch.set('Intercessor');
+    fixture.detectChanges();
+    expect(pickerModal.pickerSearch()).toBe('Intercessor');
+
+    comp.activePickerModal.set('color');
+    fixture.detectChanges();
+    expect(pickerModal.pickerSearch()).toBe('');
+
+    pickerModal.pickerSearch.set('Retributor');
+    fixture.detectChanges();
+    comp.activePickerModal.set('thumbnail');
+    fixture.detectChanges();
+    expect(pickerModal.pickerSearch()).toBe('');
   });
 });

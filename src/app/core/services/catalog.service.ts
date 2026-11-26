@@ -22,6 +22,7 @@ import {
 import { getFirebaseHandles } from './firebase.config';
 import { createIdbStoreClient } from '../utils/idb.util';
 import { getPaintRepresentativeHex, mergeCatalogBrands } from '../utils/catalog-filter.util';
+import { isSafeRecordKey } from '../utils/user-state-normalizer.util';
 import { doc, getDoc } from 'firebase/firestore';
 
 const IDB_NAME = 'whc_catalog_cache_v1';
@@ -305,9 +306,17 @@ export class CatalogService {
     cachedManifest: CatalogManifest | null
   ): string[] {
     const staleBundles: string[] = [];
-    for (const bundleId of Object.keys(remoteManifest.bundles)) {
-      const remoteEntry = remoteManifest.bundles[bundleId];
-      const localEntry = cachedManifest?.bundles?.[bundleId];
+    const remoteBundles = remoteManifest.bundles ?? {};
+    const cachedBundles = cachedManifest?.bundles;
+    for (const bundleId of Object.keys(remoteBundles)) {
+      if (!isSafeRecordKey(bundleId)) {
+        continue;
+      }
+      const remoteEntry = remoteBundles[bundleId];
+      const localEntry =
+        cachedBundles && Object.hasOwn(cachedBundles, bundleId)
+          ? cachedBundles[bundleId]
+          : undefined;
       const remoteHash = typeof remoteEntry === 'string' ? remoteEntry : remoteEntry?.hash;
       const localHash = typeof localEntry === 'string' ? localEntry : localEntry?.hash;
       if (!cachedManifest || remoteHash !== localHash) {
@@ -319,7 +328,7 @@ export class CatalogService {
 
   private getModelBundleKeys(manifest: CatalogManifest): string[] {
     return Object.keys(manifest.bundles ?? {})
-      .filter((key) => key.startsWith(MODEL_BUNDLE_PREFIX))
+      .filter((key) => isSafeRecordKey(key) && key.startsWith(MODEL_BUNDLE_PREFIX))
       .sort((a, b) => {
         const numA = Number.parseInt(a.slice(MODEL_BUNDLE_PREFIX.length), 10);
         const numB = Number.parseInt(b.slice(MODEL_BUNDLE_PREFIX.length), 10);
