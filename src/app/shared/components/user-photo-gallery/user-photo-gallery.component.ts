@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { USER_LIMITS, formatBytes } from '../../../core/config/user-limits.config';
 import {
@@ -107,6 +107,29 @@ export class UserPhotoGalleryComponent {
     return list[idx];
   });
 
+  private lastTargetIdentity: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const identity = `${this.targetType()}|${this.targetId()}|${this.projectId() ?? ''}|${this.kind()}`;
+      if (this.lastTargetIdentity !== null && this.lastTargetIdentity !== identity) {
+        this.lightboxIndex.set(null);
+        this.editingCaptionId.set(null);
+        this.editingCaptionText.set('');
+        this.captionDraft.set('');
+        this.errorMessages.set([]);
+        this.dragActive.set(false);
+      }
+      this.lastTargetIdentity = identity;
+    });
+
+    effect(() => {
+      if (this.lightboxIndex() !== null && this.activeLightboxPhoto() === null) {
+        this.lightboxIndex.set(null);
+      }
+    });
+  }
+
   async onFileInputChange(event: Event): Promise<void> {
     const inputEl = event.target as HTMLInputElement;
     const fileList = inputEl.files;
@@ -165,7 +188,7 @@ export class UserPhotoGalleryComponent {
       event.defaultPrevented ||
       this.isAtLimit() ||
       this.uploading() ||
-      this.lightboxIndex() !== null ||
+      this.activeLightboxPhoto() !== null ||
       isEditableElement(event.target) ||
       hasOpenModalDialog()
     ) {

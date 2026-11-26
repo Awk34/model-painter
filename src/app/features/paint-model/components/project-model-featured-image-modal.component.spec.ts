@@ -120,4 +120,47 @@ describe('ProjectModelFeaturedImageModalComponent', () => {
     expect(searchInput?.type).toBe('search');
     expect(searchInput?.labels?.length).toBe(1);
   });
+
+  it('resets activeTab, catalogSearch, and uploadError when parent sets [open]="false" or entry changes', () => {
+    const fixture = TestBed.createComponent(ProjectModelFeaturedImageModalComponent);
+    fixture.componentRef.setInput('open', true);
+    fixture.componentRef.setInput('project', SAMPLE_PROJECT);
+    fixture.componentRef.setInput('entry', SAMPLE_ENTRY);
+    fixture.componentRef.setInput('recipe', SAMPLE_RECIPE);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    comp.activeTab.set('catalog');
+    comp.catalogSearch.set('intercessor');
+    comp.uploadError.set('Upload failed');
+    fixture.detectChanges();
+
+    // Sibling update on the same entry.id while open must preserve draft state
+    fixture.componentRef.setInput('entry', { ...SAMPLE_ENTRY, notes: 'Updated notes' });
+    fixture.detectChanges();
+    expect(comp.activeTab()).toBe('catalog');
+    expect(comp.catalogSearch()).toBe('intercessor');
+    expect(comp.uploadError()).toBe('Upload failed');
+
+    // Parent-driven close [open]="false" must reset all draft state
+    fixture.componentRef.setInput('open', false);
+    fixture.detectChanges();
+    expect(comp.activeTab()).toBe('angles');
+    expect(comp.catalogSearch()).toBe('');
+    expect(comp.uploadError()).toBeNull();
+
+    // Reopen, dirty state again, and switch entry.id while open -> must reset
+    fixture.componentRef.setInput('open', true);
+    fixture.detectChanges();
+    comp.activeTab.set('uploaded');
+    comp.catalogSearch.set('dread');
+    comp.uploadError.set('Another error');
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('entry', { ...SAMPLE_ENTRY, id: 'pmod_2' });
+    fixture.detectChanges();
+    expect(comp.activeTab()).toBe('angles');
+    expect(comp.catalogSearch()).toBe('');
+    expect(comp.uploadError()).toBeNull();
+  });
 });

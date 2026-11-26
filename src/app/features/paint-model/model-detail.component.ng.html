@@ -534,13 +534,21 @@
       </app-modal-dialog>
     } @else if (loadError()) {
       <div class="empty-box studio-card" role="alert">
-        <h1>Model Guide Unavailable</h1>
+        @if (isProjectMode() && project() && projectModelEntry()) {
+          <h2>Model Guide Unavailable</h2>
+        } @else {
+          <h1>Model Guide Unavailable</h1>
+        }
         <p>{{ loadError() }}</p>
         <a routerLink="/models" class="btn btn-gold">Back to Paint A Model</a>
       </div>
     } @else {
       <div class="empty-box studio-card">
-        <h1>Model Guide Not Found</h1>
+        @if (isProjectMode() && project() && projectModelEntry()) {
+          <h2>Model Guide Not Found</h2>
+        } @else {
+          <h1>Model Guide Not Found</h1>
+        }
         <p>No painting guide matches this model ID.</p>
         <a routerLink="/models" class="btn btn-gold">Back to Paint A Model</a>
       </div>

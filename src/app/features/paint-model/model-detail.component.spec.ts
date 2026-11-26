@@ -810,4 +810,72 @@ describe('ModelDetailComponent Async Re-Entry Race & Route Transitions', () => {
     expect(fixture.componentInstance.selectedImageIndex()).toBe(0);
     expect(fixture.componentInstance.viewingCustomFeatured()).toBeFalse();
   });
+
+  it('keeps a single <h1> when loadError() occurs or recipe is missing in project mode', async () => {
+    spyOn(console, 'warn');
+    const projects: UserProject[] = [
+      {
+        id: 'proj_1',
+        name: 'Project One',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+        colorIds: [],
+        notes: [],
+        photos: [],
+        models: [
+          {
+            id: 'pmod_1',
+            recipeId: 'missing-recipe',
+            customName: 'Custom Squad',
+            quantity: 1,
+            notes: '',
+            completedStepIds: [],
+            photos: [],
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-01T00:00:00Z',
+          },
+        ],
+      },
+    ];
+
+    const getRecipeSpy = jasmine
+      .createSpy('getModelRecipe')
+      .and.rejectWith(new Error('Network error'));
+    const { fixture } = createHarness(
+      { projectId: 'proj_1', entryId: 'pmod_1' },
+      getRecipeSpy,
+      projects
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const h1sOnError = root.querySelectorAll('h1');
+    expect(h1sOnError.length).toBe(1);
+    expect(h1sOnError[0].textContent?.trim()).toBe('Custom Squad');
+    expect(root.querySelector('[role="alert"] h2')?.textContent?.trim()).toBe(
+      'Model Guide Unavailable'
+    );
+
+    // Also verify missing recipe (null) in project mode keeps a single <h1>
+    TestBed.resetTestingModule();
+    getRecipeSpy.and.resolveTo(null);
+    const { fixture: notFoundFixture } = createHarness(
+      { projectId: 'proj_1', entryId: 'pmod_1' },
+      getRecipeSpy,
+      projects
+    );
+    notFoundFixture.detectChanges();
+    await notFoundFixture.whenStable();
+    notFoundFixture.detectChanges();
+
+    const nfRoot = notFoundFixture.nativeElement as HTMLElement;
+    const h1sOnMissing = nfRoot.querySelectorAll('h1');
+    expect(h1sOnMissing.length).toBe(1);
+    expect(h1sOnMissing[0].textContent?.trim()).toBe('Custom Squad');
+    expect(nfRoot.querySelector('.empty-box h2')?.textContent?.trim()).toBe(
+      'Model Guide Not Found'
+    );
+  });
 });

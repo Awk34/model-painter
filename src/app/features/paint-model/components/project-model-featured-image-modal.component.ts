@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -60,6 +61,21 @@ export class ProjectModelFeaturedImageModalComponent {
   readonly uploadError = signal<string | null>(null);
   readonly tabs: readonly FeaturedImagePickerTab[] = ['angles', 'uploaded', 'catalog'];
   private readonly tabBtns = viewChildren<ElementRef<HTMLButtonElement>>('tabBtn');
+  private lastEntryId: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const isOpen = this.open();
+      const entryId = this.entry().id;
+      const entryChanged = this.lastEntryId !== null && this.lastEntryId !== entryId;
+      this.lastEntryId = entryId;
+      if (!isOpen || entryChanged) {
+        this.activeTab.set('angles');
+        this.catalogSearch.set('');
+        this.uploadError.set(null);
+      }
+    });
+  }
 
   readonly acceptAttr = USER_LIMITS.ALLOWED_IMAGE_MIME_TYPES.join(',');
 

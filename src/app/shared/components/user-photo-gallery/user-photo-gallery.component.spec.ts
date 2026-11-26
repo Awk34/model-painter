@@ -262,4 +262,117 @@ describe('UserPhotoGalleryComponent clipboard paste', () => {
     fixture.detectChanges();
     expect(dialog.open).toBeFalse();
   });
+
+  it('resets lightboxIndex and draft state when switching targetId so paste works and new uploads do not auto-open lightbox', async () => {
+    const photo1: UserUploadedPhoto = {
+      id: 'ph1',
+      targetType: 'model',
+      targetId: 'model-1',
+      kind: 'showcase',
+      fileName: 'front.png',
+      mimeType: 'image/png',
+      sizeBytes: 1024,
+      storagePath: 'p/ph1.png',
+      caption: 'Front View',
+      createdAt: '2026-11-01T12:00:00Z',
+      isPrivate: false,
+    };
+    const photo2: UserUploadedPhoto = {
+      id: 'ph2',
+      targetType: 'model',
+      targetId: 'model-2',
+      kind: 'showcase',
+      fileName: 'other.png',
+      mimeType: 'image/png',
+      sizeBytes: 1024,
+      storagePath: 'p/ph2.png',
+      createdAt: '2026-11-02T12:00:00Z',
+      isPrivate: false,
+    };
+    photosSignal.set([photo1]);
+
+    const fixture = createComponent(true);
+    const comp = fixture.componentInstance;
+
+    comp.openLightbox(0);
+    comp.startEditCaption(photo1);
+    comp.captionDraft.set('Draft on target 1');
+    comp.errorMessages.set(['Previous error']);
+    comp.dragActive.set(true);
+    fixture.detectChanges();
+    expect(comp.lightboxIndex()).toBe(0);
+
+    // Sibling updates on the same target must NOT clobber open lightbox or active caption edit
+    fixture.componentRef.setInput('allowSetCover', true);
+    fixture.detectChanges();
+    expect(comp.lightboxIndex()).toBe(0);
+    expect(comp.editingCaptionId()).toBe('ph1');
+
+    // Switch targetId (simulating reused route component navigation /projects/A -> /projects/B)
+    photosSignal.set([]);
+    fixture.componentRef.setInput('targetId', 'model-2');
+    fixture.detectChanges();
+
+    expect(comp.lightboxIndex()).toBeNull();
+    expect(comp.editingCaptionId()).toBeNull();
+    expect(comp.editingCaptionText()).toBe('');
+    expect(comp.captionDraft()).toBe('');
+    expect(comp.errorMessages()).toEqual([]);
+    expect(comp.dragActive()).toBeFalse();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeFalse();
+
+    // Global paste on new target must work instead of being blocked by stale lightboxIndex
+    const png = new File([new Uint8Array([1, 2, 3])], 'new.png', { type: 'image/png' });
+    const pasteEvent = createPasteEvent([png], document.body);
+    await comp.onDocumentPaste(pasteEvent);
+    expect(pasteEvent.defaultPrevented).toBeTrue();
+    expect(uploadPhotosSpy).toHaveBeenCalledTimes(1);
+    expect(uploadPhotosSpy.calls.mostRecent().args[0].targetId).toBe('model-2');
+
+    // Adding a photo on the new target must NOT auto-open the lightbox
+    photosSignal.set([photo2]);
+    fixture.detectChanges();
+    expect(comp.lightboxIndex()).toBeNull();
+    expect(dialog.open).toBeFalse();
+  });
+
+  it('resets lightboxIndex to null when photos shrink to empty on the same target', async () => {
+    const photo1: UserUploadedPhoto = {
+      id: 'ph1',
+      targetType: 'model',
+      targetId: 'model-1',
+      kind: 'showcase',
+      fileName: 'front.png',
+      mimeType: 'image/png',
+      sizeBytes: 1024,
+      storagePath: 'p/ph1.png',
+      createdAt: '2026-11-01T12:00:00Z',
+      isPrivate: false,
+    };
+    photosSignal.set([photo1]);
+
+    const fixture = createComponent(true);
+    const comp = fixture.componentInstance;
+
+    comp.openLightbox(0);
+    fixture.detectChanges();
+    expect(comp.lightboxIndex()).toBe(0);
+
+    photosSignal.set([]);
+    fixture.detectChanges();
+    expect(comp.lightboxIndex()).toBeNull();
+
+    // Global paste works again and subsequent photo addition does not auto-open lightbox
+    const png = new File([new Uint8Array([1, 2, 3])], 'new.png', { type: 'image/png' });
+    const pasteEvent = createPasteEvent([png], document.body);
+    await comp.onDocumentPaste(pasteEvent);
+    expect(pasteEvent.defaultPrevented).toBeTrue();
+    expect(uploadPhotosSpy).toHaveBeenCalledTimes(1);
+
+    photosSignal.set([photo1]);
+    fixture.detectChanges();
+    expect(comp.lightboxIndex()).toBeNull();
+  });
 });

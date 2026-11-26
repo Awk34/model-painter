@@ -11,6 +11,8 @@ import { AppModalDialogComponent } from './modal-dialog.component';
       [open]="open()"
       [title]="title()"
       [ariaLabel]="ariaLabel()"
+      [size]="size()"
+      [style.--dialog-max-width]="customMaxWidth()"
       [closeOnBackdrop]="closeOnBackdrop()"
       (closed)="onClosed()"
     >
@@ -24,6 +26,8 @@ class TestHostComponent {
   readonly open = signal(false);
   readonly title = signal<string | null>('Test Dialog Title');
   readonly ariaLabel = signal<string | null>(null);
+  readonly size = signal<'sm' | 'md' | 'lg' | 'xl'>('lg');
+  readonly customMaxWidth = signal<string | null>(null);
   readonly closeOnBackdrop = signal(true);
   closedCount = 0;
 
@@ -173,5 +177,28 @@ describe('AppModalDialogComponent', () => {
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
     expect(dialog.getAttribute('aria-label')).toBe('Custom Accessible Dialog');
     expect(dialog.getAttribute('aria-labelledby')).toBeNull();
+  });
+
+  it('allows --dialog-max-width on <app-modal-dialog> to override size presets', () => {
+    TestBed.configureTestingModule({ imports: [TestHostComponent] });
+    const fixture = TestBed.createComponent(TestHostComponent);
+    const host = fixture.componentInstance;
+
+    host.size.set('xl');
+    host.customMaxWidth.set('1180px');
+    host.open.set(true);
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(getComputedStyle(dialog).maxWidth).toBe('1180px');
+
+    host.size.set('sm');
+    host.customMaxWidth.set('480px');
+    fixture.detectChanges();
+    expect(getComputedStyle(dialog).maxWidth).toBe('480px');
+
+    host.customMaxWidth.set(null);
+    fixture.detectChanges();
+    expect(getComputedStyle(dialog).maxWidth).toBe('520px');
   });
 });

@@ -11,7 +11,7 @@ dialog.app-dialog {
   color: var(--text-primary);
   box-shadow: var(--shadow-modal);
   width: var(--dialog-width, calc(100vw - 24px));
-  max-width: var(--dialog-max-width, min(820px, calc(100vw - 24px)));
+  max-width: var(--dialog-max-width, var(--_dialog-size-max-width, min(820px, calc(100vw - 24px))));
   height: var(--dialog-height, auto);
   max-height: var(--dialog-max-height, 90dvh);
   overflow: hidden;
@@ -23,19 +23,19 @@ dialog.app-dialog {
 }
 
 dialog.app-dialog.size-sm {
-  --dialog-max-width: min(520px, calc(100vw - 24px));
+  --_dialog-size-max-width: min(520px, calc(100vw - 24px));
 }
 
 dialog.app-dialog.size-md {
-  --dialog-max-width: min(640px, calc(100vw - 24px));
+  --_dialog-size-max-width: min(640px, calc(100vw - 24px));
 }
 
 dialog.app-dialog.size-lg {
-  --dialog-max-width: min(820px, calc(100vw - 24px));
+  --_dialog-size-max-width: min(820px, calc(100vw - 24px));
 }
 
 dialog.app-dialog.size-xl {
-  --dialog-max-width: min(960px, calc(100vw - 24px));
+  --_dialog-size-max-width: min(960px, calc(100vw - 24px));
 }
 
 dialog.app-dialog[open] {
