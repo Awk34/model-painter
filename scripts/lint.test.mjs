@@ -85,8 +85,23 @@ test('lintTypeScriptSource enforces no-explicit-any with documented lint-ignore-
     }
     export const x = (v: unknown) => v;
     export const y = 1 as any; // lint-ignore-any: interop cast
+    /*
+     * lint-ignore-any: justified
+     */
+    export const z: any = 1;
   `;
   assert.deepEqual(lintTypeScriptSource('src/app/core/parse.ts', validExemption), []);
+
+  const emptyBlockReason = `
+    /*
+     * lint-ignore-any:
+     */
+    export const badMulti: any = 1;
+    /* lint-ignore-any: */
+    export const badInline: any = 2;
+  `;
+  const v3 = lintTypeScriptSource('src/app/core/parse.ts', emptyBlockReason);
+  assert.equal(v3.filter((v) => v.rule === 'no-explicit-any').length, 2);
 });
 
 test('lintTypeScriptSource enforces no-ts-suppression, no-debugger, and scoped no-console-log', () => {
@@ -141,6 +156,32 @@ test('lintHtmlTemplate rejects legacy control flow and ngClass/ngStyle while all
     }
   `;
   assert.deepEqual(lintHtmlTemplate('src/app/good/good.component.ng.html', goodHtml), []);
+});
+
+test('lintHtmlTemplate handles stray slashes and < inside Angular interpolations without hanging', () => {
+  assert.deepEqual(
+    lintHtmlTemplate('src/app/interp.component.ng.html', '<span>{{ a<b }}</span>'),
+    []
+  );
+
+  const afterInterp = lintHtmlTemplate(
+    'src/app/interp-bad.component.ng.html',
+    '<span>{{ a<b }}</span><div *ngIf="x"></div>'
+  );
+  assert.equal(afterInterp.length, 1);
+  assert.equal(afterInterp[0].rule, 'no-legacy-control-flow');
+
+  assert.deepEqual(
+    lintHtmlTemplate('src/app/stray-slash.component.ng.html', '<div / class="a"></div>'),
+    []
+  );
+
+  const straySlashBad = lintHtmlTemplate(
+    'src/app/stray-slash-bad.component.ng.html',
+    '<div / *ngIf="x"></div>'
+  );
+  assert.equal(straySlashBad.length, 1);
+  assert.equal(straySlashBad[0].rule, 'no-legacy-control-flow');
 });
 
 test('checkTsconfigDiagnostics flags unused imports, locals, and parameters', () => {

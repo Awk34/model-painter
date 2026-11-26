@@ -93,8 +93,15 @@ function scanComments(sourceText) {
         });
       }
 
-      if (/lint-ignore-any:\s*\S+/.test(text)) {
+      const body =
+        token === ts.SyntaxKind.MultiLineCommentTrivia
+          ? text.replace(/^\/\*/, '').replace(/\*\/$/, '')
+          : text.slice(2);
+      if (/lint-ignore-any:[ \t]*\S+/.test(body)) {
+        const endPos = Math.max(start, scanner.getTextPos() - 1);
+        const endLine = getLineAndCol(sourceText, endPos).line;
         ignoredAnyLines.add(line);
+        ignoredAnyLines.add(endLine);
       }
     }
     token = scanner.scan();
@@ -258,6 +265,36 @@ function stripHtmlCommentsPreservingLines(htmlText) {
   return htmlText.replace(/<!--[\s\S]*?-->/g, (match) => match.replace(/[^\n]/g, ' '));
 }
 
+function findInterpolationEnd(text, startIndex) {
+  const len = text.length;
+  let j = startIndex + 2;
+  let quote = null;
+  while (j < len) {
+    const ch = text[j];
+    if (quote) {
+      if (ch === '\\') {
+        j += 2;
+        continue;
+      }
+      if (ch === quote) {
+        quote = null;
+      }
+      j++;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      quote = ch;
+      j++;
+      continue;
+    }
+    if (ch === '}' && text[j + 1] === '}') {
+      return j + 2;
+    }
+    j++;
+  }
+  return -1;
+}
+
 /**
  * Lint an Angular HTML template against AGENTS.md template invariants.
  * @param {string} filePath
@@ -271,6 +308,15 @@ export function lintHtmlTemplate(filePath, htmlText) {
   let i = 0;
 
   while (i < len) {
+    if (cleaned[i] === '{' && cleaned[i + 1] === '{') {
+      const interpEnd = findInterpolationEnd(cleaned, i);
+      if (interpEnd !== -1) {
+        i = interpEnd;
+        continue;
+      }
+      i += 2;
+      continue;
+    }
     if (cleaned[i] !== '<') {
       i++;
       continue;
@@ -299,9 +345,13 @@ export function lintHtmlTemplate(filePath, htmlText) {
         i++;
         break;
       }
-      if (cleaned[i] === '/' && cleaned[i + 1] === '>') {
-        i += 2;
-        break;
+      if (cleaned[i] === '/') {
+        if (cleaned[i + 1] === '>') {
+          i += 2;
+          break;
+        }
+        i++;
+        continue;
       }
 
       // Read attribute name
@@ -354,6 +404,11 @@ export function lintHtmlTemplate(filePath, htmlText) {
             i++;
           }
         }
+      }
+
+      // Defensive progress invariant: never stall in the attribute loop
+      if (i === attrStart) {
+        i++;
       }
     }
   }
