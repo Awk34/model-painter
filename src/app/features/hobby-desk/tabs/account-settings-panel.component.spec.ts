@@ -99,6 +99,34 @@ describe('AccountSettingsPanelComponent', () => {
     expect(text).not.toContain('Load Extracted Account Snapshot');
   });
 
+  it('keeps snapshot import actions hidden before probe resolves and renders them when HEAD returns application/json', async () => {
+    let resolveProbe!: (resp: Response) => void;
+    fetchSpy.and.returnValue(
+      new Promise<Response>((resolve) => {
+        resolveProbe = resolve;
+      })
+    );
+
+    fixture.detectChanges();
+    expect(component.snapshotAvailable()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('Load Extracted Account Snapshot');
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('Import Extracted Account Snapshot');
+
+    resolveProbe(
+      new Response(null, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+
+    expect(component.snapshotAvailable()).toBeTrue();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Load Extracted Account Snapshot');
+    expect(text).toContain('Import Extracted Account Snapshot');
+  });
+
   it('catches loadExtractedSnapshot errors into snapshotError without throwing an unhandled rejection', async () => {
     userStateMock.loadExtractedAccountSnapshot.and.rejectWith(
       new Error('Bundled account snapshot is not available in this environment.')

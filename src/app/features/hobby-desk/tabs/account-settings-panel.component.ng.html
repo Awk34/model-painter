@@ -6,7 +6,7 @@
       <strong>My Warhammer</strong> account via Auth0 PKCE, or upload a JSON/CSV backup.
     </p>
   </div>
-  @if (snapshotAvailable() !== false) {
+  @if (snapshotAvailable() === true) {
     <div class="onboarding-actions">
       <button
         type="button"
@@ -109,7 +109,7 @@
     </div>
 
     <div class="wizard-steps">
-      @if (snapshotAvailable() !== false) {
+      @if (snapshotAvailable() === true) {
         <div class="wizard-step">
           <div class="step-num">1</div>
           <div class="step-content">
