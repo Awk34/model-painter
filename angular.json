@@ -62,26 +62,6 @@
                 "output": "/data/catalog_meta"
               },
               {
-                "glob": "recipes/*.json",
-                "input": "public/data",
-                "output": "/data"
-              },
-              {
-                "glob": "colours/*.json",
-                "input": "public/data",
-                "output": "/data"
-              },
-              {
-                "glob": "user_account_snapshot.json",
-                "input": "public/data",
-                "output": "/data"
-              },
-              {
-                "glob": "firebase-config*.json",
-                "input": "public",
-                "output": "/"
-              },
-              {
                 "glob": "logo.svg",
                 "input": "public",
                 "output": "/"
@@ -111,7 +91,49 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public/fonts",
+                  "output": "/fonts"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "public/icons",
+                  "output": "/icons"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "public/data/catalog_meta",
+                  "output": "/data/catalog_meta"
+                },
+                {
+                  "glob": "recipes/*.json",
+                  "input": "public/data",
+                  "output": "/data"
+                },
+                {
+                  "glob": "colours/*.json",
+                  "input": "public/data",
+                  "output": "/data"
+                },
+                {
+                  "glob": "user_account_snapshot.json",
+                  "input": "public/data",
+                  "output": "/data"
+                },
+                {
+                  "glob": "firebase-config.local.json",
+                  "input": "public",
+                  "output": "/"
+                },
+                {
+                  "glob": "logo.svg",
+                  "input": "public",
+                  "output": "/"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -151,7 +173,23 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public/fonts",
+                "output": "/fonts"
+              },
+              {
+                "glob": "**/*",
+                "input": "public/icons",
+                "output": "/icons"
+              },
+              {
+                "glob": "**/*",
+                "input": "public/data/catalog_meta",
+                "output": "/data/catalog_meta"
+              },
+              {
+                "glob": "logo.svg",
+                "input": "public",
+                "output": "/"
               }
             ],
             "styles": [

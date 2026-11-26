@@ -297,7 +297,7 @@ describe('CatalogService', () => {
         ],
       })
     );
-    localStorage.setItem(
+    sessionStorage.setItem(
       'whc_pkce_token_cache',
       JSON.stringify({ code: 'abc', bearer: 'test-bearer-token' })
     );
@@ -318,6 +318,27 @@ describe('CatalogService', () => {
     expect(apiCall).toBeDefined();
     const headers = apiCall?.[1]?.headers as Record<string, string> | undefined;
     expect(headers?.['Authorization']).toBe('Bearer test-bearer-token');
+  });
+
+  it('ignores legacy localStorage whc_pkce_token_cache and does not send Authorization from localStorage', async () => {
+    routeResponses.delete('/data/recipes/model-dante.json');
+    localStorage.setItem(
+      'whc_pkce_token_cache',
+      JSON.stringify({ code: 'abc', bearer: 'legacy-localstorage-token' })
+    );
+    sessionStorage.removeItem('whc_pkce_token_cache');
+
+    const service = TestBed.inject(CatalogService);
+    await service.initializeCatalog(true);
+    await service.clearEntityCaches();
+
+    const recipe = await service.getModelRecipe('model-dante');
+    expect(recipe).not.toBeNull();
+
+    const apiCall = fetchSpy.calls
+      .allArgs()
+      .find((args) => String(args[0]).startsWith('/gw-paint-api/'));
+    expect(apiCall).toBeUndefined();
   });
 
   it('preserves metallic potStyle, gradientMiddleHex, and gradientEndHex on enriched recipe and color steps', async () => {

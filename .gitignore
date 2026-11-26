@@ -23,8 +23,13 @@ npm-debug.log*
 serviceAccountKey.json
 *-firebase-adminsdk-*.json
 public/firebase-config.local.json
+tokens.json
 .env
 .env.*
+
+# Python
+__pycache__/
+*.pyc
 
 # Other
 .dccache

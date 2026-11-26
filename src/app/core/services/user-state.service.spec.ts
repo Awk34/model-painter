@@ -7,6 +7,11 @@ import { CatalogService } from './catalog.service';
 import { ImageService } from './image.service';
 import { UserMediaService } from './user-media.service';
 import { UserStateService } from './user-state.service';
+import {
+  PKCE_STATE_KEY,
+  PKCE_TOKEN_CACHE_KEY,
+  PKCE_VERIFIER_KEY,
+} from '../utils/warhammer-pkce-storage.util';
 
 const STORAGE_KEY = 'whc_user_state_v1';
 
@@ -849,7 +854,12 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     // Avoid unused warning on docOnNext
     expect(typeof docOnNext).toBe('function');
 
-    // 4. signOutCloud resets state(), localStorage, and calls clearAllLocalMedia()
+    // 4. signOutCloud resets state(), localStorage, PKCE caches, and calls clearAllLocalMedia()
+    sessionStorage.setItem(PKCE_TOKEN_CACHE_KEY, '{"code":"c","bearer":"tok"}');
+    sessionStorage.setItem(PKCE_VERIFIER_KEY, 'v');
+    sessionStorage.setItem(PKCE_STATE_KEY, 's');
+    localStorage.setItem(PKCE_TOKEN_CACHE_KEY, '{"code":"c","bearer":"tok"}');
+
     await service.signOutCloud();
     expect(signOutSpy).toHaveBeenCalledTimes(1);
     expect(service.currentUser()).toBeNull();
@@ -857,6 +867,10 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     expect(service.state().inventoryPaintIds).toEqual([]);
     expect(service.state().projects).toEqual([]);
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).inventoryPaintIds).toEqual([]);
+    expect(sessionStorage.getItem(PKCE_TOKEN_CACHE_KEY)).toBeNull();
+    expect(sessionStorage.getItem(PKCE_VERIFIER_KEY)).toBeNull();
+    expect(sessionStorage.getItem(PKCE_STATE_KEY)).toBeNull();
+    expect(localStorage.getItem(PKCE_TOKEN_CACHE_KEY)).toBeNull();
     expect(mediaMock.clearAllLocalMedia).toHaveBeenCalled();
   });
 
@@ -1014,6 +1028,7 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     expect(service.cloudSyncStatus()).toBe(CloudSyncStatus.Synced);
 
     // Resolve stale sdkSignOut from uA signOutCloud()
+    sessionStorage.setItem(PKCE_TOKEN_CACHE_KEY, '{"code":"cB","bearer":"tokB"}');
     mediaMock.clearAllLocalMedia.calls.reset();
     resolveSignOut();
     await signOutPromise;
@@ -1022,5 +1037,103 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     expect(service.state().inventoryPaintIds).toEqual(['paint-user-b']);
     expect(service.cloudSyncStatus()).toBe(CloudSyncStatus.Synced);
     expect(mediaMock.clearAllLocalMedia).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(PKCE_TOKEN_CACHE_KEY)).toBe('{"code":"cB","bearer":"tokB"}');
+    sessionStorage.removeItem(PKCE_TOKEN_CACHE_KEY);
+  });
+
+  it('clears PKCE token cache on resetLocalData()', () => {
+    service = setupService();
+    sessionStorage.setItem(PKCE_TOKEN_CACHE_KEY, '{"code":"c","bearer":"tok"}');
+    sessionStorage.setItem(PKCE_VERIFIER_KEY, 'v');
+    sessionStorage.setItem(PKCE_STATE_KEY, 's');
+    localStorage.setItem(PKCE_TOKEN_CACHE_KEY, '{"code":"c","bearer":"tok"}');
+
+    service.resetLocalData();
+
+    expect(sessionStorage.getItem(PKCE_TOKEN_CACHE_KEY)).toBeNull();
+    expect(sessionStorage.getItem(PKCE_VERIFIER_KEY)).toBeNull();
+    expect(sessionStorage.getItem(PKCE_STATE_KEY)).toBeNull();
+    expect(localStorage.getItem(PKCE_TOKEN_CACHE_KEY)).toBeNull();
+  });
+
+  it('strips unexpected properties in addCustomPaint() and updatePreferences()', () => {
+    service = setupService();
+
+    const created = service.addCustomPaint({
+      brand: 'Vallejo',
+      range: 'Model Color',
+      name: 'Evil Sunz Alt',
+      category: 'Layer',
+      potStyle: 'dropper_bottle',
+      hex: '#D42E24',
+      citadelMatches: [
+        {
+          citadelPaintId: 'paint-red',
+          citadelPaintName: 'Evil Sunz Scarlet',
+          citadelRange: 'Citadel Base',
+          citadelCategory: 'Layer',
+          citadelHex: '#C0241A',
+          deltaE: 2.4,
+          matchQuality: 'close',
+          extraMatchField: 'should-be-stripped',
+        } as never,
+      ],
+      injectedKey: 'should-be-stripped',
+    } as never);
+
+    expect(created).not.toBeNull();
+    expect(created!.potStyle).toBe('dropper_bottle');
+    expect(Object.hasOwn(created as unknown as Record<string, unknown>, 'injectedKey')).toBeFalse();
+    expect(
+      Object.hasOwn(
+        created!.citadelMatches[0] as unknown as Record<string, unknown>,
+        'extraMatchField'
+      )
+    ).toBeFalse();
+
+    service.updatePreferences({
+      defaultRangeFilter: 'warhammer_pro',
+      allowCompatibleSubstitutions: false,
+      unknownPrefKey: 'evil',
+    } as never);
+
+    const prefs = service.preferences() as unknown as Record<string, unknown>;
+    expect(prefs['defaultRangeFilter']).toBe('warhammer_pro');
+    expect(prefs['allowCompatibleSubstitutions']).toBeFalse();
+    expect(Object.hasOwn(prefs, 'unknownPrefKey')).toBeFalse();
+  });
+
+  it('rejects text/html SPA fallback and 404 in loadExtractedAccountSnapshot() while importing valid JSON', async () => {
+    service = setupService();
+    const fetchSpy = spyOn(window, 'fetch');
+
+    fetchSpy.and.resolveTo(
+      new Response('<!doctype html><html></html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      })
+    );
+    await expectAsync(service.loadExtractedAccountSnapshot('merge')).toBeRejectedWithError(
+      /not available in this environment/
+    );
+
+    fetchSpy.and.resolveTo(
+      new Response('Not Found', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain' },
+      })
+    );
+    await expectAsync(service.loadExtractedAccountSnapshot('merge')).toBeRejectedWithError(
+      /not available in this environment/
+    );
+
+    fetchSpy.and.resolveTo(
+      new Response(JSON.stringify({ inventoryPaintIds: ['paint-gold'], projects: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    await service.loadExtractedAccountSnapshot('merge');
+    expect(service.state().inventoryPaintIds).toContain('paint-gold');
   });
 });

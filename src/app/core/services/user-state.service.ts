@@ -5,6 +5,7 @@ import {
   ModelSummary,
   ProjectModelEntry,
   ProjectModelFeaturedImage,
+  ThirdPartyCitadelMatch,
   ThirdPartyPaint,
   UserAccountState,
   UserPhotoKind,
@@ -37,6 +38,7 @@ import { CatalogService } from './catalog.service';
 import { FirebaseHandles, getFirebaseHandles } from './firebase.config';
 import { ImageService } from './image.service';
 import { UserMediaService } from './user-media.service';
+import { clearWarhammerTokenCache } from '../utils/warhammer-pkce-storage.util';
 import {
   GoogleAuthProvider,
   User,
@@ -1643,22 +1645,47 @@ export class UserStateService implements OnDestroy {
       this.showToast('Custom paint name is required.');
       return null;
     }
+    const sanitizedMatches: ThirdPartyCitadelMatch[] = [];
+    for (const m of paint.citadelMatches ?? []) {
+      if (sanitizedMatches.length >= USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT) {
+        break;
+      }
+      if (!m || typeof m !== 'object') {
+        continue;
+      }
+      const citadelPaintId = optionalTrimmedString(m.citadelPaintId, 200);
+      if (!citadelPaintId) {
+        continue;
+      }
+      const matchQuality =
+        m.matchQuality === 'exact' || m.matchQuality === 'close' || m.matchQuality === 'similar'
+          ? m.matchQuality
+          : 'close';
+      const deltaE = typeof m.deltaE === 'number' && Number.isFinite(m.deltaE) ? m.deltaE : 0;
+      sanitizedMatches.push({
+        citadelPaintId,
+        citadelPaintName:
+          optionalTrimmedString(m.citadelPaintName, USER_LIMITS.MAX_TITLE_LENGTH) ?? '',
+        citadelRange:
+          optionalTrimmedString(m.citadelRange, USER_LIMITS.MAX_TITLE_LENGTH) ?? '',
+        citadelCategory: optionalTrimmedString(m.citadelCategory, 64) ?? '',
+        citadelHex: optionalTrimmedString(m.citadelHex, 16) ?? '#888888',
+        deltaE,
+        matchQuality,
+      });
+    }
     const created: ThirdPartyPaint = {
-      ...paint,
-      name: safeName,
+      id: createEntityId('custom'),
       brand:
         (paint.brand ?? '').trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH) || 'Custom Brand',
       range:
         (paint.range ?? '').trim().slice(0, USER_LIMITS.MAX_TITLE_LENGTH) || 'Custom Range',
       code: optionalTrimmedString(paint.code, 64),
+      name: safeName,
       category: (paint.category ?? '').trim().slice(0, 64) || 'Layer',
       potStyle: optionalTrimmedString(paint.potStyle, 64),
       hex: (paint.hex ?? '').trim().slice(0, 16) || '#888888',
-      citadelMatches: (paint.citadelMatches ?? []).slice(
-        0,
-        USER_LIMITS.MAX_COMPATIBILITY_OVERRIDES_PER_PAINT
-      ),
-      id: createEntityId('custom'),
+      citadelMatches: sanitizedMatches,
       isCustom: true,
     };
     this.commit((prev) => {
@@ -1737,10 +1764,13 @@ export class UserStateService implements OnDestroy {
   updatePreferences(patch: Partial<UserPreferences>): void {
     this.commit((prev) => ({
       ...prev,
-      preferences: {
-        ...prev.preferences,
-        ...patch,
-      },
+      preferences: normalizePreferences(
+        {
+          ...prev.preferences,
+          ...patch,
+        },
+        prev.preferences
+      ),
     }));
   }
 
@@ -1896,12 +1926,21 @@ export class UserStateService implements OnDestroy {
   }
 
   async loadExtractedAccountSnapshot(mode: 'merge' | 'replace' = 'merge'): Promise<void> {
-    const resp = await fetch('/data/user_account_snapshot.json');
-    if (!resp.ok) {
-      throw new Error(`Could not load /data/user_account_snapshot.json (${resp.status})`);
+    const resp = await fetch('/data/user_account_snapshot.json', {
+      cache: 'no-cache',
+      signal: AbortSignal.timeout(10_000),
+    });
+    const contentType = (resp.headers.get('content-type') ?? '').toLowerCase();
+    if (!resp.ok || !contentType.includes('application/json')) {
+      throw new Error(
+        'Bundled account snapshot is not available in this environment. Use My Warhammer PKCE login or upload a JSON/CSV file instead.'
+      );
     }
-    const data = (await resp.json()) as Record<string, unknown>;
-    this.importAccountPayload(data, mode);
+    const data: unknown = await resp.json();
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('Bundled account snapshot is invalid.');
+    }
+    this.importAccountPayload(data as Record<string, unknown>, mode);
   }
 
   exportBackupJson(): void {
@@ -1920,6 +1959,7 @@ export class UserStateService implements OnDestroy {
     const fresh = createDefaultState();
     this.state.set(fresh);
     this.persistLocalState(fresh);
+    clearWarhammerTokenCache();
     void this.media.clearAllLocalMedia();
     this.showToast('Reset local browser data to a blank slate');
   }
@@ -2075,6 +2115,7 @@ export class UserStateService implements OnDestroy {
         const fresh = createDefaultState();
         this.state.set(fresh);
         this.persistLocalState(fresh);
+        clearWarhammerTokenCache();
         await this.media.clearAllLocalMedia();
         if (authGen !== this.authGeneration) {
           return;
@@ -2359,6 +2400,7 @@ export class UserStateService implements OnDestroy {
     const fresh = createDefaultState();
     this.state.set(fresh);
     this.persistLocalState(fresh);
+    clearWarhammerTokenCache();
     await this.media.clearAllLocalMedia();
     if (this.authGeneration !== signOutGen && this.currentUser() !== null) {
       return;

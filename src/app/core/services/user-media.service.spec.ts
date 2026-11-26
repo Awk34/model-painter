@@ -324,4 +324,60 @@ describe('UserMediaService', () => {
       '/icons/ic_image_loading_placeholder.svg'
     );
   });
+
+  it('builds bounded storage paths across 200-char targetId, 120-char photo.id, dot-only IDs, and all kind/targetType combos', () => {
+    const longTargetId = 't'.repeat(200);
+    const longPhotoId = 'p'.repeat(120);
+
+    const combos: Array<{
+      kind: 'showcase' | 'reference';
+      targetType: 'model' | 'project' | 'project_model';
+      expectedFolder: string;
+    }> = [
+      { kind: 'showcase', targetType: 'model', expectedFolder: 'showcase' },
+      { kind: 'showcase', targetType: 'project', expectedFolder: 'showcase' },
+      { kind: 'showcase', targetType: 'project_model', expectedFolder: 'showcase' },
+      { kind: 'reference', targetType: 'model', expectedFolder: 'private_references' },
+      { kind: 'reference', targetType: 'project', expectedFolder: 'private_references' },
+      { kind: 'reference', targetType: 'project_model', expectedFolder: 'private_references' },
+    ];
+
+    for (const combo of combos) {
+      const storagePath = service.buildStoragePath(
+        makePhoto({
+          id: longPhotoId,
+          targetId: longTargetId,
+          kind: combo.kind,
+          targetType: combo.targetType,
+          mimeType: 'image/webp',
+        }),
+        'u'.repeat(128)
+      );
+      const parts = storagePath.split('/');
+      expect(parts.length).toBe(6);
+      expect(parts[2]).toBe(combo.expectedFolder);
+      expect(parts[3]).toBe(combo.targetType);
+      expect(parts[4].length).toBeLessThanOrEqual(100);
+      expect(parts[5].length).toBeLessThanOrEqual(120);
+      expect(parts[5].endsWith('.webp')).toBeTrue();
+      expect(storagePath.length).toBeLessThanOrEqual(512);
+    }
+
+    for (const edge of ['', '.', '..']) {
+      const storagePath = service.buildStoragePath(
+        makePhoto({
+          id: edge,
+          targetId: edge,
+          kind: 'reference',
+          targetType: 'project_model',
+          mimeType: 'image/png',
+        }),
+        'uid_edge'
+      );
+      const parts = storagePath.split('/');
+      expect(['', '.', '..']).not.toContain(parts[4]);
+      expect(['', '.', '..']).not.toContain(parts[5]);
+      expect(parts[5].endsWith('.png')).toBeTrue();
+    }
+  });
 });
