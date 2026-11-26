@@ -106,6 +106,18 @@ test('firestore.rules removes dead uid helpers and unused public collections, an
   assert.ok(customPaintBlock.includes("'potStyle'"));
   assert.ok(customPaintBlock.includes('paint.id is string'));
   assert.ok(customPaintBlock.includes('paint.name is string'));
+  const maxOverridesPerPaint = readNumericLimit('MAX_COMPATIBILITY_OVERRIDES_PER_PAINT');
+  assert.ok(customPaintBlock.includes('let matches = paint.citadelMatches;'));
+  assert.ok(
+    new RegExp(`matches is list && matches\\.size\\(\\) <= ${maxOverridesPerPaint}\\b`).test(customPaintBlock)
+  );
+
+  const customPaintLiteBlock = getFunctionBlock('isValidCustomPaintLite');
+  assert.ok(customPaintLiteBlock.includes('paint.keys().hasOnly(['));
+  assert.ok(customPaintLiteBlock.includes("'potStyle'"));
+  assert.ok(
+    new RegExp(`paint\\.citadelMatches is list && paint\\.citadelMatches\\.size\\(\\) <= ${maxOverridesPerPaint}\\b`).test(customPaintLiteBlock)
+  );
 
   const prefsBlock = getFunctionBlock('isValidPreferences');
   assert.ok(prefsBlock.includes('prefs.keys().hasOnly(['));
@@ -121,12 +133,47 @@ test('firestore.rules removes dead uid helpers and unused public collections, an
       block.includes('isValidScopedStoragePath(photo.storagePath, userId, photo.kind, expectedTargetType)'),
       `${fnName} missing scoped storagePath check`
     );
+    assert.ok(
+      block.includes(`photo.sizeBytes <= ${readNumericLimit('MAX_PHOTO_FILE_SIZE_BYTES')}`),
+      `${fnName} missing MAX_PHOTO_FILE_SIZE_BYTES check`
+    );
+    if (fnName === 'isValidUploadedPhotoCore') {
+      assert.ok(block.includes('photo.isPrivate is bool'), `${fnName} missing isPrivate bool check`);
+      assert.match(
+        block,
+        /\(photo\.kind == 'reference' \? photo\.isPrivate(?: == true)? : photo\.kind == 'showcase'\)/,
+        `${fnName} missing private reference guard`
+      );
+    } else {
+      assert.match(
+        block,
+        /\(photo\.kind == 'reference' \? photo\.isPrivate == true : photo\.kind == 'showcase'\)/,
+        `${fnName} missing strict private reference guard`
+      );
+    }
   }
 
   assert.ok(getFunctionBlock('isValidUploadedPhotosList').includes(", 'model')"));
   assert.ok(getFunctionBlock('isValidProjectPhotosList').includes(", 'project')"));
   assert.ok(getFunctionBlock('isValidProjectModelHead').includes(", 'project_model')"));
   assert.ok(getFunctionBlock('isValidProjectModelTail').includes(", 'project_model')"));
+
+  assert.ok(
+    new RegExp(
+      `entry\\.completedStepIds is list && entry\\.completedStepIds\\.size\\(\\) <= ${readNumericLimit('MAX_STEPS_PER_MODEL_PROGRESS')}\\b`
+    ).test(getFunctionBlock('isValidProjectModelHead'))
+  );
+  assert.ok(getFunctionBlock('isValidProjectModelTail').includes('entry.keys().hasOnly(['));
+
+  const projectDocBlock = getFunctionBlock('isValidProjectDoc');
+  assert.ok(projectDocBlock.includes('proj.keys().hasOnly(['));
+  assert.ok(projectDocBlock.includes('proj.id == projectId'));
+
+  const projectMatchBlock = firestoreRules.match(/match \/projects\/\{projectId\}[\s\S]*?\n\s*\}/)?.[0] ?? '';
+  assert.ok(
+    projectMatchBlock.includes('request.resource.data.createdAt == resource.data.createdAt'),
+    'projects/{projectId} update missing createdAt immutability'
+  );
 });
 
 test('storage.rules and UserMediaService align on filename length <= 120, dot-segment rejection, and explicit content types', () => {

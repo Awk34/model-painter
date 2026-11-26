@@ -65,14 +65,13 @@ service cloud.firestore {
       return items is list && items.size() <= maxSize;
     }
 
-    // Spot-check first and last values of a `map<string, list<string>>` (CEL has no loops)
+    // Spot-check first and last values of a non-empty `map<string, list<string>>` (CEL has no loops)
     function hasValidStringListMapValues(vals, maxListSize) {
-      return vals.size() == 0
-        || (
-          vals[0] is list && vals[0].size() <= maxListSize
-          && (vals[0].size() == 0 || vals[0][0] is string)
-          && (vals.size() == 1 || (vals[vals.size() - 1] is list && vals[vals.size() - 1].size() <= maxListSize))
-        );
+      let n = vals.size();
+      let v0 = vals[0];
+      let vn = vals[n - 1];
+      return v0 is list && v0.size() <= maxListSize
+        && (n == 1 || (vn is list && vn.size() <= maxListSize));
     }
 
     function isValidStringListMap(m, maxKeys, maxListSize) {
@@ -113,7 +112,7 @@ service cloud.firestore {
         ])
         && photo.targetType == expectedTargetType
         && photo.isPrivate is bool
-        && (photo.kind == 'showcase' || (photo.kind == 'reference' && photo.isPrivate))
+        && (photo.kind == 'reference' ? photo.isPrivate : photo.kind == 'showcase')
         && photo.mimeType in ['image/jpeg', 'image/png', 'image/webp']
         && photo.sizeBytes is int && photo.sizeBytes > 0 && photo.sizeBytes <= 5242880
         && (photo.get('caption', null) == null || (photo.caption is string && photo.caption.size() <= 140))
@@ -142,8 +141,7 @@ service cloud.firestore {
           'storagePath'
         ])
         && photo.targetType == expectedTargetType
-        && (photo.kind == 'showcase' || (photo.kind == 'reference' && photo.isPrivate == true))
-        && photo.mimeType in ['image/jpeg', 'image/png', 'image/webp']
+        && (photo.kind == 'reference' ? photo.isPrivate == true : photo.kind == 'showcase')
         && photo.sizeBytes is int && photo.sizeBytes <= 5242880
         && (
           photo.get('storagePath', null) == null
@@ -170,7 +168,7 @@ service cloud.firestore {
           'storagePath'
         ])
         && photo.targetType == expectedTargetType
-        && (photo.kind == 'showcase' || (photo.kind == 'reference' && photo.isPrivate == true))
+        && (photo.kind == 'reference' ? photo.isPrivate == true : photo.kind == 'showcase')
         && photo.sizeBytes <= 5242880
         && (
           photo.get('storagePath', null) == null
@@ -179,16 +177,19 @@ service cloud.firestore {
     }
 
     function isValidUploadedPhotosList(photos, userId) {
+      let n = photos.size();
+      let p0 = photos[0];
+      let pn = photos[n - 1];
       return photos is list
         && photos.size() <= 250
         && (
-          photos.size() == 0
+          n == 0
           || (
-            isValidUploadedPhotoCore(photos[0], userId, 'model')
-            && photos[0].targetId is string
+            isValidUploadedPhotoCore(p0, userId, 'model')
+            && p0.targetId is string
             && (
-              photos.size() == 1
-              || isValidUploadedPhotoLite(photos[photos.size() - 1], userId, 'model')
+              n == 1
+              || isValidUploadedPhotoLite(pn, userId, 'model')
             )
           )
         );
@@ -213,6 +214,9 @@ service cloud.firestore {
 
     // Validate a custom ThirdPartyPaint entry (full check on head, compact core on tail)
     function isValidCustomPaint(paint) {
+      let codeVal = paint.get('code', null);
+      let potVal = paint.get('potStyle', null);
+      let matches = paint.citadelMatches;
       return paint is map
         && paint.keys().hasOnly([
           'id',
@@ -228,12 +232,12 @@ service cloud.firestore {
         ])
         && paint.id is string && paint.id != '' && paint.id.size() <= 120
         && paint.name is string && paint.name != '' && paint.name.size() <= 120
-        && (paint.get('code', null) == null || paint.code is string)
-        && (paint.get('potStyle', null) == null || paint.potStyle is string)
-        && paint.citadelMatches is list && paint.citadelMatches.size() <= 20
+        && (codeVal == null || codeVal is string)
+        && (potVal == null || potVal is string)
+        && matches is list && matches.size() <= 20
         && (
-          paint.citadelMatches.size() == 0
-          || isValidThirdPartyCitadelMatch(paint.citadelMatches[0])
+          matches.size() == 0
+          || isValidThirdPartyCitadelMatch(matches[0])
         );
     }
 
@@ -251,19 +255,18 @@ service cloud.firestore {
           'citadelMatches',
           'isCustom'
         ])
-        && paint.id is string
-        && paint.name is string && paint.name != ''
         && paint.citadelMatches is list && paint.citadelMatches.size() <= 20;
     }
 
     function isValidCustomPaintsList(paints) {
+      let n = paints.size();
       return paints is list
         && paints.size() <= 200
         && (
-          paints.size() == 0
+          n == 0
           || (
             isValidCustomPaint(paints[0])
-            && (paints.size() == 1 || isValidCustomPaintLite(paints[paints.size() - 1]))
+            && (n == 1 || isValidCustomPaintLite(paints[n - 1]))
           )
         );
     }
@@ -326,36 +329,34 @@ service cloud.firestore {
     }
 
     // Validate a UserProjectNote entry
-    function isValidProjectNoteHead(note, checkLastComp) {
+    function isValidProjectNoteHead(note) {
+      let comps = note.components;
       return note is map
         && note.keys().hasOnly(['id', 'title', 'createdAt', 'updatedAt', 'components'])
         && note.components is list && note.components.size() <= 100
-        && (
-          note.components.size() == 0
-          || (
-            isValidNoteComponent(note.components[0])
-            && (!checkLastComp || note.components.size() == 1 || isValidNoteComponent(note.components[note.components.size() - 1]))
-          )
-        );
+        && (comps.size() == 0 || isValidNoteComponent(comps[0]));
     }
 
     function isValidProjectNotesList(notes) {
       return notes is list
         && notes.size() <= 50
-        && (notes.size() == 0 || isValidProjectNoteHead(notes[0], notes.size() == 1));
+        && (notes.size() == 0 || isValidProjectNoteHead(notes[0]));
     }
 
     // Validate project-level photos list (first & last, strictly scoped to this project)
     function isValidProjectPhotosList(photos, userId, projectId) {
+      let n = photos.size();
+      let p0 = photos[0];
+      let pn = photos[n - 1];
       return photos is list
         && photos.size() <= 18
         && (
-          photos.size() == 0
+          n == 0
           || (
-            isValidProjectPhotoCore(photos[0], userId, 'project') && photos[0].targetId == projectId
+            isValidProjectPhotoCore(p0, userId, 'project') && p0.targetId == projectId
             && (
-              photos.size() == 1
-              || (isValidUploadedPhotoLite(photos[photos.size() - 1], userId, 'project') && photos[photos.size() - 1].targetId == projectId)
+              n == 1
+              || (isValidUploadedPhotoLite(pn, userId, 'project') && pn.targetId == projectId)
             )
           )
         );
@@ -376,6 +377,14 @@ service cloud.firestore {
 
     // Validate head ProjectModelEntry item inside a project document
     function isValidProjectModelHead(entry, userId, checkLastPhotoAndCfg) {
+      let fi = entry.get('featuredImage', null);
+      let photos = entry.photos;
+      let np = photos.size();
+      let p0 = photos[0];
+      let pn = photos[np - 1];
+      let cfgs = entry.configurations;
+      let nc = cfgs.size();
+      let eid = entry.id;
       return entry is map
         && entry.keys().hasOnly([
           'id',
@@ -393,13 +402,13 @@ service cloud.firestore {
         && entry.quantity is int && entry.quantity >= 1 && entry.quantity <= 999
         && entry.notes is string && entry.notes.size() <= 5000
         && entry.completedStepIds is list && entry.completedStepIds.size() <= 200
-        && (entry.get('featuredImage', null) == null || isValidFeaturedImage(entry.featuredImage))
+        && (fi == null || isValidFeaturedImage(fi))
         && entry.photos is list && entry.photos.size() <= 13
         && (
-          entry.photos.size() == 0
+          np == 0
           || (
-            isValidProjectPhotoCore(entry.photos[0], userId, 'project_model') && entry.photos[0].targetId == entry.id
-            && (!checkLastPhotoAndCfg || entry.photos.size() == 1 || (isValidUploadedPhotoLite(entry.photos[entry.photos.size() - 1], userId, 'project_model') && entry.photos[entry.photos.size() - 1].targetId == entry.id))
+            isValidProjectPhotoCore(p0, userId, 'project_model') && p0.targetId == eid
+            && (!checkLastPhotoAndCfg || np == 1 || (isValidUploadedPhotoLite(pn, userId, 'project_model') && pn.targetId == eid))
           )
         )
         && (
@@ -407,10 +416,10 @@ service cloud.firestore {
           || (
             entry.configurations is list && entry.configurations.size() <= 30
             && (
-              entry.configurations.size() == 0
+              nc == 0
               || (
-                isValidModelConfiguration(entry.configurations[0])
-                && (!checkLastPhotoAndCfg || entry.configurations.size() == 1 || isValidModelConfiguration(entry.configurations[entry.configurations.size() - 1]))
+                isValidModelConfiguration(cfgs[0])
+                && (!checkLastPhotoAndCfg || nc == 1 || isValidModelConfiguration(cfgs[nc - 1]))
               )
             )
           )
@@ -419,6 +428,9 @@ service cloud.firestore {
 
     // Compact validation for tail ProjectModelEntry within CEL expression budget
     function isValidProjectModelTail(entry, userId) {
+      let photos = entry.photos;
+      let np = photos.size();
+      let pn = photos[np - 1];
       return entry is map
         && entry.keys().hasOnly([
           'id',
@@ -435,21 +447,22 @@ service cloud.firestore {
         ])
         && entry.photos is list && entry.photos.size() <= 13
         && (
-          entry.photos.size() == 0
-          || (isValidUploadedPhotoLite(entry.photos[entry.photos.size() - 1], userId, 'project_model') && entry.photos[entry.photos.size() - 1].targetId == entry.id)
+          np == 0
+          || (isValidUploadedPhotoLite(pn, userId, 'project_model') && pn.targetId == entry.id)
         );
     }
 
     function isValidProjectModelsList(models, userId) {
+      let n = models.size();
       return models is list
         && models.size() <= 100
         && (
-          models.size() == 0
-          || (models.size() == 1 && isValidProjectModelHead(models[0], userId, true))
+          n == 0
+          || (n == 1 && isValidProjectModelHead(models[0], userId, true))
           || (
-            models.size() > 1
+            n > 1
             && isValidProjectModelHead(models[0], userId, false)
-            && isValidProjectModelTail(models[models.size() - 1], userId)
+            && isValidProjectModelTail(models[n - 1], userId)
           )
         );
     }
