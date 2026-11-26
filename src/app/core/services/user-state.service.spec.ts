@@ -926,4 +926,101 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     expect(setItemSpy).toHaveBeenCalledTimes(1);
     expect(service.toastMessage()).toContain('Cleared painting progress');
   });
+
+  it('aborts stale signOutCloud post-await reset when concurrent onAuthStateChanged re-login occurs before sdkSignOut resolves', async () => {
+    service = setupService();
+
+    const svcPrivate = service as unknown as {
+      getFbHandles: () => unknown;
+      getUserDocRef: (db: unknown, uid: string) => unknown;
+      getProjectsColRef: (db: unknown, uid: string) => unknown;
+      getProjectDocRef: (db: unknown, uid: string, pid: string) => unknown;
+      subscribeAuthState: (auth: unknown, cb: (u: User | null) => void) => () => void;
+      fetchDocSnap: (ref: unknown) => Promise<{ exists: () => boolean; data: () => unknown }>;
+      fetchQuerySnap: (ref: unknown) => Promise<{ forEach: (cb: (d: unknown) => void) => void }>;
+      subscribeDocSnapshot: (
+        ref: unknown,
+        onNext: (snap: unknown) => void,
+        onError: (err: Error) => void
+      ) => () => void;
+      subscribeQuerySnapshot: (
+        ref: unknown,
+        onNext: (snap: unknown) => void,
+        onError: (err: Error) => void
+      ) => () => void;
+      createWriteBatch: (db: unknown) => {
+        set: () => void;
+        delete: () => void;
+        commit: () => Promise<void>;
+      };
+      sdkSignOut: (auth: unknown) => Promise<void>;
+    };
+
+    let authCb!: (user: User | null) => void;
+    let resolveSignOut!: () => void;
+
+    spyOn(svcPrivate, 'getFbHandles').and.returnValue({ auth: {}, db: {}, storage: {} });
+    spyOn(svcPrivate, 'getUserDocRef').and.callFake((_db, uid) => ({ path: `users/${uid}` }));
+    spyOn(svcPrivate, 'getProjectsColRef').and.callFake((_db, uid) => ({
+      path: `users/${uid}/projects`,
+    }));
+    spyOn(svcPrivate, 'getProjectDocRef').and.returnValue({ path: 'users/u/projects/p' });
+    spyOn(svcPrivate, 'subscribeAuthState').and.callFake((_auth, cb) => {
+      authCb = cb;
+      return () => {};
+    });
+    spyOn(svcPrivate, 'fetchDocSnap').and.callFake(async (ref) => {
+      const path = (ref as { path: string }).path;
+      if (path === 'users/uB') {
+        return {
+          exists: () => true,
+          data: () => ({ inventoryPaintIds: ['paint-user-b'] }),
+        };
+      }
+      return {
+        exists: () => true,
+        data: () => ({ inventoryPaintIds: ['paint-user-a'] }),
+      };
+    });
+    spyOn(svcPrivate, 'fetchQuerySnap').and.resolveTo({ forEach: () => {} });
+    spyOn(svcPrivate, 'subscribeDocSnapshot').and.returnValue(() => {});
+    spyOn(svcPrivate, 'subscribeQuerySnapshot').and.returnValue(() => {});
+    spyOn(svcPrivate, 'createWriteBatch').and.returnValue({
+      set: () => {},
+      delete: () => {},
+      commit: () => Promise.resolve(),
+    });
+    spyOn(svcPrivate, 'sdkSignOut').and.callFake(
+      () =>
+        new Promise<void>((res) => {
+          resolveSignOut = res;
+        })
+    );
+
+    service.initAuthListener();
+    authCb({ uid: 'uA' } as User);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(service.currentUser()?.uid).toBe('uA');
+    expect(service.state().inventoryPaintIds).toEqual(['paint-user-a']);
+
+    mediaMock.clearAllLocalMedia.calls.reset();
+    const signOutPromise = service.signOutCloud();
+
+    // Concurrent re-login as uB before sdkSignOut resolves
+    authCb({ uid: 'uB' } as User);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(service.currentUser()?.uid).toBe('uB');
+    expect(service.state().inventoryPaintIds).toEqual(['paint-user-b']);
+    expect(service.cloudSyncStatus()).toBe(CloudSyncStatus.Synced);
+
+    // Resolve stale sdkSignOut from uA signOutCloud()
+    mediaMock.clearAllLocalMedia.calls.reset();
+    resolveSignOut();
+    await signOutPromise;
+
+    expect(service.currentUser()?.uid).toBe('uB');
+    expect(service.state().inventoryPaintIds).toEqual(['paint-user-b']);
+    expect(service.cloudSyncStatus()).toBe(CloudSyncStatus.Synced);
+    expect(mediaMock.clearAllLocalMedia).not.toHaveBeenCalled();
+  });
 });

@@ -129,7 +129,7 @@ function normalizePhotoEntry(
   const ph = raw as Partial<UserUploadedPhoto>;
   const rawId = typeof ph.id === 'string' || typeof ph.id === 'number' ? String(ph.id) : '';
   const id = optionalTrimmedString(rawId, 120);
-  if (!id) {
+  if (!id || !isSafeRecordKey(id)) {
     return null;
   }
   const kind: UserPhotoKind = ph.kind === 'reference' ? 'reference' : 'showcase';
@@ -206,7 +206,8 @@ export function normalizeFeaturedImage(raw: unknown): ProjectModelFeaturedImage 
     } else if (typeof rawIdx === 'string' && rawIdx.trim() !== '') {
       parsedIdx = Number(rawIdx.trim());
     }
-    const idx = Math.trunc(parsedIdx);
+    const truncatedIdx = Math.trunc(parsedIdx);
+    const idx = truncatedIdx === 0 ? 0 : truncatedIdx;
     if (!Number.isFinite(parsedIdx) || idx < 0 || idx > 50) {
       return undefined;
     }

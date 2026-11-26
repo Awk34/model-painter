@@ -2347,16 +2347,22 @@ export class UserStateService implements OnDestroy {
     if (!fb) {
       return;
     }
-    this.authGeneration++;
-    this.activeSyncedUid = null;
+    const signOutGen = ++this.authGeneration;
     this.clearFirestoreListeners();
     await this.sdkSignOut(fb.auth);
+    if (this.authGeneration !== signOutGen && this.currentUser() !== null) {
+      return;
+    }
+    this.activeSyncedUid = null;
     this.currentUser.set(null);
     this.cloudSyncStatus.set(CloudSyncStatus.LocalOnly);
     const fresh = createDefaultState();
     this.state.set(fresh);
     this.persistLocalState(fresh);
     await this.media.clearAllLocalMedia();
+    if (this.authGeneration !== signOutGen && this.currentUser() !== null) {
+      return;
+    }
     this.showToast('Signed out of Cloud Sync');
   }
 }

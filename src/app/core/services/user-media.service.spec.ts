@@ -311,4 +311,17 @@ describe('UserMediaService', () => {
     expect(refParts[5].length).toBeLessThanOrEqual(120);
     expect(refParts[5].endsWith('.png')).toBeTrue();
   });
+
+  it('uses Object.hasOwn for photoUrls lookups so prototype-named photo IDs never return Object.prototype methods', async () => {
+    const protoKeys = ['toString', 'constructor', 'valueOf', 'hasOwnProperty', '__proto__'];
+    for (const id of protoKeys) {
+      const photo = makePhoto({ id });
+      expect(service.resolvePhotoUrl(photo)).toBe('/icons/ic_image_loading_placeholder.svg');
+      await expectAsync(service.deletePhotoAssets(photo)).toBeResolved();
+    }
+    await new Promise((r) => setTimeout(r, 0));
+    expect(service.resolvePhotoUrl(makePhoto({ id: 'toString' }))).toBe(
+      '/icons/ic_image_loading_placeholder.svg'
+    );
+  });
 });

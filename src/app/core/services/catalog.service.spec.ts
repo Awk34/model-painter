@@ -1,7 +1,11 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ModelPaintingStepsComponent } from '../../features/paint-model/components/model-painting-steps.component';
-import { KNOWN_THIRD_PARTY_BRANDS } from '../models/catalog.models';
+import {
+  CatalogManifest,
+  CatalogSyncStatus,
+  KNOWN_THIRD_PARTY_BRANDS,
+} from '../models/catalog.models';
 import { CatalogService, normalizePaintingStageLabel } from './catalog.service';
 import { InventoryMatchService } from './inventory-match.service';
 import { UserStateService } from './user-state.service';
@@ -551,6 +555,174 @@ describe('CatalogService', () => {
     );
 
     expect(stale).toEqual(['toString']);
+  });
+
+  it('hydrates in-memory on idb.put failure for paints_bundle and does not advance manifest hash so reload re-fetches it', async () => {
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    const idbStore = new Map<string, unknown>();
+    let failPaintsPut = true;
+    const idbClient = (service as unknown as {
+      idb: {
+        get: (store: string, key: string) => Promise<unknown>;
+        put: (store: string, key: string, value: unknown) => Promise<void>;
+        clearAll: () => Promise<void>;
+      };
+    }).idb;
+
+    spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
+      return idbStore.get(`${store}:${key}`) ?? null;
+    });
+    spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
+      if (failPaintsPut && key === 'paints_bundle') {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      }
+      idbStore.set(`${store}:${key}`, value);
+    });
+    spyOn(idbClient, 'clearAll').and.callFake(async () => {
+      idbStore.clear();
+    });
+
+    service.paints.set([]);
+    service.models.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+
+    // Fetched paints_bundle is still hydrated in-memory despite idb.put failure
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.models().length).toBeGreaterThan(0);
+    const cachedManifest = idbStore.get('bundles:manifest') as CatalogManifest | undefined;
+    expect(cachedManifest).toBeDefined();
+    expect(cachedManifest?.bundles['paints_bundle']).toBeUndefined();
+    expect(cachedManifest?.bundles['models_index_0']).toBe('sha256:models_0_test');
+
+    // Simulate reload: clear in-memory signals and allow idb.put to succeed
+    failPaintsPut = false;
+    service.paints.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
+    expect(requestedUrls).not.toContain('/data/catalog_meta/colours_bundle.json');
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
+  });
+
+  it('re-fetches missing cached bundles even when cached manifest hashes match remote manifest', async () => {
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    const idbStore = new Map<string, unknown>([
+      [
+        'bundles:manifest',
+        {
+          schemaVersion: 1,
+          updatedAt: '2026-11-15T00:00:00Z',
+          bundles: {
+            paints_bundle: 'sha256:paints_test',
+            third_party_paints_bundle: 'sha256:tp_test',
+            colours_bundle: 'sha256:colours_test',
+            games_factions_bundle: 'sha256:games_test',
+            models_index_0: 'sha256:models_0_test',
+          },
+        },
+      ],
+      ['bundles:third_party_paints_bundle', { thirdPartyPaints: [], citadelToThirdPartyMap: {} }],
+      ['bundles:colours_bundle', { colourGroups: [], colours: [] }],
+      ['bundles:games_factions_bundle', { games: [] }],
+      ['bundles:models_index_0', { models: [] }],
+    ]);
+
+    const idbClient = (service as unknown as {
+      idb: {
+        get: (store: string, key: string) => Promise<unknown>;
+        put: (store: string, key: string, value: unknown) => Promise<void>;
+        clearAll: () => Promise<void>;
+      };
+    }).idb;
+
+    spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
+      return idbStore.get(`${store}:${key}`) ?? null;
+    });
+    spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
+      idbStore.set(`${store}:${key}`, value);
+    });
+
+    service.paints.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
+    expect(requestedUrls).not.toContain('/data/catalog_meta/colours_bundle.json');
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
+  });
+
+  it('treats malformed non-object cachedManifest.bundles as stale and triggers re-fetch', async () => {
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    const findStaleBundles = (
+      service as unknown as {
+        findStaleBundles: (
+          remote: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> },
+          cached: { schemaVersion: number; updatedAt: string; bundles: unknown } | null
+        ) => string[];
+      }
+    ).findStaleBundles.bind(service);
+
+    expect(
+      findStaleBundles(
+        { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: { '0': 'h', paints_bundle: 'p' } },
+        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: 'h' }
+      )
+    ).toEqual(['0', 'paints_bundle']);
+
+    expect(
+      findStaleBundles(
+        { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: { '0': 'h' } },
+        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: ['h'] }
+      )
+    ).toEqual(['0']);
+
+    const idbStore = new Map<string, unknown>([
+      [
+        'bundles:manifest',
+        {
+          schemaVersion: 1,
+          updatedAt: '2026-11-15T00:00:00Z',
+          bundles: 'malformed-bundles-string',
+        },
+      ],
+    ]);
+    const idbClient = (service as unknown as {
+      idb: {
+        get: (store: string, key: string) => Promise<unknown>;
+        put: (store: string, key: string, value: unknown) => Promise<void>;
+      };
+    }).idb;
+
+    spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
+      return idbStore.get(`${store}:${key}`) ?? null;
+    });
+    spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
+      idbStore.set(`${store}:${key}`, value);
+    });
+
+    service.paints.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
   });
 });
 

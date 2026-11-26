@@ -350,5 +350,20 @@ describe('user-state-normalizer.util', () => {
     expect(photoState.uploadedPhotos.length).toBe(1);
     expect(photoState.uploadedPhotos[0].id).toBe('ph_obj_filename');
     expect(photoState.uploadedPhotos[0].fileName).toBe('photo.jpg');
+
+    const negHalfFeatured = normalizeFeaturedImage({ source: 'catalog_angle', imageIndex: -0.5 });
+    expect(negHalfFeatured).toBeDefined();
+    expect(negHalfFeatured?.source).toBe('catalog_angle');
+    if (negHalfFeatured?.source === 'catalog_angle') {
+      expect(Object.is(negHalfFeatured.imageIndex, 0)).toBeTrue();
+      expect(Object.is(negHalfFeatured.imageIndex, -0)).toBeFalse();
+    }
+
+    const unsafePhotoState = normalizeAccountState(
+      JSON.parse(
+        '{"uploadedPhotos":[{"id":"__proto__","targetType":"model","targetId":"m1","kind":"showcase","fileName":"p1.jpg"},{"id":"constructor","targetType":"model","targetId":"m1","kind":"showcase","fileName":"p2.jpg"},{"id":"prototype","targetType":"model","targetId":"m1","kind":"showcase","fileName":"p3.jpg"},{"id":"ph_safe","targetType":"model","targetId":"m1","kind":"showcase","fileName":"ok.jpg"}]}'
+      ) as Record<string, unknown>
+    );
+    expect(unsafePhotoState.uploadedPhotos.map((p) => p.id)).toEqual(['ph_safe']);
   });
 });

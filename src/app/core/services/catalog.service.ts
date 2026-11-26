@@ -1,5 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import {
+  CatalogBundleMeta,
   CatalogManifest,
   CatalogSyncStatus,
   CitadelThirdPartyMatchRef,
@@ -260,33 +261,94 @@ export class CatalogService {
       ? null
       : await this.idb.get<CatalogManifest>(STORE_BUNDLES, 'manifest');
 
+    let initialHydration = { checkedIds: new Set<string>(), presentIds: new Set<string>() };
     if (cachedManifest) {
-      await this.hydrateSignalsFromIdb(cachedManifest);
+      initialHydration = await this.hydrateSignalsFromIdb(cachedManifest);
       this.loading.set(false);
     }
 
     try {
       const remoteManifest = await this.fetchMetaDoc<CatalogManifest>('manifest');
       const staleBundles = this.findStaleBundles(remoteManifest, cachedManifest);
+      const staleSet = new Set(staleBundles);
+      const remoteBundles = this.getValidBundlesMap(remoteManifest.bundles);
+      const missingCheckedBundles: string[] = [];
 
-      if (staleBundles.length > 0) {
+      for (const bundleId of Object.keys(remoteBundles)) {
+        if (!isSafeRecordKey(bundleId) || staleSet.has(bundleId)) {
+          continue;
+        }
+        if (initialHydration.checkedIds.has(bundleId)) {
+          if (!initialHydration.presentIds.has(bundleId)) {
+            missingCheckedBundles.push(bundleId);
+          }
+        } else {
+          const existing = await this.idb.get<unknown>(STORE_BUNDLES, bundleId);
+          if (existing === null || existing === undefined) {
+            missingCheckedBundles.push(bundleId);
+          } else {
+            initialHydration.presentIds.add(bundleId);
+          }
+        }
+      }
+
+      const bundlesToFetch = [...staleBundles, ...missingCheckedBundles];
+      const bundlesToFetchSet = new Set(bundlesToFetch);
+
+      if (bundlesToFetch.length > 0) {
         this.syncStatus.set(CatalogSyncStatus.Updating);
+        const fetchedBundles = new Map<string, unknown>();
+        const persistedBundleIds = new Set<string>();
+
         await Promise.all(
-          staleBundles.map(async (bundleId) => {
+          bundlesToFetch.map(async (bundleId) => {
             const data = await this.fetchMetaDoc<unknown>(bundleId);
+            fetchedBundles.set(bundleId, data);
             try {
               await this.idb.put(STORE_BUNDLES, bundleId, data);
+              persistedBundleIds.add(bundleId);
             } catch (putErr) {
               console.warn(`Failed to cache catalog bundle ${bundleId} in IndexedDB:`, putErr);
             }
           })
         );
+
+        const cachedBundles = this.getValidBundlesMap(cachedManifest?.bundles);
+        const manifestBundlesToCache: Record<string, CatalogBundleMeta | string> = {};
+        for (const bundleId of Object.keys(remoteBundles)) {
+          if (!isSafeRecordKey(bundleId)) {
+            continue;
+          }
+          if (!bundlesToFetchSet.has(bundleId) || persistedBundleIds.has(bundleId)) {
+            Object.defineProperty(manifestBundlesToCache, bundleId, {
+              value: remoteBundles[bundleId],
+              enumerable: true,
+              configurable: true,
+              writable: true,
+            });
+          } else if (
+            Object.hasOwn(cachedBundles, bundleId) &&
+            initialHydration.presentIds.has(bundleId)
+          ) {
+            Object.defineProperty(manifestBundlesToCache, bundleId, {
+              value: cachedBundles[bundleId],
+              enumerable: true,
+              configurable: true,
+              writable: true,
+            });
+          }
+        }
+
+        const manifestToCache: CatalogManifest = {
+          ...remoteManifest,
+          bundles: manifestBundlesToCache,
+        };
         try {
-          await this.idb.put(STORE_BUNDLES, 'manifest', remoteManifest);
+          await this.idb.put(STORE_BUNDLES, 'manifest', manifestToCache);
         } catch (putErr) {
           console.warn('Failed to cache catalog manifest in IndexedDB:', putErr);
         }
-        await this.hydrateSignalsFromIdb(remoteManifest);
+        await this.hydrateSignalsFromIdb(remoteManifest, fetchedBundles);
       } else {
         this.manifest.set(remoteManifest);
       }
@@ -301,13 +363,30 @@ export class CatalogService {
     }
   }
 
+  private getValidBundlesMap(
+    rawBundles: unknown
+  ): Record<string, CatalogBundleMeta | string> {
+    if (!rawBundles || typeof rawBundles !== 'object' || Array.isArray(rawBundles)) {
+      return {};
+    }
+    return rawBundles as Record<string, CatalogBundleMeta | string>;
+  }
+
   private findStaleBundles(
     remoteManifest: CatalogManifest,
     cachedManifest: CatalogManifest | null
   ): string[] {
     const staleBundles: string[] = [];
-    const remoteBundles = remoteManifest.bundles ?? {};
-    const cachedBundles = cachedManifest?.bundles;
+    const remoteBundles = this.getValidBundlesMap(remoteManifest.bundles);
+    const rawCachedBundles = cachedManifest?.bundles;
+    const hasValidCachedBundles =
+      typeof rawCachedBundles === 'object' &&
+      rawCachedBundles !== null &&
+      !Array.isArray(rawCachedBundles);
+    const cachedBundles = hasValidCachedBundles
+      ? (rawCachedBundles as Record<string, CatalogBundleMeta | string>)
+      : null;
+
     for (const bundleId of Object.keys(remoteBundles)) {
       if (!isSafeRecordKey(bundleId)) {
         continue;
@@ -319,7 +398,7 @@ export class CatalogService {
           : undefined;
       const remoteHash = typeof remoteEntry === 'string' ? remoteEntry : remoteEntry?.hash;
       const localHash = typeof localEntry === 'string' ? localEntry : localEntry?.hash;
-      if (!cachedManifest || remoteHash !== localHash) {
+      if (!cachedManifest || !cachedBundles || remoteHash !== localHash) {
         staleBundles.push(bundleId);
       }
     }
@@ -327,7 +406,7 @@ export class CatalogService {
   }
 
   private getModelBundleKeys(manifest: CatalogManifest): string[] {
-    return Object.keys(manifest.bundles ?? {})
+    return Object.keys(this.getValidBundlesMap(manifest.bundles))
       .filter((key) => isSafeRecordKey(key) && key.startsWith(MODEL_BUNDLE_PREFIX))
       .sort((a, b) => {
         const numA = Number.parseInt(a.slice(MODEL_BUNDLE_PREFIX.length), 10);
@@ -339,35 +418,50 @@ export class CatalogService {
       });
   }
 
-  private async hydrateSignalsFromIdb(manifest: CatalogManifest): Promise<void> {
+  private async hydrateSignalsFromIdb(
+    manifest: CatalogManifest,
+    inMemoryBundles?: ReadonlyMap<string, unknown>
+  ): Promise<{ checkedIds: Set<string>; presentIds: Set<string> }> {
     this.manifest.set(manifest);
     const modelBundleKeys = this.getModelBundleKeys(manifest);
+    const checkedIds = new Set<string>();
+    const presentIds = new Set<string>();
+
+    const readBundle = async <T>(bundleId: string): Promise<T | null> => {
+      checkedIds.add(bundleId);
+      if (inMemoryBundles?.has(bundleId)) {
+        const inMemory = inMemoryBundles.get(bundleId) as T | undefined;
+        if (inMemory !== null && inMemory !== undefined) {
+          presentIds.add(bundleId);
+          return inMemory;
+        }
+      }
+      const cached = await this.idb.get<T>(STORE_BUNDLES, bundleId);
+      if (cached !== null && cached !== undefined) {
+        presentIds.add(bundleId);
+      }
+      return cached;
+    };
 
     const [paintsBundle, thirdPartyBundle, colorsBundle, gamesBundle, modelBundles] =
       await Promise.all([
-        this.idb.get<{ paints: Paint[]; compatibility: PaintCompatibilityLink[] }>(
-          STORE_BUNDLES,
-          'paints_bundle'
-        ),
-        this.idb.get<{
+        readBundle<{ paints: Paint[]; compatibility: PaintCompatibilityLink[] }>('paints_bundle'),
+        readBundle<{
           brands?: string[];
           thirdPartyPaints: ThirdPartyPaint[];
           citadelToThirdParty?: Record<string, CitadelThirdPartyMatchRef[]>;
           citadelToThirdPartyMap?: Record<string, CitadelThirdPartyMatchRef[]>;
-        }>(STORE_BUNDLES, 'third_party_paints_bundle'),
-        this.idb.get<{
+        }>('third_party_paints_bundle'),
+        readBundle<{
           colors?: RawColorSummary[];
           colours?: RawColorSummary[];
           colorGroups?: ColorGroup[];
           colourGroups?: ColorGroup[];
-        }>(STORE_BUNDLES, 'colours_bundle'),
-        this.idb.get<{ games: GameSystem[] }>(STORE_BUNDLES, 'games_factions_bundle'),
+        }>('colours_bundle'),
+        readBundle<{ games: GameSystem[] }>('games_factions_bundle'),
         Promise.all(
           modelBundleKeys.map((key) =>
-            this.idb.get<{ models: (ModelSummary & { colourIds?: string[] })[] }>(
-              STORE_BUNDLES,
-              key
-            )
+            readBundle<{ models: (ModelSummary & { colourIds?: string[] })[] }>(key)
           )
         ),
       ]);
@@ -403,6 +497,8 @@ export class CatalogService {
     if (allModels.length > 0) {
       this.models.set(allModels);
     }
+
+    return { checkedIds, presentIds };
   }
 
   private async fetchMetaDoc<T>(docId: string): Promise<T> {

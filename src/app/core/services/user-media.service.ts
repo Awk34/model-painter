@@ -314,15 +314,22 @@ export class UserMediaService {
     if (this.deletedIds.has(photoId)) {
       return '';
     }
-    const existing = this.photoUrls()[photoId];
+    const urls = this.photoUrls();
+    const existing = Object.hasOwn(urls, photoId) ? urls[photoId] : undefined;
     if (existing) {
       return existing;
     }
     const objUrl = URL.createObjectURL(blob);
-    this.photoUrls.update((prev) => ({
-      ...prev,
-      [photoId]: objUrl,
-    }));
+    this.photoUrls.update((prev) => {
+      const next = { ...prev };
+      Object.defineProperty(next, photoId, {
+        value: objUrl,
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
+      return next;
+    });
     return objUrl;
   }
 
@@ -376,7 +383,8 @@ export class UserMediaService {
     if (!photo) {
       return '/icons/ic_image_loading_placeholder.svg';
     }
-    const cachedUrl = this.photoUrls()[photo.id];
+    const urls = this.photoUrls();
+    const cachedUrl = Object.hasOwn(urls, photo.id) ? urls[photo.id] : undefined;
     if (cachedUrl) {
       return cachedUrl;
     }
@@ -387,8 +395,9 @@ export class UserMediaService {
   hydratePhotoUrl(photo: UserUploadedPhoto): void {
     const uid = this.getCurrentUid() ?? '';
     const attemptKey = `${photo.storagePath ?? ''}|${uid}`;
+    const urls = this.photoUrls();
     if (
-      this.photoUrls()[photo.id] ||
+      (Object.hasOwn(urls, photo.id) && urls[photo.id]) ||
       this.loadingIds.has(photo.id) ||
       this.deletedIds.has(photo.id) ||
       this.failedAttemptKeys.get(photo.id) === attemptKey
@@ -473,7 +482,8 @@ export class UserMediaService {
     this.nextPhotoGeneration(photo.id);
     this.failedAttemptKeys.delete(photo.id);
 
-    const existingUrl = this.photoUrls()[photo.id];
+    const urls = this.photoUrls();
+    const existingUrl = Object.hasOwn(urls, photo.id) ? urls[photo.id] : undefined;
     if (existingUrl) {
       URL.revokeObjectURL(existingUrl);
       this.photoUrls.update((prev) => {
