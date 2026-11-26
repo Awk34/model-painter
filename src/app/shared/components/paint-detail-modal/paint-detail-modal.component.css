@@ -11,6 +11,13 @@
   display: flex;
   align-items: center;
   gap: 18px;
+  min-width: 0;
+  flex: 1;
+}
+
+.paint-header-main > div:not(.pot-preview) {
+  min-width: 0;
+  flex: 1;
 }
 
 .pot-preview {
@@ -44,10 +51,12 @@
 .paint-title {
   font-size: 1.55rem;
   color: var(--text-primary);
+  overflow-wrap: break-word;
 }
 
 .action-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 14px 24px;
   background: var(--bg-elevated);
@@ -203,7 +212,14 @@
 
 .override-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.override-controls .input-control {
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .reverse-chip-list {

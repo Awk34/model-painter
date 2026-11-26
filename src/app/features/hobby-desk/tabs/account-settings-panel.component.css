@@ -48,6 +48,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .settings-card h3 {
@@ -193,6 +194,7 @@
 .file-input {
   font-family: var(--font-sans);
   font-size: 0.8rem;
+  max-width: 100%;
 }
 
 .pref-toggles {
@@ -262,6 +264,9 @@
 .bundle-row {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .bundle-hash {

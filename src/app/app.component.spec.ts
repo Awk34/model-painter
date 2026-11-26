@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AppComponent } from './app.component';
@@ -9,11 +9,21 @@ import { PaintModalService } from './core/services/paint-modal.service';
 import { ToastService } from './core/services/toast.service';
 import { UserStateService } from './core/services/user-state.service';
 
+interface MockUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let toastService: ToastService;
+  let currentUserSig: WritableSignal<MockUser | null>;
 
   beforeEach(async () => {
+    currentUserSig = signal<MockUser | null>(null);
+
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
@@ -65,7 +75,7 @@ describe('AppComponent', () => {
                   allowThirdPartySubstitutions: true,
                 },
               }),
-              currentUser: signal(null),
+              currentUser: currentUserSig,
               cloudSyncStatus: signal(CloudSyncStatus.LocalOnly),
               toastMessage: toast.message,
               isOwned: () => false,
@@ -148,5 +158,59 @@ describe('AppComponent', () => {
 
     expect(toastService.message()).toBeNull();
     expect(popoverEl?.matches(':popover-open')).toBeFalse();
+  });
+
+  it('keeps consecutive toasts paused when popover is hovered or focused and stays paused on focusout while hovered', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const popoverEl = root.querySelector('#app-toast-popover') as HTMLElement;
+    expect(popoverEl).toBeTruthy();
+
+    toastService.show('First');
+    fixture.detectChanges();
+
+    const closeBtn = popoverEl.querySelector(
+      'button[type="button"][aria-label="Dismiss notification"]'
+    ) as HTMLButtonElement;
+    closeBtn.focus();
+    expect(popoverEl.matches(':focus-within')).toBeTrue();
+    expect(toastService.isPaused()).toBeTrue();
+
+    // Consecutive toast while focus remains inside popover must re-pause immediately
+    toastService.show('Second');
+    fixture.detectChanges();
+    expect(toastService.message()).toBe('Second');
+    expect(toastService.isPaused()).toBeTrue();
+
+    // Focus leaving while hovered must stay paused
+    const origMatches = popoverEl.matches.bind(popoverEl);
+    spyOn(popoverEl, 'matches').and.callFake((selector: string) =>
+      selector === ':hover' ? true : origMatches(selector)
+    );
+    closeBtn.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    expect(toastService.isPaused()).toBeTrue();
+  });
+
+  it('resets avatarFailed when currentUser photoURL changes', () => {
+    currentUserSig.set({
+      uid: 'u1',
+      email: 'a@example.com',
+      displayName: 'Alice',
+      photoURL: 'https://example.invalid/a.png',
+    });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.avatarUrl()).toBe('https://example.invalid/a.png');
+
+    fixture.componentInstance.onAvatarError();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.avatarUrl()).toBeNull();
+
+    currentUserSig.set({
+      uid: 'u2',
+      email: 'b@example.com',
+      displayName: 'Bob',
+      photoURL: 'https://example.invalid/b.png',
+    });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.avatarUrl()).toBe('https://example.invalid/b.png');
   });
 });

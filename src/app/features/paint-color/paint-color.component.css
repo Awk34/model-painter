@@ -50,10 +50,25 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .filter-select {
   min-width: min(100%, 210px);
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .filter-controls {
+    width: 100%;
+  }
+
+  select.filter-select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 .results-meta {

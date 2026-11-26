@@ -46,9 +46,11 @@
 
 .conv-side {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
 }
 
 .conv-paint-btn {
@@ -98,6 +100,8 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .conv-eq-main {
@@ -105,6 +109,8 @@
   align-items: center;
   gap: 8px;
   text-align: left;
+  min-width: 0;
+  flex: 1;
 }
 
 .mini-swatch {
@@ -118,6 +124,7 @@
 .conv-eq-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .conv-eq-name {
@@ -125,11 +132,13 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
 }
 
 .conv-eq-brand {
   font-family: var(--font-sans);
   font-size: 0.75rem;
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 

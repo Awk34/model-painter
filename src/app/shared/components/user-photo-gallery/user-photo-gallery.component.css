@@ -88,6 +88,8 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .upload-action-btns {
@@ -95,6 +97,8 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .caption-field-wrap {

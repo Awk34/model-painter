@@ -59,7 +59,7 @@
 
 .tier-switcher {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -73,6 +73,9 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
+  min-width: 0;
+  overflow-wrap: break-word;
+  text-align: center;
 }
 
 .tier-btn strong {

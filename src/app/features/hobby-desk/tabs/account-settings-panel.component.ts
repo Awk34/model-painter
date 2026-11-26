@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { USER_LIMITS, formatBytes } from '../../../core/config/user-limits.config';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -35,6 +43,13 @@ export class AccountSettingsPanelComponent implements OnInit {
   authPassword = '';
   readonly authError = signal<string | null>(null);
   readonly avatarFailed = signal(false);
+
+  constructor() {
+    effect(() => {
+      this.userState.currentUser()?.photoURL;
+      this.avatarFailed.set(false);
+    });
+  }
 
   onAvatarError(): void {
     this.avatarFailed.set(true);

@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
@@ -47,6 +48,11 @@ export class AppComponent {
 
   constructor() {
     effect(() => {
+      this.userState.currentUser()?.photoURL;
+      this.avatarFailed.set(false);
+    });
+
+    effect(() => {
       const active = this.toast.current();
       const el = this.toastPopover()?.nativeElement;
       if (!el || !el.isConnected || typeof el.showPopover !== 'function') {
@@ -59,6 +65,12 @@ export class AppComponent {
             this.lastFocusBeforeToast =
               activeEl instanceof HTMLElement && !el.contains(activeEl) ? activeEl : null;
             el.showPopover();
+          }
+          if (
+            (el.matches(':hover') || el.matches(':focus-within')) &&
+            !untracked(() => this.toast.isPaused())
+          ) {
+            this.toast.pause();
           }
         } else if (el.matches(':popover-open')) {
           el.hidePopover();
@@ -91,7 +103,7 @@ export class AppComponent {
   onToastFocusOut(event: FocusEvent): void {
     const el = this.toastPopover()?.nativeElement;
     const next = event.relatedTarget;
-    if (!el || !(next instanceof Node) || !el.contains(next)) {
+    if ((!el || !(next instanceof Node) || !el.contains(next)) && !el?.matches(':hover')) {
       this.toast.resume();
     }
   }

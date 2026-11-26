@@ -6,6 +6,9 @@ export interface ToastNotification {
   readonly durationMs: number;
 }
 
+const DEFAULT_TOAST_DURATION_MS = 3500;
+const MAX_TIMEOUT_MS = 2_147_483_647;
+
 @Injectable({ providedIn: 'root' })
 export class ToastService implements OnDestroy {
   readonly current = signal<ToastNotification | null>(null);
@@ -17,14 +20,15 @@ export class ToastService implements OnDestroy {
   private startedAt = 0;
   private nextId = 0;
 
-  show(message: string, durationMs = 3500): void {
+  show(message: string, durationMs = DEFAULT_TOAST_DURATION_MS): void {
     if (!message.trim()) {
       this.dismiss();
       return;
     }
 
     this.clearTimer();
-    const clampedDuration = Math.max(0, durationMs);
+    const safeDuration = Number.isFinite(durationMs) ? durationMs : DEFAULT_TOAST_DURATION_MS;
+    const clampedDuration = Math.min(MAX_TIMEOUT_MS, Math.max(0, safeDuration));
     const id = ++this.nextId;
     this.isPaused.set(false);
     this.remainingMs = clampedDuration;

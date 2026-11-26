@@ -152,4 +152,31 @@ describe('ToastService', () => {
       jasmine.clock().uninstall();
     }
   });
+
+  it('guards non-finite durationMs to 3500ms default and clamps duration to [0, 2147483647]', () => {
+    jasmine.clock().install();
+    try {
+      jasmine.clock().mockDate(new Date(1_000_000));
+
+      for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+        service.show('Fallback', bad);
+        expect(service.current()?.durationMs).toBe(3500);
+        jasmine.clock().tick(3499);
+        expect(service.message()).toBe('Fallback');
+        jasmine.clock().tick(1);
+        expect(service.message()).toBeNull();
+      }
+
+      service.show('Sticky', -500);
+      expect(service.current()?.durationMs).toBe(0);
+      jasmine.clock().tick(10_000);
+      expect(service.message()).toBe('Sticky');
+
+      service.show('Capped', 3_000_000_000);
+      expect(service.current()?.durationMs).toBe(2_147_483_647);
+      service.dismiss();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
 });
