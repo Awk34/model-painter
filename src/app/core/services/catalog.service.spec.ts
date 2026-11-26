@@ -1044,4 +1044,98 @@ describe('ModelPaintingStepsComponent stage filtering', () => {
     expect(stageBtn.getAttribute('aria-pressed')).toBe('false');
     expect(comp.overallProgress()).toEqual({ done: 0, total: 2, isDone: false, percent: 0 });
   });
+
+  it('updates stageProgressByKey and areaViewModels reactively and sets image dimensions/lazy attributes', () => {
+    const progressSignal = signal<Record<string, string[]>>({ 'model-2': ['s-base'] });
+    TestBed.configureTestingModule({
+      imports: [ModelPaintingStepsComponent],
+      providers: [
+        {
+          provide: UserStateService,
+          useValue: {
+            isOwned: () => false,
+            isWishlisted: () => false,
+            toggleInventory: () => undefined,
+            toggleWishlist: () => undefined,
+            getCompletedStepIds: (modelId: string) => progressSignal()[modelId] ?? [],
+            toggleStepDone: () => undefined,
+            setStepsDone: () => undefined,
+            clearModelProgress: () => undefined,
+          },
+        },
+        { provide: InventoryMatchService, useValue: {} },
+        {
+          provide: CatalogService,
+          useValue: { paints: signal([]), paintById: signal(new Map()) },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ModelPaintingStepsComponent);
+    const comp = fixture.componentInstance;
+    fixture.componentRef.setInput('modelId', 'model-2');
+    fixture.componentRef.setInput('paintingAreas', [
+      {
+        id: 'area-1',
+        areaOrder: 1,
+        name: 'Armor',
+        localImagePath: '/areas/armor.png',
+        paintingSteps: [
+          {
+            id: 's-base',
+            stepOrder: 1,
+            stepNumber: 1,
+            paintingStage: 'Base Finish',
+            localImagePath: '/steps/s1.png',
+          },
+          {
+            id: 's-detail',
+            stepOrder: 2,
+            stepNumber: 2,
+            paintingStage: 'Detail Finish',
+          },
+        ],
+      },
+    ]);
+    fixture.componentRef.setInput('readiness', {
+      totalRequired: 0,
+      ownedDirectCount: 0,
+      substitutedCount: 0,
+      missingCount: 0,
+      matchPercent: 100,
+      ownedDirectIds: [],
+      substitutedByPaintId: {},
+      missingPaintIds: [],
+    });
+    fixture.detectChanges();
+
+    expect(comp.stageProgressByKey()['Base Finish']).toEqual({ done: 1, total: 1, isDone: true });
+    expect(comp.stageProgressByKey()['Detail Finish']).toEqual({ done: 0, total: 1, isDone: false });
+    expect(comp.areaViewModels()[0].steps.map((s) => s.step.id)).toEqual(['s-base', 's-detail']);
+
+    comp.stageFilter.set('Detail Finish');
+    fixture.detectChanges();
+    expect(comp.areaViewModels()[0].steps.map((s) => s.step.id)).toEqual(['s-detail']);
+    expect(comp.areaViewModels()[0].progress).toEqual({ done: 0, total: 1, isDone: false });
+
+    progressSignal.set({ 'model-2': ['s-base', 's-detail'] });
+    fixture.detectChanges();
+    expect(comp.stageProgressByKey()['Detail Finish']).toEqual({ done: 1, total: 1, isDone: true });
+    expect(comp.areaViewModels()[0].progress).toEqual({ done: 1, total: 1, isDone: true });
+
+    comp.stageFilter.set('all');
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const areaThumb = root.querySelector('.area-thumb') as HTMLImageElement;
+    expect(areaThumb.getAttribute('width')).toBe('56');
+    expect(areaThumb.getAttribute('height')).toBe('56');
+    expect(areaThumb.getAttribute('loading')).toBe('lazy');
+    expect(areaThumb.getAttribute('decoding')).toBe('async');
+
+    const stepImg = root.querySelector('.step-img-box img') as HTMLImageElement;
+    expect(stepImg.getAttribute('width')).toBe('200');
+    expect(stepImg.getAttribute('height')).toBe('134');
+    expect(stepImg.getAttribute('loading')).toBe('lazy');
+    expect(stepImg.getAttribute('decoding')).toBe('async');
+  });
 });

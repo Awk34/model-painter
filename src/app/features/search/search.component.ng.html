@@ -74,7 +74,7 @@
     <section class="result-section">
       <h2>Paints ({{ matchedCitadelPaints().length + matchedThirdPartyPaints().length }})</h2>
       <div class="paints-grid">
-        @for (cp of matchedCitadelPaints().slice(0, 24); track cp.id) {
+        @for (cp of visibleCitadelPaints(); track cp.id) {
           <app-paint-action-row
             [paintId]="cp.id"
             [name]="cp.name"
@@ -85,7 +85,7 @@
           />
         }
 
-        @for (tp of matchedThirdPartyPaints().slice(0, 24); track tp.id) {
+        @for (tp of visibleThirdPartyPaints(); track tp.id) {
           <app-paint-action-row
             [paintId]="tp.id"
             [name]="tp.name"
@@ -104,7 +104,7 @@
     <section class="result-section">
       <h2>Color Guides ({{ matchedColors().length }})</h2>
       <div class="cards-grid">
-        @for (c of matchedColors().slice(0, 24); track c.id) {
+        @for (c of visibleColors(); track c.id) {
           <a class="result-card studio-card interactive" [routerLink]="['/colors', c.id]">
             <div class="c-swatch-bar" [style.background]="c.hex"></div>
             <div class="r-body">
@@ -122,7 +122,7 @@
     <section class="result-section">
       <h2>Model Painting Guides ({{ matchedModels().length }})</h2>
       <div class="cards-grid">
-        @for (m of matchedModels().slice(0, 36); track m.id) {
+        @for (m of visibleModels(); track m.id) {
           <app-model-card
             [model]="m"
             headingLevel="h3"

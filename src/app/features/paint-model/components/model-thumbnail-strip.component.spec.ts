@@ -56,6 +56,17 @@ describe('ModelThumbnailStripComponent', () => {
     ) as HTMLButtonElement[];
     expect(buttons.length).toBe(4);
     expect(buttons[3].querySelector('.thumb-lock')).not.toBeNull();
+    const featImg = buttons[0].querySelector('img') as HTMLImageElement;
+    const officialImg = buttons[1].querySelector('img') as HTMLImageElement;
+    const userImg = buttons[3].querySelector('img') as HTMLImageElement;
+    for (const imgEl of [featImg, officialImg, userImg]) {
+      expect(imgEl.getAttribute('loading')).toBe('lazy');
+      expect(imgEl.getAttribute('decoding')).toBe('async');
+    }
+    expect(featImg.getAttribute('width')).toBe('68');
+    expect(featImg.getAttribute('height')).toBe('68');
+    expect(userImg.getAttribute('width')).toBe('76');
+    expect(userImg.getAttribute('height')).toBe('76');
 
     buttons[0].click();
     buttons[2].click();

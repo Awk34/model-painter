@@ -5,42 +5,45 @@
 
 @font-face {
   font-family: 'Anton';
-  src: url('/fonts/anton_regular.ttf') format('truetype');
+  src: url('/fonts/anton_regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
+  font-family: 'Anton Impact Fallback';
+  src: local('Impact'), local('Arial Narrow');
+  size-adjust: 97%;
+  ascent-override: 121.27%;
+  descent-override: 33.93%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Anton Sans Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue'), local('DejaVu Sans');
+  size-adjust: 70%;
+  ascent-override: 168.04%;
+  descent-override: 47.01%;
+  line-gap-override: 0%;
+}
+
+@font-face {
   font-family: 'Bitter';
-  src: url('/fonts/bitter_regular.otf') format('opentype');
+  src: url('/fonts/bitter_regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Bitter';
-  src: url('/fonts/bitter_bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Bitter';
-  src: url('/fonts/bitter_italic.otf') format('opentype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Bitter';
-  src: url('/fonts/bitter_bold_italic.otf') format('opentype');
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
+  font-family: 'Bitter Fallback';
+  src: local('Georgia'), local('Liberation Serif'), local('Times New Roman'), local('DejaVu Serif');
+  size-adjust: 109%;
+  ascent-override: 88.99%;
+  descent-override: 21.10%;
+  line-gap-override: 0%;
 }
 
 :root {
@@ -95,8 +98,8 @@
   scrollbar-width: thin;
 
   /* Typography */
-  --font-display: 'Anton', Impact, 'Arial Narrow', sans-serif;
-  --font-body: 'Bitter', Georgia, serif;
+  --font-display: 'Anton', 'Anton Impact Fallback', 'Anton Sans Fallback', Impact, 'Arial Narrow', sans-serif;
+  --font-body: 'Bitter', 'Bitter Fallback', Georgia, serif;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Radii */

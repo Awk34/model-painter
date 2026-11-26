@@ -5,8 +5,8 @@ import { CatalogService } from '../../../core/services/catalog.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
+  getFallbackSwatch,
   getPaintRepresentativeHex,
-  PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
 import { PaintActionRowComponent } from '../../../shared/components/paint-action-row/paint-action-row.component';
 
@@ -20,7 +20,6 @@ import { PaintActionRowComponent } from '../../../shared/components/paint-action
 export class HobbyDeskConverterTabComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
-  readonly getCitadelBrandLabel = getCitadelBrandLabel;
 
   readonly converterMode = signal<'cross-brand' | 'tone-pro'>('cross-brand');
   readonly converterSearch = signal('');
@@ -68,6 +67,7 @@ export class HobbyDeskConverterTabComponent {
     const onlyOwned = this.converterOnlyOwned();
     const inv = this.userState.inventorySet();
     const map = this.catalog.citadelToThirdPartyMap();
+    const tpById = this.catalog.thirdPartyPaintById();
 
     const results = [];
     for (const cp of this.catalog.paints()) {
@@ -103,11 +103,20 @@ export class HobbyDeskConverterTabComponent {
 
       results.push({
         citadel: cp,
-        matches: matches.slice(0, 6),
+        citadelSubtitle: `${getCitadelBrandLabel(cp.range)} • ${cp.category}`,
+        matches: matches.slice(0, 6).map((m) => ({
+          ...m,
+          subtitle: `${m.brand} • ${m.range} • ΔE ${m.deltaE}`,
+          swatch: tpById.get(m.thirdPartyPaintId) ?? getFallbackSwatch(m.category),
+        })),
       });
     }
     return results;
   });
+
+  readonly visibleCrossBrandRows = computed(() =>
+    this.filteredCrossBrandRows().slice(0, 120)
+  );
 
   readonly filteredToneProGroups = computed(() => {
     const q = this.converterSearch().trim().toLowerCase();
@@ -131,20 +140,15 @@ export class HobbyDeskConverterTabComponent {
       groups.push({
         classicId,
         classicName,
-        classicCategory,
+        classicSubtitle: `Citadel Classic • ${classicCategory}`,
         classicHex,
         classicPaint,
-        toneProList: links,
+        toneProItems: links.map((tp) => ({
+          ...tp,
+          paint: paintById.get(tp.tone_pro_paint_id),
+        })),
       });
     }
     return groups;
   });
-
-  resolveThirdPartySwatch(id: string, category?: string): PaintSwatchLike {
-    return this.catalog.thirdPartyPaintById().get(id) ?? { category };
-  }
-
-  resolveCitadelSwatch(id: string): PaintSwatchLike | undefined {
-    return this.catalog.paintById().get(id);
-  }
 }

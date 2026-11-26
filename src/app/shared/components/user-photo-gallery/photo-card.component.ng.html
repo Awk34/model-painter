@@ -9,7 +9,10 @@
       [src]="photoUrl()"
       [alt]="photo().caption || photo().fileName"
       class="photo-thumb-img"
+      [attr.width]="photo().width || 220"
+      [attr.height]="photo().height || 175"
       loading="lazy"
+      decoding="async"
     />
     @if (isReference()) {
       <span class="corner-pill private-pill">🔒 Private</span>

@@ -26,6 +26,13 @@ export interface ValidatedImageInfo {
   wasDownscaled: boolean;
 }
 
+export interface DecodedImageSource {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  close: () => void;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -136,44 +143,89 @@ export class UserMediaService {
       );
     }
 
-    const loaded = await this.loadImageElement(file);
-    const { width, height, img } = loaded;
+    const loaded = await this.decodeImageSource(file);
+    try {
+      const { width, height, source } = loaded;
 
-    const overByteLimit = file.size > USER_LIMITS.MAX_PHOTO_FILE_SIZE_BYTES;
-    const overDimLimit = Math.max(width, height) > USER_LIMITS.MAX_PHOTO_DIMENSION_PX;
+      const overByteLimit = file.size > USER_LIMITS.MAX_PHOTO_FILE_SIZE_BYTES;
+      const overDimLimit = Math.max(width, height) > USER_LIMITS.MAX_PHOTO_DIMENSION_PX;
 
-    if (!overByteLimit && !overDimLimit) {
-      if (Math.max(width, height) > MAX_STORAGE_DIMENSION_PX) {
+      if (!overByteLimit && !overDimLimit) {
+        if (Math.max(width, height) > MAX_STORAGE_DIMENSION_PX) {
+          throw new Error(
+            `"${file.name}" exceeds the ${MAX_STORAGE_DIMENSION_PX}px maximum image dimension.`
+          );
+        }
+        return {
+          blob: file,
+          mimeType: detectedMime,
+          width,
+          height,
+          wasDownscaled: false,
+        };
+      }
+
+      const downscaled = await this.downscaleImageToLimit(source, width, height, detectedMime);
+      if (
+        Math.max(downscaled.width, downscaled.height) > USER_LIMITS.MAX_PHOTO_DIMENSION_PX ||
+        Math.max(downscaled.width, downscaled.height) > MAX_STORAGE_DIMENSION_PX ||
+        downscaled.blob.size > USER_LIMITS.MAX_PHOTO_FILE_SIZE_BYTES
+      ) {
         throw new Error(
-          `"${file.name}" exceeds the ${MAX_STORAGE_DIMENSION_PX}px maximum image dimension.`
+          `Could not downscale "${file.name}" within ${USER_LIMITS.MAX_PHOTO_DIMENSION_PX}px and ${USER_LIMITS.MAX_PHOTO_FILE_SIZE_MB} MB limits.`
         );
       }
+
       return {
-        blob: file,
-        mimeType: detectedMime,
-        width,
-        height,
-        wasDownscaled: false,
+        blob: downscaled.blob,
+        mimeType: downscaled.mimeType,
+        width: downscaled.width,
+        height: downscaled.height,
+        wasDownscaled: true,
+      };
+    } finally {
+      loaded.close();
+    }
+  }
+
+  protected canUseImageBitmap(): boolean {
+    return typeof createImageBitmap === 'function';
+  }
+
+  protected canUseOffscreenCanvas(): boolean {
+    return typeof OffscreenCanvas === 'function';
+  }
+
+  protected async decodeImageSource(blob: Blob): Promise<DecodedImageSource> {
+    if (this.canUseImageBitmap()) {
+      let bitmap: ImageBitmap;
+      try {
+        bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+      } catch (err) {
+        if (err instanceof TypeError) {
+          bitmap = await createImageBitmap(blob);
+        } else {
+          throw new Error('Could not decode image file.');
+        }
+      }
+      if (bitmap.width <= 0 || bitmap.height <= 0) {
+        bitmap.close();
+        throw new Error('Image has invalid dimensions.');
+      }
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        close: () => bitmap.close(),
       };
     }
 
-    const downscaled = await this.downscaleImageToLimit(img, width, height, detectedMime);
-    if (
-      Math.max(downscaled.width, downscaled.height) > USER_LIMITS.MAX_PHOTO_DIMENSION_PX ||
-      Math.max(downscaled.width, downscaled.height) > MAX_STORAGE_DIMENSION_PX ||
-      downscaled.blob.size > USER_LIMITS.MAX_PHOTO_FILE_SIZE_BYTES
-    ) {
-      throw new Error(
-        `Could not downscale "${file.name}" within ${USER_LIMITS.MAX_PHOTO_DIMENSION_PX}px and ${USER_LIMITS.MAX_PHOTO_FILE_SIZE_MB} MB limits.`
-      );
-    }
-
+    const { img, width, height } = await this.loadImageElement(blob);
     return {
-      blob: downscaled.blob,
-      mimeType: downscaled.mimeType,
-      width: downscaled.width,
-      height: downscaled.height,
-      wasDownscaled: true,
+      source: img,
+      width,
+      height,
+      close: () => undefined,
     };
   }
 
@@ -235,7 +287,7 @@ export class UserMediaService {
   }
 
   private async downscaleImageToLimit(
-    img: HTMLImageElement,
+    source: CanvasImageSource,
     origWidth: number,
     origHeight: number,
     sourceMime: AllowedImageMimeType
@@ -245,9 +297,27 @@ export class UserMediaService {
     const targetMime: AllowedImageMimeType =
       sourceMime === 'image/png' ? 'image/webp' : sourceMime;
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
+    let offscreen: OffscreenCanvas | null = null;
+    let offscreenCtx: OffscreenCanvasRenderingContext2D | null = null;
+    if (this.canUseOffscreenCanvas()) {
+      try {
+        const probe = new OffscreenCanvas(1, 1);
+        const probeCtx = typeof probe.convertToBlob === 'function' ? probe.getContext('2d') : null;
+        if (probeCtx) {
+          offscreen = probe;
+          offscreenCtx = probeCtx;
+        }
+      } catch {
+        offscreen = null;
+        offscreenCtx = null;
+      }
+    }
+
+    const htmlCanvas = offscreen ? null : document.createElement('canvas');
+    const htmlCtx = htmlCanvas ? htmlCanvas.getContext('2d') : null;
+    const canvas = offscreen ?? htmlCanvas;
+    const ctx = offscreenCtx ?? htmlCtx;
+    if (!canvas || !ctx) {
       throw new Error('Browser canvas 2D context is unavailable for downscaling.');
     }
 
@@ -269,10 +339,12 @@ export class UserMediaService {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.clearRect(0, 0, targetW, targetH);
-      ctx.drawImage(img, 0, 0, targetW, targetH);
+      ctx.drawImage(source, 0, 0, targetW, targetH);
 
       for (const quality of qualityCandidates) {
-        const encoded = await this.canvasToBlob(canvas, targetMime, quality);
+        const encoded = offscreen
+          ? await offscreen.convertToBlob({ type: targetMime, quality })
+          : await this.canvasToBlob(htmlCanvas!, targetMime, quality);
         const actualMime: AllowedImageMimeType =
           encoded.type === 'image/webp' ||
           encoded.type === 'image/png' ||

@@ -352,6 +352,19 @@ describe('ProjectDetailComponent route switch state reset', () => {
 
     // Semantic checks: <time>, no aria-label on plain stepper div, heading order h1 -> h2 -> h3
     const root = fixture.nativeElement as HTMLElement;
+    const heroImg = root.querySelector('.hero-thumb-box img') as HTMLImageElement;
+    expect(heroImg.getAttribute('fetchpriority')).toBe('high');
+    expect(heroImg.getAttribute('decoding')).toBe('async');
+    expect(heroImg.getAttribute('width')).toBe('120');
+    expect(heroImg.getAttribute('height')).toBe('120');
+    expect(heroImg.hasAttribute('loading')).toBeFalse();
+
+    const attachedImg = root.querySelector('.attached-img-wrap img') as HTMLImageElement;
+    expect(attachedImg.getAttribute('loading')).toBe('lazy');
+    expect(attachedImg.getAttribute('decoding')).toBe('async');
+    expect(attachedImg.getAttribute('width')).toBe('180');
+    expect(attachedImg.getAttribute('height')).toBe('130');
+
     const timeEl = root.querySelector('time');
     expect(timeEl?.getAttribute('datetime')).toBe('2026-01-02T00:00:00Z');
     const qtyStepper = root.querySelector('.card-qty-stepper');

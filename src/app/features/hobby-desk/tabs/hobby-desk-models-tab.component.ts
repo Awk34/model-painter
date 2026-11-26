@@ -99,14 +99,6 @@ export class HobbyDeskModelsTabComponent {
     this.filteredModels().slice(0, this.modelVisibleLimit())
   );
 
-  onSearchChange(query: string): void {
-    this.modelSearch.set(query);
-  }
-
-  onGameFilterChange(gameId: string): void {
-    this.selectedModelGameFilter.set(gameId);
-  }
-
   loadMoreModels(): void {
     this.pagination.loadMore();
   }

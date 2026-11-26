@@ -17,6 +17,9 @@
                   [src]="img.resolve(cp.localImagePath, cp.imageUrl)"
                   [alt]="cp.name"
                   class="pot-img"
+                  width="60"
+                  height="60"
+                  decoding="async"
                 />
               } @else {
                 <app-paint-swatch [paint]="cp" size="large" />
@@ -26,7 +29,7 @@
               <div class="badge-row">
                 <app-paint-brand-badge [paint]="cp" />
                 <span class="badge category-badge">{{ cp.category }}</span>
-                <span class="hex-pill">{{ getPaintRepresentativeHex(cp) }}</span>
+                <span class="hex-pill">{{ citadelPaintHex() }}</span>
               </div>
               <h2 id="paint-detail-modal-title" class="paint-title">{{ cp.name }}</h2>
             </div>
@@ -147,14 +150,14 @@
               </div>
             </div>
 
-            @if (crossBrandMatches().length > 0) {
+            @if (crossBrandMatchRows().length > 0) {
               <div class="equiv-grid">
-                @for (m of crossBrandMatches(); track m.thirdPartyPaintId) {
+                @for (m of crossBrandMatchRows(); track m.thirdPartyPaintId) {
                   <app-paint-action-row
                     [paintId]="m.thirdPartyPaintId"
                     [name]="m.name"
-                    [subtitle]="m.brand + ' • ' + m.range + (m.code ? ' (' + m.code + ')' : '')"
-                    [paint]="resolveThirdPartySwatch(m.thirdPartyPaintId, m.category)"
+                    [subtitle]="m.subtitle"
+                    [paint]="m.swatch"
                     [hex]="m.hex"
                     [deltaE]="m.deltaE"
                     [matchQuality]="m.matchQuality"
@@ -176,16 +179,16 @@
         }
 
         <!-- Citadel Matches (when viewing a 3rd-Party Paint) -->
-        @if (thirdPartyPaint(); as tp) {
+        @if (thirdPartyPaint()) {
           <section class="modal-section">
             <h3 class="section-title">Equivalent Citadel Paints</h3>
             <div class="equiv-grid">
-              @for (cm of tp.citadelMatches; track cm.citadelPaintId) {
+              @for (cm of thirdPartyCitadelMatchRows(); track cm.citadelPaintId) {
                 <app-paint-action-row
                   [paintId]="cm.citadelPaintId"
                   [name]="cm.citadelPaintName"
-                  [subtitle]="getCitadelBrandLabel(cm.citadelRange) + ' • ' + cm.citadelCategory"
-                  [paint]="resolveCitadelSwatch(cm.citadelPaintId, cm.citadelCategory)"
+                  [subtitle]="cm.subtitle"
+                  [paint]="cm.swatch"
                   [hex]="cm.citadelHex"
                   [deltaE]="cm.deltaE"
                   [matchQuality]="cm.matchQuality"
@@ -205,7 +208,7 @@
             </h3>
             @if (colorsUsingPaint().length > 0) {
               <div class="reverse-chip-list">
-                @for (col of colorsUsingPaint().slice(0, 24); track col.id) {
+                @for (col of visibleColorsUsingPaint(); track col.id) {
                   <button type="button" class="reverse-chip" (click)="goToColor(col.id)">
                     <span class="mini-dot" [style.background]="col.hex"></span>
                     <span>{{ col.name }}</span>
@@ -223,7 +226,7 @@
             </h3>
             @if (modelsUsingPaint().length > 0) {
               <div class="reverse-models-grid">
-                @for (mod of modelsUsingPaint().slice(0, 12); track mod.id) {
+                @for (mod of visibleModelsUsingPaint(); track mod.id) {
                   <button
                     type="button"
                     class="reverse-model-card studio-card interactive"
@@ -232,7 +235,10 @@
                     <img
                       [src]="img.resolve(mod.localPrimaryImage, mod.primaryImage)"
                       [alt]="mod.name"
+                      width="120"
+                      height="84"
                       loading="lazy"
+                      decoding="async"
                     />
                     <span>{{ mod.name }}</span>
                   </button>

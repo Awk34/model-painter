@@ -14,6 +14,11 @@
   flex-direction: column;
 }
 
+.projects-grid > .project-card:nth-child(n + 13) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 305px;
+}
+
 .project-thumb-wrap {
   position: relative;
   height: 170px;
@@ -25,6 +30,8 @@
 }
 
 .project-thumb {
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;

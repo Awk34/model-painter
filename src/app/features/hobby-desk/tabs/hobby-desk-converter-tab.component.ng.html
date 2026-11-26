@@ -55,13 +55,13 @@
 
   @if (converterMode() === 'cross-brand') {
     <div class="converter-list">
-      @for (row of filteredCrossBrandRows().slice(0, 120); track row.citadel.id) {
+      @for (row of visibleCrossBrandRows(); track row.citadel.id) {
         <div class="converter-row studio-card">
           <app-paint-action-row
             class="conv-side"
             [paintId]="row.citadel.id"
             [name]="row.citadel.name"
-            [subtitle]="getCitadelBrandLabel(row.citadel.range) + ' • ' + row.citadel.category"
+            [subtitle]="row.citadelSubtitle"
             [paint]="row.citadel"
             actionMode="own-only"
             variant="step"
@@ -74,8 +74,8 @@
               <app-paint-action-row
                 [paintId]="eq.thirdPartyPaintId"
                 [name]="eq.name"
-                [subtitle]="eq.brand + ' • ' + eq.range + ' • ΔE ' + eq.deltaE"
-                [paint]="resolveThirdPartySwatch(eq.thirdPartyPaintId, eq.category)"
+                [subtitle]="eq.subtitle"
+                [paint]="eq.swatch"
                 [hex]="eq.hex"
                 swatchSize="mini"
                 actionMode="compact-own"
@@ -94,7 +94,7 @@
             class="conv-side"
             [paintId]="group.classicId"
             [name]="group.classicName"
-            [subtitle]="'Citadel Classic • ' + group.classicCategory"
+            [subtitle]="group.classicSubtitle"
             [paint]="group.classicPaint"
             [hex]="group.classicHex"
             actionMode="own-only"
@@ -104,12 +104,12 @@
           <div class="conv-arrow">⇄</div>
 
           <div class="conv-equivalents">
-            @for (tp of group.toneProList; track tp.tone_pro_paint_id) {
+            @for (tp of group.toneProItems; track tp.tone_pro_paint_id) {
               <app-paint-action-row
                 [paintId]="tp.tone_pro_paint_id"
                 [name]="tp.tone_pro_paint_name"
                 subtitle="Citadel Tone Pro"
-                [paint]="resolveCitadelSwatch(tp.tone_pro_paint_id)"
+                [paint]="tp.paint"
                 [hex]="tp.tone_pro_hex"
                 swatchSize="mini"
                 actionMode="compact-own"

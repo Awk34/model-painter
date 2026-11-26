@@ -8,7 +8,7 @@
       aria-label="View custom featured image"
       (click)="selectCustomFeatured.emit()"
     >
-      <img [src]="featUrl" alt="" />
+      <img [src]="featUrl" alt="" width="68" height="68" loading="lazy" decoding="async" />
       <span class="thumb-star" aria-hidden="true">★</span>
     </button>
   }
@@ -20,7 +20,7 @@
       [attr.aria-label]="officialAriaPrefix() + (idx + 1)"
       (click)="selectOfficialAngle.emit(idx)"
     >
-      <img [src]="img.resolve(localImagePaths()[idx], imgUrl)" alt="" />
+      <img [src]="img.resolve(localImagePaths()[idx], imgUrl)" alt="" width="68" height="68" loading="lazy" decoding="async" />
     </button>
   }
   @for (ph of userPhotos(); track ph.id) {
@@ -33,7 +33,7 @@
       [attr.aria-label]="'View ' + (ph.kind === 'reference' ? 'private reference photo: ' : 'my photo: ') + (ph.caption || ph.fileName)"
       (click)="selectUserPhoto.emit(ph.id)"
     >
-      <img [src]="media.resolvePhotoUrl(ph)" alt="" />
+      <img [src]="media.resolvePhotoUrl(ph)" alt="" width="76" height="76" loading="lazy" decoding="async" />
       @if (ph.kind === 'reference') {
         <span class="thumb-lock" aria-hidden="true">🔒</span>
       }

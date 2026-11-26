@@ -92,6 +92,8 @@ app-modal-dialog.zoom-modal-dialog {
 
 .zoom-stage-img {
   display: block;
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: calc(88dvh - 140px);
   object-fit: contain;

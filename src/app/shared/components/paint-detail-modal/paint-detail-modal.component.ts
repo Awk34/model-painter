@@ -13,6 +13,7 @@ import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
+  getFallbackSwatch,
   getPaintRepresentativeHex,
   PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
@@ -40,8 +41,6 @@ export class PaintDetailModalComponent {
   readonly userState = inject(UserStateService);
   readonly modalService = inject(PaintModalService);
   readonly img = inject(ImageService);
-  readonly getCitadelBrandLabel = getCitadelBrandLabel;
-  readonly getPaintRepresentativeHex = getPaintRepresentativeHex;
   private readonly router = inject(Router);
 
   readonly selectedOverridePaintId = signal('');
@@ -62,6 +61,8 @@ export class PaintDetailModalComponent {
     }
     return this.catalog.paintById().get(id) ?? null;
   });
+
+  readonly citadelPaintHex = computed(() => getPaintRepresentativeHex(this.citadelPaint()));
 
   readonly thirdPartyPaint = computed(() => {
     const id = this.activePaintId();
@@ -159,6 +160,32 @@ export class PaintDetailModalComponent {
     return combined;
   });
 
+  readonly crossBrandMatchRows = computed(() => {
+    const tpById = this.catalog.thirdPartyPaintById();
+    const customById = this.userState.customPaintById();
+    return this.crossBrandMatches().map((m) => ({
+      ...m,
+      subtitle: `${m.brand} • ${m.range}${m.code ? ` (${m.code})` : ''}`,
+      swatch:
+        tpById.get(m.thirdPartyPaintId) ??
+        customById.get(m.thirdPartyPaintId) ??
+        getFallbackSwatch(m.category),
+    }));
+  });
+
+  readonly thirdPartyCitadelMatchRows = computed(() => {
+    const tp = this.thirdPartyPaint();
+    if (!tp) {
+      return [];
+    }
+    const paintById = this.catalog.paintById();
+    return tp.citadelMatches.map((cm) => ({
+      ...cm,
+      subtitle: `${getCitadelBrandLabel(cm.citadelRange)} • ${cm.citadelCategory}`,
+      swatch: paintById.get(cm.citadelPaintId) ?? getFallbackSwatch(cm.citadelCategory),
+    }));
+  });
+
   readonly colorsUsingPaint = computed(() => {
     const id = this.activePaintId();
     if (!id) {
@@ -166,6 +193,8 @@ export class PaintDetailModalComponent {
     }
     return this.catalog.colorsUsingPaintMap().get(id) ?? [];
   });
+
+  readonly visibleColorsUsingPaint = computed(() => this.colorsUsingPaint().slice(0, 24));
 
   readonly modelsUsingPaint = computed(() => {
     const id = this.activePaintId();
@@ -175,17 +204,7 @@ export class PaintDetailModalComponent {
     return this.catalog.modelsUsingPaintMap().get(id) ?? [];
   });
 
-  resolveThirdPartySwatch(id: string, category?: string): PaintSwatchLike {
-    return (
-      this.catalog.thirdPartyPaintById().get(id) ??
-      this.userState.customPaintById().get(id) ??
-      { category }
-    );
-  }
-
-  resolveCitadelSwatch(id: string, category?: string): PaintSwatchLike {
-    return this.catalog.paintById().get(id) ?? { category };
-  }
+  readonly visibleModelsUsingPaint = computed(() => this.modelsUsingPaint().slice(0, 12));
 
   selectPaint(id: string): void {
     this.modalService.openPaint(id);

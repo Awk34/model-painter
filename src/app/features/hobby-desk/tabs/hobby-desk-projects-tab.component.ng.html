@@ -43,7 +43,15 @@
       @for (card of filteredProjectCards(); track card.project.id) {
         <div class="project-card studio-card interactive">
           <div class="project-thumb-wrap">
-            <img [src]="card.coverUrl" [alt]="card.project.name" class="project-thumb" />
+            <img
+              [src]="card.coverUrl"
+              [alt]="card.project.name"
+              class="project-thumb"
+              width="200"
+              height="146"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
 
           <div class="project-body">

@@ -33,7 +33,7 @@
         title="Click to change thumbnail"
         (click)="activePickerModal.set('thumbnail')"
       >
-        <img [src]="coverUrl()" [alt]="proj.name" />
+        <img [src]="coverUrl()" [alt]="proj.name" width="120" height="120" fetchpriority="high" decoding="async" />
       </button>
 
       <div class="hero-info">
@@ -110,7 +110,7 @@
           @for (item of attachedModels(); track item.entry.id) {
             <div class="attached-card studio-card interactive">
               <div class="attached-img-wrap">
-                <img [src]="item.imageUrl" [alt]="item.displayName" />
+                <img [src]="item.imageUrl" [alt]="item.displayName" width="180" height="130" loading="lazy" decoding="async" />
                 @if (item.entry.quantity > 1) {
                   <span
                     class="qty-corner-badge"

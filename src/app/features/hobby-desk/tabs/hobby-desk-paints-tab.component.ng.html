@@ -74,12 +74,12 @@
   </div>
 
   <p class="sr-only" aria-live="polite" aria-atomic="true">
-    Showing {{ filteredPaints().length }} matching paints
+    Showing {{ displayedPaints().length }} of {{ filteredPaints().length | number }} matching paints
   </p>
 
   @if (filteredPaints().length > 0) {
     <div class="paints-grid">
-      @for (p of filteredPaints(); track p.id) {
+      @for (p of displayedPaints(); track p.id) {
         <app-paint-action-row
           [paintId]="p.id"
           [name]="p.name"
@@ -98,6 +98,14 @@
         </app-paint-action-row>
       }
     </div>
+
+    @if (filteredPaints().length > visibleLimit()) {
+      <div class="load-more-row">
+        <button type="button" class="btn btn-secondary" (click)="loadMorePaints()">
+          Load More Paints ({{ filteredPaints().length - visibleLimit() | number }} remaining)
+        </button>
+      </div>
+    }
   } @else {
     <div class="empty-state studio-card">
       <h2>No Matching Paints</h2>

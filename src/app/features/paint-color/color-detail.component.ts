@@ -153,4 +153,6 @@ export class ColorDetailComponent {
     }
     return this.catalog.modelsUsingColorMap().get(c.id) ?? [];
   });
+
+  readonly visibleModelsUsingColor = computed(() => this.modelsUsingColor().slice(0, 24));
 }

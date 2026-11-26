@@ -73,7 +73,7 @@
                   (click)="selectOfficialAngle(angle)"
                 >
                   <div class="choice-img-wrap">
-                    <img [src]="angle.url" [alt]="'Official angle ' + (angle.index + 1)" />
+                    <img [src]="angle.url" [alt]="'Official angle ' + (angle.index + 1)" width="140" height="112" loading="lazy" decoding="async" />
                   </div>
                   <div class="choice-caption">
                     <strong>{{ angle.index === 0 ? 'Default Primary Angle' : 'Angle ' + (angle.index + 1) }}</strong>
@@ -128,7 +128,14 @@
                   (click)="selectUploadedPhoto(ph.id)"
                 >
                   <div class="choice-img-wrap">
-                    <img [src]="media.resolvePhotoUrl(ph)" [alt]="ph.caption || ph.fileName" />
+                    <img
+                      [src]="media.resolvePhotoUrl(ph)"
+                      [alt]="ph.caption || ph.fileName"
+                      [attr.width]="ph.width || 140"
+                      [attr.height]="ph.height || 112"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </div>
                   <div class="choice-caption">
                     <strong>{{ ph.caption || ph.fileName }}</strong>
@@ -165,7 +172,7 @@
                 (click)="selectCatalogModel(m.id, m.localPrimaryImage, m.primaryImage)"
               >
                 <div class="choice-img-wrap">
-                  <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
+                  <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" width="140" height="112" loading="lazy" decoding="async" />
                 </div>
                 <div class="choice-caption">
                   <strong>{{ m.name }}</strong>

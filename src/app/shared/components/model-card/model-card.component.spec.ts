@@ -74,6 +74,11 @@ describe('ModelCardComponent', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
+    const cardImg = root.querySelector('.model-img-box img') as HTMLImageElement;
+    expect(cardImg.getAttribute('loading')).toBe('lazy');
+    expect(cardImg.getAttribute('decoding')).toBe('async');
+    expect(cardImg.getAttribute('width')).toBe('200');
+    expect(cardImg.getAttribute('height')).toBe('166');
     expect(root.querySelector('h2 a.card-stretched-link')?.getAttribute('href')).toBe('/models/m1');
     expect(root.querySelector('.range-tag')?.textContent?.trim()).toBe('Tone Pro');
     expect(root.querySelector('app-stage-readiness-pills')).not.toBeNull();

@@ -91,6 +91,11 @@
   gap: 16px;
 }
 
+.models-grid > app-model-card:nth-child(n + 13) {
+  --model-card-cv: auto;
+  --model-card-cis: auto 360px;
+}
+
 .load-more-row {
   display: flex;
   justify-content: center;

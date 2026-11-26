@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, model, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -10,6 +11,7 @@ import {
   getPaintRepresentativeHex,
   PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
+import { createVisibleLimit } from '../../../core/utils/pagination.util';
 import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
 import { PaintActionRowComponent } from '../../../shared/components/paint-action-row/paint-action-row.component';
 
@@ -50,7 +52,7 @@ function createDefaultCustomPaintForm(): CustomPaintFormState {
 
 @Component({
   selector: 'app-hobby-desk-paints-tab',
-  imports: [ReactiveFormsModule, AppModalDialogComponent, PaintActionRowComponent],
+  imports: [DecimalPipe, ReactiveFormsModule, AppModalDialogComponent, PaintActionRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-paints-tab.component.ng.html',
   styleUrl: './hobby-desk-paints-tab.component.css',
@@ -65,6 +67,14 @@ export class HobbyDeskPaintsTabComponent {
   readonly selectedBrandFilter = signal('all');
   readonly selectedCategoryFilter = signal('all');
   readonly showCustomPaintModal = signal(false);
+
+  private readonly pagination = createVisibleLimit(60, () => [
+    this.subMode(),
+    this.paintSearch(),
+    this.selectedBrandFilter(),
+    this.selectedCategoryFilter(),
+  ]);
+  readonly visibleLimit = this.pagination.limit;
 
   readonly customPaintForm = signal<CustomPaintFormState>(createDefaultCustomPaintForm());
 
@@ -204,6 +214,14 @@ export class HobbyDeskPaintsTabComponent {
       return true;
     });
   });
+
+  readonly displayedPaints = computed(() =>
+    this.filteredPaints().slice(0, this.visibleLimit())
+  );
+
+  loadMorePaints(): void {
+    this.pagination.loadMore();
+  }
 
   openCustomPaintModal(): void {
     this.customPaintForm.set(createDefaultCustomPaintForm());

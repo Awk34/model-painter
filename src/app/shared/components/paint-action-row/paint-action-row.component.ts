@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { PaintSubstituteMatch } from '../../../core/models/catalog.models';
 import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
@@ -43,6 +43,9 @@ export class PaintActionRowComponent {
   readonly useIconToggle = input<boolean>(false);
 
   readonly inspect = output<string>();
+
+  readonly isOwned = computed(() => this.userState.isOwned(this.paintId()));
+  readonly isWishlisted = computed(() => this.userState.isWishlisted(this.paintId()));
 
   onInspect(): void {
     const id = this.paintId();

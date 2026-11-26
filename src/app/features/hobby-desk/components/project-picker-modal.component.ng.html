@@ -40,7 +40,7 @@
         <div class="picker-grid">
           @for (m of pickerModels(); track m.id) {
             <div class="picker-item studio-card">
-              <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
+              <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" width="48" height="48" loading="lazy" decoding="async" />
               <div class="picker-info">
                 <strong>{{ m.name }}</strong>
                 @if (activeMode === 'model') {

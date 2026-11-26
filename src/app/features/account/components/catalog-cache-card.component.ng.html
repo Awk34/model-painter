@@ -25,7 +25,7 @@
       @for (entry of manifestBundlesList(); track entry.key) {
         <div class="bundle-row">
           <span class="bundle-name">{{ entry.key }}</span>
-          <code class="bundle-hash">{{ (entry.hash || '').slice(0, 19) }}…</code>
+          <code class="bundle-hash">{{ entry.shortHash }}…</code>
         </div>
       }
     </div>
