@@ -9,9 +9,8 @@ export const routes: Routes = [
   },
   {
     path: 'account',
-    data: { page: 'account' },
     loadComponent: () =>
-      import('./features/hobby-desk/hobby-desk.component').then((m) => m.HobbyDeskComponent),
+      import('./features/account/account-page.component').then((m) => m.AccountPageComponent),
   },
   {
     path: 'projects/:id',

@@ -22,57 +22,17 @@
         @for (st of tierBlock.steps; track st.id) {
           @if (st.paint; as sp) {
             <div class="stage-step-row">
-              <button
-                type="button"
-                class="step-paint-btn"
-                (click)="paintModal.openPaint(sp.id)"
-              >
-                <span class="step-order-num">{{ st.stepOrder }}</span>
-                <app-paint-swatch [paint]="sp" />
-                <div class="step-paint-info">
-                  <strong>{{ sp.name }}</strong>
-                  <span>{{ st.technique || sp.category }}</span>
-                </div>
-              </button>
-
-              <div class="step-paint-actions">
-                @let sub = readiness().substitutedByPaintId[sp.id];
-                @if (userState.isOwned(sp.id)) {
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-owned"
-                    (click)="userState.toggleInventory(sp.id)"
-                  >
-                    ✓ Owned
-                  </button>
-                } @else if (sub) {
-                  <button
-                    type="button"
-                    class="btn btn-sm badge-sub"
-                    (click)="paintModal.openPaint(sp.id)"
-                  >
-                    ⇄ {{ sub.substituteName }}
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-ghost"
-                    (click)="userState.toggleInventory(sp.id)"
-                  >
-                    + Own
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [class.btn-wishlist]="userState.isWishlisted(sp.id)"
-                    [class.btn-ghost]="!userState.isWishlisted(sp.id)"
-                    [attr.aria-label]="(userState.isWishlisted(sp.id) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + sp.name"
-                    (click)="userState.toggleWishlist(sp.id)"
-                  >
-                    {{ userState.isWishlisted(sp.id) ? '★' : '☆' }}
-                  </button>
-                }
-              </div>
+              <app-paint-action-row
+                [paintId]="sp.id"
+                [name]="sp.name"
+                [subtitle]="st.technique || sp.category"
+                [paint]="sp"
+                [stepOrder]="st.stepOrder"
+                [substitute]="readiness().substitutedByPaintId[sp.id]"
+                substituteFormat="short"
+                actionMode="full"
+                variant="step"
+              />
             </div>
           }
         }

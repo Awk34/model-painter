@@ -1,0 +1,40 @@
+<div class="settings-card studio-card">
+  <span class="badge badge-gold">Usage &amp; Quotas</span>
+  <h2>Account Limits &amp; Photo Upload Quotas</h2>
+  <p class="settings-desc">
+    Fair-use limits protect local browser storage and cloud sync performance. Showcase photos and private reference photos are stored locally in IndexedDB and privately synced when signed in.
+  </p>
+
+  <div class="quota-list">
+    <div class="quota-row">
+      <span>Hobby Projects</span>
+      <strong>{{ userState.projects().length }} / {{ userState.limits.MAX_PROJECTS }}</strong>
+    </div>
+    <div class="quota-row">
+      <span>Models / Colors / Notes per Project</span>
+      <strong>{{ userState.limits.MAX_MODELS_PER_PROJECT }} / {{ userState.limits.MAX_COLORS_PER_PROJECT }} / {{ userState.limits.MAX_NOTES_PER_PROJECT }}</strong>
+    </div>
+    <div class="quota-row">
+      <span>Owned Models / Model Wishlist</span>
+      <strong>{{ userState.inventoryModelIds().length }}/{{ userState.limits.MAX_INVENTORY_MODELS }} • {{ userState.wishlistModelIds().length }}/{{ userState.limits.MAX_WISHLIST_MODELS }}★</strong>
+    </div>
+    <div class="quota-row">
+      <span>Owned Paints / Paint Wishlist</span>
+      <strong>{{ userState.inventoryPaintIds().length }}/{{ userState.limits.MAX_INVENTORY_PAINTS }} • {{ userState.wishlistPaintIds().length }}/{{ userState.limits.MAX_WISHLIST_PAINTS }}★</strong>
+    </div>
+    <div class="quota-row">
+      <span>Custom 3rd-Party Paints</span>
+      <strong>{{ userState.customPaints().length }} / {{ userState.limits.MAX_CUSTOM_PAINTS }}</strong>
+    </div>
+    <div class="quota-row">
+      <span>Total Uploaded Photos ({{ totalUploadedBytesLabel() }})</span>
+      <strong>{{ userState.allUploadedPhotos().length }} / {{ userState.limits.MAX_TOTAL_USER_PHOTOS }}</strong>
+    </div>
+  </div>
+
+  <div class="photo-rules-note">
+    <div><strong>Showcase Photos:</strong> {{ showcasePhotoCount() }} uploaded (up to {{ userState.limits.MAX_MODEL_SHOWCASE_PHOTOS }}/model, {{ userState.limits.MAX_PROJECT_SHOWCASE_PHOTOS }}/project)</div>
+    <div><strong>🔒 Private Reference Photos:</strong> {{ referencePhotoCount() }} uploaded (up to {{ userState.limits.MAX_MODEL_REFERENCE_PHOTOS }}/model, {{ userState.limits.MAX_PROJECT_REFERENCE_PHOTOS }}/project)</div>
+    <div><strong>File Rules:</strong> JPG, PNG, or WebP • Up to {{ userState.limits.MAX_RAW_INPUT_FILE_SIZE_MB }} MB upload (auto-downscaled to ≤ {{ maxPhotoSizeLabel }})</div>
+  </div>
+</div>

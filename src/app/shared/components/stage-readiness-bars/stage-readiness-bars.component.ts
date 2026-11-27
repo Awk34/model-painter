@@ -4,6 +4,7 @@ import {
   InventoryReadinessResult,
   StagedReadinessResult,
 } from '../../../core/models/catalog.models';
+import { FINISH_STAGE_META } from '../../constants/finish-stage-meta';
 
 interface StageBarItem {
   key: FinishStageKey;
@@ -31,29 +32,13 @@ export class StageReadinessBarsComponent {
 
   readonly stages = computed<StageBarItem[]>(() => {
     const s = this.staged();
-    return [
-      {
-        key: 'base',
-        title: '1. Base Finish',
-        tierHint: 'Battle Ready',
-        primaryWishlistButton: true,
-        data: s.base,
-      },
-      {
-        key: 'detail',
-        title: '2. Detail Finish',
-        tierHint: 'Shade & Layer',
-        primaryWishlistButton: false,
-        data: s.detail,
-      },
-      {
-        key: 'artificer',
-        title: '3. Artificer Finish',
-        tierHint: 'Edge Highlights',
-        primaryWishlistButton: false,
-        data: s.artificer,
-      },
-    ];
+    return FINISH_STAGE_META.map((meta) => ({
+      key: meta.key,
+      title: meta.title,
+      tierHint: meta.tierHint,
+      primaryWishlistButton: meta.primaryWishlistButton,
+      data: s[meta.key],
+    }));
   });
 
   onWishlistClick(event: Event, paintIds: string[]): void {

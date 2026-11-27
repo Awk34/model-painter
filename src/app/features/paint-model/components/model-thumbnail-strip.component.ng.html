@@ -1,0 +1,42 @@
+<div class="angle-thumbs" role="group" aria-label="Model photos">
+  @if (hasCustomOverlayFeatured() && customFeaturedUrl(); as featUrl) {
+    <button
+      type="button"
+      class="angle-thumb featured-angle-thumb"
+      [class.active]="viewingCustomFeatured() && !selectedUserPhotoId()"
+      [attr.title]="showCustomFeaturedTitle() ? 'Custom Featured Image' : null"
+      aria-label="View custom featured image"
+      (click)="selectCustomFeatured.emit()"
+    >
+      <img [src]="featUrl" alt="" />
+      <span class="thumb-star" aria-hidden="true">★</span>
+    </button>
+  }
+  @for (imgUrl of officialImages(); track $index; let idx = $index) {
+    <button
+      type="button"
+      class="angle-thumb"
+      [class.active]="!viewingCustomFeatured() && !selectedUserPhotoId() && selectedImageIndex() === idx"
+      [attr.aria-label]="officialAriaPrefix() + (idx + 1)"
+      (click)="selectOfficialAngle.emit(idx)"
+    >
+      <img [src]="img.resolve(localImagePaths()[idx], imgUrl)" alt="" />
+    </button>
+  }
+  @for (ph of userPhotos(); track ph.id) {
+    <button
+      type="button"
+      class="angle-thumb user-angle-thumb"
+      [class.ref-angle-thumb]="ph.kind === 'reference'"
+      [class.active]="selectedUserPhotoId() === ph.id"
+      [title]="ph.caption || ph.fileName"
+      [attr.aria-label]="'View ' + (ph.kind === 'reference' ? 'private reference photo: ' : 'my photo: ') + (ph.caption || ph.fileName)"
+      (click)="selectUserPhoto.emit(ph.id)"
+    >
+      <img [src]="media.resolvePhotoUrl(ph)" alt="" />
+      @if (ph.kind === 'reference') {
+        <span class="thumb-lock" aria-hidden="true">🔒</span>
+      }
+    </button>
+  }
+</div>

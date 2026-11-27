@@ -1,0 +1,78 @@
+<div class="settings-card studio-card">
+  <span class="badge badge-pro">Cloud Account &amp; Sync</span>
+  <h2>Firebase Auth &amp; Cross-Device Sync</h2>
+  <p class="settings-desc">
+    By default, all user data stays 100% private in your local browser. Sign in with Google or Email to sync <code>users/{{ '{' }}uid{{ '}' }}</code> across devices.
+  </p>
+
+  @if (userState.currentUser(); as user) {
+    <div class="signed-in-box">
+      <div class="signed-in-profile">
+        @if (user.photoURL && !avatarFailed()) {
+          <img
+            [src]="user.photoURL"
+            (error)="onAvatarError()"
+            referrerpolicy="no-referrer"
+            alt="User avatar"
+            class="account-avatar"
+          />
+        } @else {
+          <app-icon name="profile" class="account-avatar placeholder" />
+        }
+        <div>
+          <div>
+            <strong>{{ user.displayName || user.email || user.uid }}</strong>
+            <span class="badge badge-owned sync-badge">{{ userState.cloudSyncStatus() }}</span>
+          </div>
+          @if (user.displayName && user.email) {
+            <div class="account-email">{{ user.email }}</div>
+          }
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="userState.signOutCloud()">
+        Sign Out
+      </button>
+    </div>
+  } @else {
+    <form class="auth-form" [formGroup]="authForm" (ngSubmit)="handleEmailAuth(false)">
+      <div class="form-row">
+        <div>
+          <label for="auth-email" class="sr-only">Email address</label>
+          <input
+            id="auth-email"
+            formControlName="email"
+            type="email"
+            autocomplete="email"
+            class="input-control"
+            placeholder="Email address"
+          />
+        </div>
+        <div>
+          <label for="auth-password" class="sr-only">Password</label>
+          <input
+            id="auth-password"
+            formControlName="password"
+            type="password"
+            autocomplete="current-password"
+            class="input-control"
+            placeholder="Password"
+          />
+        </div>
+      </div>
+      <div class="backup-btn-row">
+        <button type="submit" class="btn btn-gold btn-sm">
+          Sign In
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="handleEmailAuth(true)">
+          Create Account
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="handleGoogleAuth()">
+          Sign In with Google
+        </button>
+      </div>
+      @if (authError()) {
+        <p class="error-msg" role="alert">{{ authError() }}</p>
+      }
+    </form>
+  }
+</div>

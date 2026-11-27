@@ -13,8 +13,7 @@
         type="search"
         class="input-control"
         [placeholder]="searchPlaceholder()"
-        [ngModel]="pickerSearch()"
-        (ngModelChange)="pickerSearch.set($event)"
+        [formControl]="searchControl"
         autofocus
       />
 

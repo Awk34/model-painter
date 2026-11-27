@@ -6,9 +6,10 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   FinishStageKey,
   ModelRecipe,
@@ -22,17 +23,18 @@ import { InventoryMatchService } from '../../core/services/inventory-match.servi
 import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
 import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
-import { isEditableElement } from '../../core/utils/clipboard-image.util';
 import { AddToProjectModalComponent } from '../../shared/components/add-to-project-modal/add-to-project-modal.component';
-import { AppModalDialogComponent } from '../../shared/components/modal-dialog/modal-dialog.component';
+import { CollapsibleSectionComponent } from '../../shared/components/collapsible-section/collapsible-section.component';
 import { PaintBrandBadgeComponent } from '../../shared/components/paint-brand-badge/paint-brand-badge.component';
 import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint-swatch.component';
 import { StageReadinessBarsComponent } from '../../shared/components/stage-readiness-bars/stage-readiness-bars.component';
 import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
+import { ImageZoomLightboxComponent } from './components/image-zoom-lightbox.component';
 import {
   ModelPaintingStepsComponent,
   ModelStageFilter,
 } from './components/model-painting-steps.component';
+import { ModelThumbnailStripComponent } from './components/model-thumbnail-strip.component';
 import { ProjectModelFeaturedImageModalComponent } from './components/project-model-featured-image-modal.component';
 import { ProjectModelWorkspaceBarComponent } from './components/project-model-workspace-bar.component';
 
@@ -53,12 +55,14 @@ const FILTER_TO_STAGE_KEY: Record<ModelStageFilter, FinishStageKey | null> = {
   selector: 'app-model-detail',
   imports: [
     DecimalPipe,
-    RouterModule,
+    RouterLink,
+    CollapsibleSectionComponent,
     UserPhotoGalleryComponent,
     StageReadinessBarsComponent,
     ModelPaintingStepsComponent,
+    ModelThumbnailStripComponent,
+    ImageZoomLightboxComponent,
     AddToProjectModalComponent,
-    AppModalDialogComponent,
     PaintBrandBadgeComponent,
     PaintSwatchComponent,
     ProjectModelWorkspaceBarComponent,
@@ -67,9 +71,6 @@ const FILTER_TO_STAGE_KEY: Record<ModelStageFilter, FinishStageKey | null> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './model-detail.component.ng.html',
   styleUrl: './model-detail.component.css',
-  host: {
-    '(document:keydown)': 'onZoomModalKeyDown($event)',
-  },
 })
 export class ModelDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -81,10 +82,17 @@ export class ModelDetailComponent {
   readonly media = inject(UserMediaService);
   readonly projectImg = inject(ProjectImageResolverService);
 
+  private readonly zoomLightbox = viewChild(ImageZoomLightboxComponent);
+  private readonly paramMap = toSignal(this.route.paramMap);
+
   /** Route params: standalone `/models/:id` OR project-scoped `/projects/:projectId/models/:entryId` */
-  readonly standaloneModelId = signal<string | null>(null);
-  readonly projectId = signal<string | null>(null);
-  readonly entryId = signal<string | null>(null);
+  readonly projectId = computed(() => this.paramMap()?.get('projectId') ?? null);
+  readonly entryId = computed(() => this.paramMap()?.get('entryId') ?? null);
+  readonly standaloneModelId = computed(() => {
+    const pid = this.projectId();
+    const eid = this.entryId();
+    return pid && eid ? null : (this.paramMap()?.get('id') ?? null);
+  });
 
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
@@ -92,7 +100,6 @@ export class ModelDetailComponent {
   readonly selectedImageIndex = signal(0);
   readonly viewingCustomFeatured = signal(false);
   readonly selectedUserPhotoId = signal<string | null>(null);
-  readonly showPins = signal(true);
   readonly selectedColorPointId = signal<string | null>(null);
   readonly stageFilter = signal<ModelStageFilter>('all');
   readonly showProjectModal = signal(false);
@@ -103,15 +110,10 @@ export class ModelDetailComponent {
   readonly zoomScale = signal(2);
   readonly panX = signal(0);
   readonly panY = signal(0);
-  readonly isPanning = signal(false);
 
-  private dragStartX = 0;
-  private dragStartY = 0;
-  private panOriginX = 0;
-  private panOriginY = 0;
-  private activePointerId: number | null = null;
   private lastLoadedRecipeId: string | null = null;
   private lastFeaturedSignature: string | null = null;
+  private lastRouteKey: string | null = null;
   private loadGeneration = 0;
 
   readonly isProjectMode = computed(() => Boolean(this.projectId() && this.entryId()));
@@ -253,20 +255,19 @@ export class ModelDetailComponent {
   readonly readiness = computed(() => this.stagedReadiness().overall);
 
   constructor() {
-    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      const pid = params.get('projectId');
-      const eid = params.get('entryId');
-      const standaloneId = params.get('id');
-
-      this.projectId.set(pid);
-      this.entryId.set(eid);
-      this.standaloneModelId.set(pid && eid ? null : standaloneId);
+    effect(() => {
+      const pid = this.projectId();
+      const eid = this.entryId();
+      const standaloneId = this.standaloneModelId();
+      const routeKey = `${pid ?? ''}|${eid ?? ''}|${standaloneId ?? ''}`;
+      if (routeKey === this.lastRouteKey) {
+        return;
+      }
+      this.lastRouteKey = routeKey;
       this.loadError.set(null);
       this.zoomModalOpen.set(false);
       this.showFeaturedImageModal.set(false);
       this.selectedUserPhotoId.set(null);
-      this.isPanning.set(false);
-      this.activePointerId = null;
       this.lastFeaturedSignature = null;
       if (!(pid && eid)) {
         this.selectedImageIndex.set(0);
@@ -394,7 +395,7 @@ export class ModelDetailComponent {
     }
     const copy = this.userState.duplicateProjectModel(p.id, entry.id);
     if (copy) {
-      this.router.navigate(['/projects', p.id, 'models', copy.id]);
+      void this.router.navigate(['/projects', p.id, 'models', copy.id]);
     }
   }
 
@@ -407,7 +408,7 @@ export class ModelDetailComponent {
     const label = entry.customName || this.recipe()?.name || 'this model';
     if (confirm(`Remove "${label}" from "${p.name}"?`)) {
       this.userState.removeModelFromProject(p.id, entry.id);
-      this.router.navigate(['/projects', p.id]);
+      void this.router.navigate(['/projects', p.id]);
     }
   }
 
@@ -436,9 +437,7 @@ export class ModelDetailComponent {
   openZoomModal(): void {
     this.zoomScale.set(2);
     this.resetPan();
-    this.isPanning.set(false);
     this.showZoomPins.set(false);
-    this.activePointerId = null;
     this.zoomModalOpen.set(true);
   }
 
@@ -449,137 +448,25 @@ export class ModelDetailComponent {
   closeZoomModal(): void {
     if (this.zoomModalOpen()) {
       this.zoomModalOpen.set(false);
-      this.isPanning.set(false);
-      this.activePointerId = null;
-    }
-  }
-
-  setZoomScale(scale: number): void {
-    const clamped = Math.round(Math.min(4, Math.max(1, scale)) * 100) / 100;
-    this.zoomScale.set(clamped);
-    if (clamped <= 1) {
-      this.resetPan();
     }
   }
 
   zoomIn(): void {
-    this.setZoomScale(this.zoomScale() + 0.5);
+    const next = Math.round(Math.min(4, Math.max(1, this.zoomScale() + 0.5)) * 100) / 100;
+    this.zoomScale.set(next);
   }
 
   zoomOut(): void {
-    this.setZoomScale(this.zoomScale() - 0.5);
+    const next = Math.round(Math.min(4, Math.max(1, this.zoomScale() - 0.5)) * 100) / 100;
+    this.zoomScale.set(next);
+    if (next <= 1) {
+      this.resetPan();
+    }
   }
 
   resetZoom(): void {
     this.zoomScale.set(1);
     this.resetPan();
-  }
-
-  panBy(dx: number, dy: number): void {
-    if (this.zoomScale() <= 1) {
-      return;
-    }
-    this.panX.update((v) => v + dx);
-    this.panY.update((v) => v + dy);
-  }
-
-  onZoomModalKeyDown(event: KeyboardEvent): void {
-    if (!this.zoomModalOpen() || isEditableElement(event.target)) {
-      return;
-    }
-    if (event.ctrlKey || event.metaKey || event.altKey) {
-      return;
-    }
-    const step = event.shiftKey ? 80 : 32;
-    switch (event.key) {
-      case '+':
-      case '=':
-        event.preventDefault();
-        this.zoomIn();
-        break;
-      case '-':
-      case '_':
-        event.preventDefault();
-        this.zoomOut();
-        break;
-      case '0':
-        event.preventDefault();
-        this.resetZoom();
-        break;
-      case 'ArrowLeft':
-        if (this.zoomScale() > 1) {
-          event.preventDefault();
-          this.panBy(step, 0);
-        }
-        break;
-      case 'ArrowRight':
-        if (this.zoomScale() > 1) {
-          event.preventDefault();
-          this.panBy(-step, 0);
-        }
-        break;
-      case 'ArrowUp':
-        if (this.zoomScale() > 1) {
-          event.preventDefault();
-          this.panBy(0, step);
-        }
-        break;
-      case 'ArrowDown':
-        if (this.zoomScale() > 1) {
-          event.preventDefault();
-          this.panBy(0, -step);
-        }
-        break;
-    }
-  }
-
-  toggleQuickZoom(): void {
-    if (this.zoomScale() > 1) {
-      this.resetZoom();
-    } else {
-      this.setZoomScale(2.5);
-    }
-  }
-
-  onZoomWheel(event: WheelEvent): void {
-    event.preventDefault();
-    const delta = event.deltaY < 0 ? 0.25 : -0.25;
-    this.setZoomScale(this.zoomScale() + delta);
-  }
-
-  onPanStart(event: PointerEvent): void {
-    const stageEl = event.currentTarget as HTMLElement | null;
-    stageEl?.focus?.({ preventScroll: true });
-    if (this.zoomScale() <= 1 || event.button !== 0) {
-      return;
-    }
-    event.preventDefault();
-    this.isPanning.set(true);
-    this.activePointerId = event.pointerId;
-    this.dragStartX = event.clientX;
-    this.dragStartY = event.clientY;
-    this.panOriginX = this.panX();
-    this.panOriginY = this.panY();
-    stageEl?.setPointerCapture?.(event.pointerId);
-  }
-
-  onPanMove(event: PointerEvent): void {
-    if (!this.isPanning() || this.activePointerId !== event.pointerId) {
-      return;
-    }
-    this.panX.set(this.panOriginX + (event.clientX - this.dragStartX));
-    this.panY.set(this.panOriginY + (event.clientY - this.dragStartY));
-  }
-
-  onPanEnd(event: PointerEvent): void {
-    if (this.activePointerId !== event.pointerId) {
-      return;
-    }
-    const target = event.currentTarget as HTMLElement | null;
-    if (target?.hasPointerCapture?.(event.pointerId)) {
-      target.releasePointerCapture(event.pointerId);
-    }
-    this.isPanning.set(false);
-    this.activePointerId = null;
+    this.zoomLightbox()?.resetZoom();
   }
 }

@@ -121,24 +121,15 @@
             </h3>
             <div class="equiv-grid">
               @for (eq of officialCitadelEquivalents(); track eq.id) {
-                <div class="equiv-card studio-card">
-                  <button type="button" class="equiv-main" (click)="selectPaint(eq.id)">
-                    <app-paint-swatch [paint]="eq.paint" [hex]="eq.hex" />
-                    <div class="equiv-info">
-                      <span class="equiv-name">{{ eq.name }}</span>
-                      <span class="equiv-meta">{{ eq.label }}</span>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [class.btn-owned]="userState.isOwned(eq.id)"
-                    [class.btn-ghost]="!userState.isOwned(eq.id)"
-                    (click)="userState.toggleInventory(eq.id)"
-                  >
-                    {{ userState.isOwned(eq.id) ? '✓ Owned' : '+ Own' }}
-                  </button>
-                </div>
+                <app-paint-action-row
+                  [paintId]="eq.id"
+                  [name]="eq.name"
+                  [subtitle]="eq.label"
+                  [paint]="eq.paint"
+                  [hex]="eq.hex"
+                  actionMode="own-only"
+                  variant="card"
+                />
               }
             </div>
           </section>
@@ -159,66 +150,28 @@
             @if (crossBrandMatches().length > 0) {
               <div class="equiv-grid">
                 @for (m of crossBrandMatches(); track m.thirdPartyPaintId) {
-                  <div class="equiv-card studio-card">
-                    <button type="button" class="equiv-main" (click)="selectPaint(m.thirdPartyPaintId)">
-                      <app-paint-swatch
-                        [paint]="resolveThirdPartySwatch(m.thirdPartyPaintId, m.category)"
-                        [hex]="m.hex"
-                      />
-                      <div class="equiv-info">
-                        <span class="equiv-name">{{ m.name }}</span>
-                        <span class="equiv-meta">
-                          {{ m.brand }} • {{ m.range }}
-                          @if (m.code) { ({{ m.code }}) }
-                        </span>
-                        <span class="delta-badge" [attr.data-quality]="m.matchQuality">
-                          ΔE {{ m.deltaE }} ({{ m.matchQuality }})
-                        </span>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-sm"
-                      [class.btn-owned]="userState.isOwned(m.thirdPartyPaintId)"
-                      [class.btn-ghost]="!userState.isOwned(m.thirdPartyPaintId)"
-                      (click)="userState.toggleInventory(m.thirdPartyPaintId)"
-                    >
-                      {{ userState.isOwned(m.thirdPartyPaintId) ? '✓ Owned' : '+ Own' }}
-                    </button>
-                  </div>
+                  <app-paint-action-row
+                    [paintId]="m.thirdPartyPaintId"
+                    [name]="m.name"
+                    [subtitle]="m.brand + ' • ' + m.range + (m.code ? ' (' + m.code + ')' : '')"
+                    [paint]="resolveThirdPartySwatch(m.thirdPartyPaintId, m.category)"
+                    [hex]="m.hex"
+                    [deltaE]="m.deltaE"
+                    [matchQuality]="m.matchQuality"
+                    actionMode="own-only"
+                    variant="card"
+                  />
                 }
               </div>
             } @else {
               <p class="empty-hint">No pre-seeded cross-brand matches for this technical/specialty paint.</p>
             }
 
-            <!-- Custom Override Linker -->
-            <div class="override-box">
-              <label for="paint-override-select" class="override-label">
-                Link Custom or 3rd-Party Equivalent Override:
-              </label>
-              <div class="override-controls">
-                <select
-                  id="paint-override-select"
-                  class="input-control"
-                  [ngModel]="selectedOverridePaintId()"
-                  (ngModelChange)="selectedOverridePaintId.set($event)"
-                >
-                  <option value="">Select a 3rd-party or custom paint...</option>
-                  @for (tp of allThirdPartyAndCustomPaints(); track tp.id) {
-                    <option [value]="tp.id">{{ tp.brand }} — {{ tp.name }} ({{ tp.range }})</option>
-                  }
-                </select>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [disabled]="!selectedOverridePaintId()"
-                  (click)="addCustomLink(pid)"
-                >
-                  + Link Equivalent
-                </button>
-              </div>
-            </div>
+            <app-paint-override-linker
+              [paints]="allThirdPartyAndCustomPaints()"
+              [(selectedPaintId)]="selectedOverridePaintId"
+              (linkRequested)="addCustomLink(pid, $event)"
+            />
           </section>
         }
 
@@ -228,32 +181,17 @@
             <h3 class="section-title">Equivalent Citadel Paints</h3>
             <div class="equiv-grid">
               @for (cm of tp.citadelMatches; track cm.citadelPaintId) {
-                <div class="equiv-card studio-card">
-                  <button type="button" class="equiv-main" (click)="selectPaint(cm.citadelPaintId)">
-                    <app-paint-swatch
-                      [paint]="resolveCitadelSwatch(cm.citadelPaintId, cm.citadelCategory)"
-                      [hex]="cm.citadelHex"
-                    />
-                    <div class="equiv-info">
-                      <span class="equiv-name">{{ cm.citadelPaintName }}</span>
-                      <span class="equiv-meta">
-                        {{ getCitadelBrandLabel(cm.citadelRange) }} • {{ cm.citadelCategory }}
-                      </span>
-                      <span class="delta-badge" [attr.data-quality]="cm.matchQuality">
-                        ΔE {{ cm.deltaE }} ({{ cm.matchQuality }})
-                      </span>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [class.btn-owned]="userState.isOwned(cm.citadelPaintId)"
-                    [class.btn-ghost]="!userState.isOwned(cm.citadelPaintId)"
-                    (click)="userState.toggleInventory(cm.citadelPaintId)"
-                  >
-                    {{ userState.isOwned(cm.citadelPaintId) ? '✓ Owned' : '+ Own' }}
-                  </button>
-                </div>
+                <app-paint-action-row
+                  [paintId]="cm.citadelPaintId"
+                  [name]="cm.citadelPaintName"
+                  [subtitle]="getCitadelBrandLabel(cm.citadelRange) + ' • ' + cm.citadelCategory"
+                  [paint]="resolveCitadelSwatch(cm.citadelPaintId, cm.citadelCategory)"
+                  [hex]="cm.citadelHex"
+                  [deltaE]="cm.deltaE"
+                  [matchQuality]="cm.matchQuality"
+                  actionMode="own-only"
+                  variant="card"
+                />
               }
             </div>
           </section>

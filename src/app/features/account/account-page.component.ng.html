@@ -1,0 +1,12 @@
+<div class="page-container">
+  <app-desk-header
+    icon="profile"
+    title="Account & Data Sync"
+    subtitle="Sign in with Firebase Auth, import a My Warhammer account, or manage local backups & readiness preferences."
+    (projectsClick)="openProjectsTab()"
+    (modelsClick)="openModelsTab($event)"
+    (paintsClick)="openPaintsTab($event)"
+  />
+
+  <app-account-settings-panel />
+</div>

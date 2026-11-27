@@ -154,8 +154,7 @@
             type="search"
             class="input-control search-field"
             placeholder="Search any catalog miniature artwork (e.g., for kitbashes or proxies)..."
-            [ngModel]="catalogSearch()"
-            (ngModelChange)="catalogSearch.set($event)"
+            [formControl]="catalogSearchControl"
           />
           <div class="image-choice-grid">
             @for (m of filteredCatalogModels(); track m.id) {

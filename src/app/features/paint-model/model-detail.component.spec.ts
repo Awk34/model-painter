@@ -100,6 +100,14 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
             getPhotoQuotaLimit: () => 5,
             getPhotosForTarget: () => [],
             resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
+            getCompletedStepIds: () => [],
+            getProjectModelCompletedStepIds: () => [],
+            toggleStepDone: () => {},
+            toggleProjectModelStepDone: () => {},
+            setStepsDone: () => {},
+            setProjectModelStepsDone: () => {},
+            clearModelProgress: () => {},
+            clearProjectModelProgress: () => {},
             isOwned: () => false,
             isWishlisted: () => false,
           },
@@ -155,7 +163,8 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
 
   it('opens .zoom-modal-panel at 200% zoom with zero .color-pin orbs when .photo-zoom-btn is clicked', async () => {
     const fixture = await createComponentFixture();
-    expect(fixture.componentInstance.showPins()).toBeTrue();
+    expect(fixture.componentInstance.canShowColorPins()).toBeTrue();
+    expect(fixture.nativeElement.querySelectorAll('.img-overlay-box .color-pin').length).toBe(2);
     expect(fixture.nativeElement.querySelector('.zoom-modal-panel')).toBeNull();
 
     const zoomBtn = fixture.nativeElement.querySelector('.photo-zoom-btn') as HTMLButtonElement;
@@ -470,6 +479,14 @@ describe('ModelDetailComponent User Photo Thumbnails', () => {
             getPhotosForTarget: (_t: string, _id: string, kind: string) =>
               kind === 'showcase' ? [showcasePhoto] : [refPhoto],
             resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
+            getCompletedStepIds: () => [],
+            getProjectModelCompletedStepIds: () => [],
+            toggleStepDone: () => {},
+            toggleProjectModelStepDone: () => {},
+            setStepsDone: () => {},
+            setProjectModelStepsDone: () => {},
+            clearModelProgress: () => {},
+            clearProjectModelProgress: () => {},
             isOwned: () => false,
             isWishlisted: () => false,
           },
@@ -571,6 +588,14 @@ describe('ModelDetailComponent Error & Not-Found States', () => {
             getPhotoQuotaLimit: () => 5,
             getPhotosForTarget: () => [],
             resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
+            getCompletedStepIds: () => [],
+            getProjectModelCompletedStepIds: () => [],
+            toggleStepDone: () => {},
+            toggleProjectModelStepDone: () => {},
+            setStepsDone: () => {},
+            setProjectModelStepsDone: () => {},
+            clearModelProgress: () => {},
+            clearProjectModelProgress: () => {},
             isOwned: () => false,
             isWishlisted: () => false,
           },

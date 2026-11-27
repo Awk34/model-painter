@@ -27,8 +27,7 @@
           type="search"
           class="input-control"
           placeholder="Search any Citadel or 3rd-party paint to find equivalents..."
-          [ngModel]="converterSearch()"
-          (ngModelChange)="converterSearch.set($event)"
+          [formControl]="searchControl"
         />
       </div>
 
@@ -38,8 +37,7 @@
           <select
             id="converter-brand-filter"
             class="input-control filter-select"
-            [ngModel]="converterTargetBrand()"
-            (ngModelChange)="converterTargetBrand.set($event)"
+            [formControl]="brandControl"
           >
             <option value="all">All 3rd-Party Brands</option>
             @for (b of catalog.thirdPartyBrands(); track b) {
@@ -47,11 +45,7 @@
             }
           </select>
           <label class="checkbox-inline">
-            <input
-              type="checkbox"
-              [ngModel]="converterOnlyOwned()"
-              (ngModelChange)="converterOnlyOwned.set($event)"
-            />
+            <input type="checkbox" [formControl]="onlyOwnedControl" />
             <span>Only show paints where I own either side</span>
           </label>
         </div>
@@ -63,63 +57,30 @@
     <div class="converter-list">
       @for (row of filteredCrossBrandRows().slice(0, 120); track row.citadel.id) {
         <div class="converter-row studio-card">
-          <div class="conv-side citadel-side">
-            <button
-              type="button"
-              class="conv-paint-btn"
-              (click)="paintModal.openPaint(row.citadel.id)"
-            >
-              <app-paint-swatch [paint]="row.citadel" />
-              <div class="conv-info">
-                <span class="conv-name">{{ row.citadel.name }}</span>
-                <span class="conv-meta">
-                  {{ getCitadelBrandLabel(row.citadel.range) }} • {{ row.citadel.category }}
-                </span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm"
-              [class.btn-owned]="userState.isOwned(row.citadel.id)"
-              [class.btn-ghost]="!userState.isOwned(row.citadel.id)"
-              (click)="userState.toggleInventory(row.citadel.id)"
-            >
-              {{ userState.isOwned(row.citadel.id) ? '✓ Owned' : '+ Own' }}
-            </button>
-          </div>
+          <app-paint-action-row
+            class="conv-side"
+            [paintId]="row.citadel.id"
+            [name]="row.citadel.name"
+            [subtitle]="getCitadelBrandLabel(row.citadel.range) + ' • ' + row.citadel.category"
+            [paint]="row.citadel"
+            actionMode="own-only"
+            variant="step"
+          />
 
           <div class="conv-arrow">⇄</div>
 
           <div class="conv-equivalents">
             @for (eq of row.matches; track eq.thirdPartyPaintId) {
-              <div class="conv-eq-pill">
-                <button
-                  type="button"
-                  class="conv-eq-main"
-                  (click)="paintModal.openPaint(eq.thirdPartyPaintId)"
-                >
-                  <app-paint-swatch
-                    [paint]="resolveThirdPartySwatch(eq.thirdPartyPaintId, eq.category)"
-                    [hex]="eq.hex"
-                    size="mini"
-                  />
-                  <div class="conv-eq-text">
-                    <span class="conv-eq-name">{{ eq.name }}</span>
-                    <span class="conv-eq-brand">
-                      {{ eq.brand }} • {{ eq.range }} • ΔE {{ eq.deltaE }}
-                    </span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  [class.btn-owned]="userState.isOwned(eq.thirdPartyPaintId)"
-                  [class.btn-ghost]="!userState.isOwned(eq.thirdPartyPaintId)"
-                  (click)="userState.toggleInventory(eq.thirdPartyPaintId)"
-                >
-                  {{ userState.isOwned(eq.thirdPartyPaintId) ? '✓' : '+' }}
-                </button>
-              </div>
+              <app-paint-action-row
+                [paintId]="eq.thirdPartyPaintId"
+                [name]="eq.name"
+                [subtitle]="eq.brand + ' • ' + eq.range + ' • ΔE ' + eq.deltaE"
+                [paint]="resolveThirdPartySwatch(eq.thirdPartyPaintId, eq.category)"
+                [hex]="eq.hex"
+                swatchSize="mini"
+                actionMode="compact-own"
+                variant="pill"
+              />
             }
           </div>
         </div>
@@ -129,59 +90,31 @@
     <div class="converter-list">
       @for (group of filteredToneProGroups(); track group.classicId) {
         <div class="converter-row studio-card">
-          <div class="conv-side citadel-side">
-            <button
-              type="button"
-              class="conv-paint-btn"
-              (click)="paintModal.openPaint(group.classicId)"
-            >
-              <app-paint-swatch [paint]="group.classicPaint" [hex]="group.classicHex" />
-              <div class="conv-info">
-                <span class="conv-name">{{ group.classicName }}</span>
-                <span class="conv-meta">Citadel Classic • {{ group.classicCategory }}</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm"
-              [class.btn-owned]="userState.isOwned(group.classicId)"
-              [class.btn-ghost]="!userState.isOwned(group.classicId)"
-              (click)="userState.toggleInventory(group.classicId)"
-            >
-              {{ userState.isOwned(group.classicId) ? '✓ Owned' : '+ Own' }}
-            </button>
-          </div>
+          <app-paint-action-row
+            class="conv-side"
+            [paintId]="group.classicId"
+            [name]="group.classicName"
+            [subtitle]="'Citadel Classic • ' + group.classicCategory"
+            [paint]="group.classicPaint"
+            [hex]="group.classicHex"
+            actionMode="own-only"
+            variant="step"
+          />
 
           <div class="conv-arrow">⇄</div>
 
           <div class="conv-equivalents">
             @for (tp of group.toneProList; track tp.tone_pro_paint_id) {
-              <div class="conv-eq-pill">
-                <button
-                  type="button"
-                  class="conv-eq-main"
-                  (click)="paintModal.openPaint(tp.tone_pro_paint_id)"
-                >
-                  <app-paint-swatch
-                    [paint]="resolveCitadelSwatch(tp.tone_pro_paint_id)"
-                    [hex]="tp.tone_pro_hex"
-                    size="mini"
-                  />
-                  <div class="conv-eq-text">
-                    <span class="conv-eq-name">{{ tp.tone_pro_paint_name }}</span>
-                    <span class="conv-eq-brand">Citadel Tone Pro</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  [class.btn-owned]="userState.isOwned(tp.tone_pro_paint_id)"
-                  [class.btn-ghost]="!userState.isOwned(tp.tone_pro_paint_id)"
-                  (click)="userState.toggleInventory(tp.tone_pro_paint_id)"
-                >
-                  {{ userState.isOwned(tp.tone_pro_paint_id) ? '✓' : '+' }}
-                </button>
-              </div>
+              <app-paint-action-row
+                [paintId]="tp.tone_pro_paint_id"
+                [name]="tp.tone_pro_paint_name"
+                subtitle="Citadel Tone Pro"
+                [paint]="resolveCitadelSwatch(tp.tone_pro_paint_id)"
+                [hex]="tp.tone_pro_hex"
+                swatchSize="mini"
+                actionMode="compact-own"
+                variant="pill"
+              />
             }
           </div>
         </div>
@@ -189,4 +122,3 @@
     </div>
   }
 </section>
-

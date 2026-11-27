@@ -39,7 +39,7 @@ export interface CompatibleToneProRef {
 export interface Paint {
   id: string;
   name: string;
-  range: CitadelPaintRange | 'warhammer_colour' | 'warhammer_pro' | string;
+  range: CitadelPaintRange | 'warhammer_colour' | 'warhammer_pro';
   category: string;
   potStyle?: string;
   gradientStartHex: string;

@@ -1,0 +1,31 @@
+:host {
+  display: block;
+}
+
+.override-box {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--bg-void);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.override-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.override-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.override-controls .input-control {
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 100%;
+}

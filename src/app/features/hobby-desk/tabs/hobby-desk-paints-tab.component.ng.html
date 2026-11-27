@@ -40,8 +40,7 @@
         type="search"
         class="input-control"
         placeholder="Search by paint name, hex code, brand, or SKU..."
-        [ngModel]="paintSearch()"
-        (ngModelChange)="paintSearch.set($event)"
+        [formControl]="paintSearchControl"
       />
     </div>
 
@@ -50,8 +49,7 @@
       <select
         id="desk-paints-brand"
         class="input-control filter-select"
-        [ngModel]="selectedBrandFilter()"
-        (ngModelChange)="selectedBrandFilter.set($event)"
+        [formControl]="brandFilterControl"
       >
         <option value="all">All Brands</option>
         <option value="Citadel Classic">Citadel Colour (Classic)</option>
@@ -65,8 +63,7 @@
       <select
         id="desk-paints-category"
         class="input-control filter-select"
-        [ngModel]="selectedCategoryFilter()"
-        (ngModelChange)="selectedCategoryFilter.set($event)"
+        [formControl]="categoryFilterControl"
       >
         <option value="all">All Categories</option>
         @for (cat of availableCategories(); track cat) {
@@ -83,51 +80,22 @@
   @if (filteredPaints().length > 0) {
     <div class="paints-grid">
       @for (p of filteredPaints(); track p.id) {
-        <div class="paint-card studio-card">
-          <button type="button" class="paint-card-main" (click)="paintModal.openPaint(p.id)">
-            @if (p.localImagePath) {
-              <img
-                [src]="img.resolve(p.localImagePath, p.imageUrl)"
-                [alt]="p.name"
-                class="paint-pot-thumb"
-                loading="lazy"
-              />
-            } @else {
-              <app-paint-swatch [paint]="p.paint" />
-            }
-
-            <div class="paint-card-info">
-              <span class="paint-card-name">{{ p.name }}</span>
-              <div class="paint-card-meta">
-                <span class="mini-brand" [class.pro]="p.isTonePro" [class.tp]="!p.isCitadel">
-                  {{ p.rangeLabel }}
-                </span>
-                <span>• {{ p.category }}</span>
-              </div>
-            </div>
-          </button>
-
-          <div class="paint-card-actions">
-            <button
-              type="button"
-              class="icon-toggle"
-              [class.active-owned]="userState.isOwned(p.id)"
-              title="Toggle Inventory"
-              (click)="userState.toggleInventory(p.id)"
-            >
-              {{ userState.isOwned(p.id) ? '✓ Owned' : '+ Own' }}
-            </button>
-            <button
-              type="button"
-              class="icon-toggle"
-              [class.active-wish]="userState.isWishlisted(p.id)"
-              title="Toggle Wishlist"
-              (click)="userState.toggleWishlist(p.id)"
-            >
-              {{ userState.isWishlisted(p.id) ? '★' : '☆' }}
-            </button>
+        <app-paint-action-row
+          [paintId]="p.id"
+          [name]="p.name"
+          [paint]="p.paint"
+          [imageUrl]="p.localImagePath ? img.resolve(p.localImagePath, p.imageUrl) : null"
+          actionMode="full"
+          variant="card"
+          [useIconToggle]="true"
+        >
+          <div class="paint-card-meta" paintRowMeta>
+            <span class="mini-brand" [class.pro]="p.isTonePro" [class.tp]="!p.isCitadel">
+              {{ p.rangeLabel }}
+            </span>
+            <span>• {{ p.category }}</span>
           </div>
-        </div>
+        </app-paint-action-row>
       }
     </div>
   } @else {
@@ -160,19 +128,16 @@
   (closed)="closeCustomPaintModal()"
 >
   @if (showCustomPaintModal()) {
-    @let form = customPaintForm();
-    <form class="modal-body" (ngSubmit)="saveCustomPaint()">
+    <form class="modal-body" [formGroup]="customPaintFormGroup" (ngSubmit)="saveCustomPaint()">
       <div class="form-grid">
         <div>
           <label class="field-label" for="custom-paint-brand">Brand</label>
           <input
             id="custom-paint-brand"
-            name="brand"
+            formControlName="brand"
             type="text"
             class="input-control"
             placeholder="e.g., The Army Painter, Scale75, Kimera..."
-            [ngModel]="form.brand"
-            (ngModelChange)="patchCustomPaintForm({ brand: $event })"
             autofocus
           />
         </div>
@@ -180,24 +145,20 @@
           <label class="field-label" for="custom-paint-range">Range</label>
           <input
             id="custom-paint-range"
-            name="range"
+            formControlName="range"
             type="text"
             class="input-control"
             placeholder="e.g., Warpaints Fanatic, Speedpaint 2.0..."
-            [ngModel]="form.range"
-            (ngModelChange)="patchCustomPaintForm({ range: $event })"
           />
         </div>
         <div>
           <label class="field-label" for="custom-paint-name">Paint Name</label>
           <input
             id="custom-paint-name"
-            name="name"
+            formControlName="name"
             type="text"
             class="input-control"
             placeholder="e.g., Matt Black"
-            [ngModel]="form.name"
-            (ngModelChange)="patchCustomPaintForm({ name: $event })"
           />
         </div>
         <div>
@@ -205,10 +166,8 @@
           <div class="category-swatch-row">
             <select
               id="custom-paint-category"
-              name="category"
+              formControlName="category"
               class="input-control"
-              [ngModel]="form.category"
-              (ngModelChange)="patchCustomPaintForm({ category: $event })"
             >
               <option value="Base">Base</option>
               <option value="Layer">Layer</option>
@@ -219,11 +178,9 @@
             </select>
             <input
               type="color"
-              name="hex"
+              formControlName="hex"
               class="color-picker"
               aria-label="Custom paint hex color"
-              [ngModel]="form.hex"
-              (ngModelChange)="patchCustomPaintForm({ hex: $event })"
             />
           </div>
         </div>
@@ -235,10 +192,8 @@
         </label>
         <select
           id="custom-paint-citadel-eq"
-          name="citadelPaintId"
+          formControlName="citadelPaintId"
           class="input-control"
-          [ngModel]="form.citadelPaintId"
-          (ngModelChange)="patchCustomPaintForm({ citadelPaintId: $event })"
         >
           <option value="">-- None / Standalone --</option>
           @for (cp of catalog.paints(); track cp.id) {

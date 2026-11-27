@@ -8,46 +8,6 @@
   gap: 10px;
 }
 
-.paint-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  gap: 10px;
-}
-
-.paint-card-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-}
-
-.paint-pot-thumb {
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.paint-card-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.paint-card-name {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: 0.88rem;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .paint-card-meta {
   display: flex;
   gap: 5px;
@@ -63,13 +23,6 @@
 
 .mini-brand.tp {
   color: var(--gold-bright);
-}
-
-.paint-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
 }
 
 .form-grid {
@@ -101,4 +54,3 @@
     grid-template-columns: 1fr;
   }
 }
-

@@ -38,15 +38,13 @@
 
       <div class="hero-info">
         @if (editingTitle()) {
-          <form class="title-edit-row" (ngSubmit)="saveTitle(proj.id)">
+          <form class="title-edit-row" [formGroup]="titleForm" (ngSubmit)="saveTitle(proj.id)">
             <label for="project-title-input" class="sr-only">Project name</label>
             <input
               id="project-title-input"
-              name="titleDraft"
               type="text"
               class="input-control"
-              [ngModel]="titleDraft()"
-              (ngModelChange)="titleDraft.set($event)"
+              [formControl]="titleControl"
             />
             <button type="submit" class="btn btn-gold btn-sm">
               Save
@@ -94,134 +92,121 @@
     </header>
 
     <!-- SECTION 1: ATTACHED MODELS -->
-    <section class="project-section studio-card">
-      <div class="section-header-bar">
-        <button
-          type="button"
-          class="section-toggle-btn"
-          [attr.aria-expanded]="modelsExpanded()"
-          (click)="modelsExpanded.set(!modelsExpanded())"
-        >
-          <span class="section-chevron" [class.expanded]="modelsExpanded()">▸</span>
-          <h2>
-            🛡 Models ({{ attachedModels().length }}@if (totalMiniatures() > attachedModels().length) { • {{ totalMiniatures() }} minis})
-          </h2>
-        </button>
-        <button
-          type="button"
-          class="btn btn-gold btn-sm"
-          (click)="activePickerModal.set('model')"
-        >
-          + Add Model to Project
-        </button>
-      </div>
+    <app-collapsible-section
+      [title]="'🛡 Models (' + attachedModels().length + (totalMiniatures() > attachedModels().length ? ' • ' + totalMiniatures() + ' minis' : '') + ')'"
+      [(expanded)]="modelsExpanded"
+    >
+      <button
+        sectionActions
+        type="button"
+        class="btn btn-gold btn-sm"
+        (click)="activePickerModal.set('model')"
+      >
+        + Add Model to Project
+      </button>
 
-      @if (modelsExpanded()) {
-        <div class="section-content">
-          @if (attachedModels().length > 0) {
-            <div class="cards-grid">
-              @for (item of attachedModels(); track item.entry.id) {
-                <div class="attached-card studio-card interactive">
-                  <div class="attached-img-wrap">
-                    <img [src]="item.imageUrl" [alt]="item.displayName" />
-                    @if (item.entry.quantity > 1) {
-                      <span
-                        class="qty-corner-badge"
-                        [attr.aria-label]="'Quantity ' + item.entry.quantity"
-                      >
-                        ×{{ item.entry.quantity }}
-                      </span>
+      @if (attachedModels().length > 0) {
+        <div class="cards-grid">
+          @for (item of attachedModels(); track item.entry.id) {
+            <div class="attached-card studio-card interactive">
+              <div class="attached-img-wrap">
+                <img [src]="item.imageUrl" [alt]="item.displayName" />
+                @if (item.entry.quantity > 1) {
+                  <span
+                    class="qty-corner-badge"
+                    [attr.aria-label]="'Quantity ' + item.entry.quantity"
+                  >
+                    ×{{ item.entry.quantity }}
+                  </span>
+                }
+              </div>
+              <div class="attached-body">
+                <h3>
+                  <a
+                    [routerLink]="['/projects', proj.id, 'models', item.entry.id]"
+                    class="card-stretched-link"
+                  >
+                    {{ item.displayName }}
+                  </a>
+                </h3>
+                @if (item.hasCustomName) {
+                  <p class="catalog-subtitle">{{ item.catalogName }}</p>
+                }
+                @if (item.gameLabel) {
+                  <p>{{ item.gameLabel }}</p>
+                }
+                @if (item.hasNotes || item.completedStepCount > 0 || item.photoCount > 0) {
+                  <div class="model-meta-pills">
+                    @if (item.completedStepCount > 0) {
+                      <span class="mini-pill progress-pill">✓ {{ item.completedStepCount }} steps</span>
+                    }
+                    @if (item.hasNotes) {
+                      <span class="mini-pill">📝 Notes</span>
+                    }
+                    @if (item.photoCount > 0) {
+                      <span class="mini-pill">📷 {{ item.photoCount }}</span>
                     }
                   </div>
-                  <div class="attached-body">
-                    <h3>
-                      <a
-                        [routerLink]="['/projects', proj.id, 'models', item.entry.id]"
-                        class="card-stretched-link"
-                      >
-                        {{ item.displayName }}
-                      </a>
-                    </h3>
-                    @if (item.hasCustomName) {
-                      <p class="catalog-subtitle">{{ item.catalogName }}</p>
-                    }
-                    @if (item.gameLabel) {
-                      <p>{{ item.gameLabel }}</p>
-                    }
-                    @if (item.hasNotes || item.completedStepCount > 0 || item.photoCount > 0) {
-                      <div class="model-meta-pills">
-                        @if (item.completedStepCount > 0) {
-                          <span class="mini-pill progress-pill">✓ {{ item.completedStepCount }} steps</span>
-                        }
-                        @if (item.hasNotes) {
-                          <span class="mini-pill">📝 Notes</span>
-                        }
-                        @if (item.photoCount > 0) {
-                          <span class="mini-pill">📷 {{ item.photoCount }}</span>
-                        }
-                      </div>
-                    }
-                  </div>
-                  <div class="attached-footer model-card-footer">
-                    <div class="card-qty-stepper">
-                      <button
-                        type="button"
-                        class="qty-step-btn"
-                        aria-label="Decrease quantity"
-                        [disabled]="item.entry.quantity <= 1"
-                        (click)="adjustModelQuantity(proj.id, item.entry, -1)"
-                      >
-                        −
-                      </button>
-                      <span class="qty-step-val">×{{ item.entry.quantity }}</span>
-                      <button
-                        type="button"
-                        class="qty-step-btn"
-                        aria-label="Increase quantity"
-                        [disabled]="item.entry.quantity >= userState.limits.MAX_MODEL_QUANTITY"
-                        (click)="adjustModelQuantity(proj.id, item.entry, 1)"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div class="card-footer-actions">
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-sm"
-                        [attr.aria-label]="'Duplicate ' + item.displayName"
-                        title="Duplicate as separate model entry"
-                        (click)="duplicateModelEntry(proj.id, item.entry.id)"
-                      >
-                        ⧉
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-sm danger-text"
-                        [attr.aria-label]="'Remove ' + item.displayName"
-                        (click)="userState.removeModelFromProject(proj.id, item.entry.id)"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
+                }
+              </div>
+              <div class="attached-footer model-card-footer">
+                <div class="card-qty-stepper">
+                  <button
+                    type="button"
+                    class="qty-step-btn"
+                    aria-label="Decrease quantity"
+                    [disabled]="item.entry.quantity <= 1"
+                    (click)="adjustModelQuantity(proj.id, item.entry, -1)"
+                  >
+                    −
+                  </button>
+                  <span class="qty-step-val">×{{ item.entry.quantity }}</span>
+                  <button
+                    type="button"
+                    class="qty-step-btn"
+                    aria-label="Increase quantity"
+                    [disabled]="item.entry.quantity >= userState.limits.MAX_MODEL_QUANTITY"
+                    (click)="adjustModelQuantity(proj.id, item.entry, 1)"
+                  >
+                    +
+                  </button>
                 </div>
-              }
-            </div>
-          } @else {
-            <div class="empty-box">
-              <p>No Model Painting Guides attached to this project yet.</p>
-              <button
-                type="button"
-                class="btn btn-gold btn-sm"
-                (click)="activePickerModal.set('model')"
-              >
-                + Add Model Guide
-              </button>
+                <div class="card-footer-actions">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [attr.aria-label]="'Duplicate ' + item.displayName"
+                    title="Duplicate as separate model entry"
+                    (click)="duplicateModelEntry(proj.id, item.entry.id)"
+                  >
+                    ⧉
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm danger-text"
+                    [attr.aria-label]="'Remove ' + item.displayName"
+                    (click)="userState.removeModelFromProject(proj.id, item.entry.id)"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
             </div>
           }
         </div>
+      } @else {
+        <div class="empty-box">
+          <p>No Model Painting Guides attached to this project yet.</p>
+          <button
+            type="button"
+            class="btn btn-gold btn-sm"
+            (click)="activePickerModal.set('model')"
+          >
+            + Add Model Guide
+          </button>
+        </div>
       }
-    </section>
+    </app-collapsible-section>
 
     <!-- SECTION 2: AGGREGATED REQUIRED & MISSING PAINTS ROLLUP -->
     <app-project-paint-rollup
@@ -233,110 +218,87 @@
     />
 
     <!-- SECTION 3: PROJECT PHOTOS & PRIVATE REFERENCE PHOTOS -->
-    <section class="project-section studio-card">
-      <div class="section-header-bar">
-        <button
-          type="button"
-          class="section-toggle-btn"
-          [attr.aria-expanded]="photosExpanded()"
-          (click)="photosExpanded.set(!photosExpanded())"
-        >
-          <span class="section-chevron" [class.expanded]="photosExpanded()">▸</span>
-          <h2>📷 Project Photos & Private References ({{ projectPhotoCount() }})</h2>
-        </button>
-      </div>
+    <app-collapsible-section
+      [title]="'📷 Project Photos & Private References (' + projectPhotoCount() + ')'"
+      [(expanded)]="photosExpanded"
+      contentClass="project-photos-stack"
+    >
+      <app-user-photo-gallery
+        targetType="project"
+        [targetId]="proj.id"
+        kind="showcase"
+        heading="My Painted Project Photos"
+        description="Upload photos of your finished squad, army display, or work-in-progress miniatures. Click 'Set Cover' on any photo to use it as this project's cover."
+        [allowSetCover]="true"
+        [allowGlobalPaste]="!activePickerModal() && !notesEditorOpen()"
+        [activeCoverPhotoId]="proj.coverPhotoId"
+        (selectCover)="onSelectCoverPhoto(proj.id, $event)"
+      />
 
-      @if (photosExpanded()) {
-        <div class="section-content project-photos-stack">
-          <app-user-photo-gallery
-            targetType="project"
-            [targetId]="proj.id"
-            kind="showcase"
-            heading="My Painted Project Photos"
-            description="Upload photos of your finished squad, army display, or work-in-progress miniatures. Click 'Set Cover' on any photo to use it as this project's cover."
-            [allowSetCover]="true"
-            [allowGlobalPaste]="!activePickerModal() && !notesEditorOpen()"
-            [activeCoverPhotoId]="proj.coverPhotoId"
-            (selectCover)="onSelectCoverPhoto(proj.id, $event)"
-          />
+      <hr class="section-divider" />
 
-          <hr class="section-divider" />
-
-          <app-user-photo-gallery
-            targetType="project"
-            [targetId]="proj.id"
-            kind="reference"
-            heading="Private Project Reference Photos"
-            description="Private inspiration, color scheme tests, or artwork for your own painting reference."
-          />
-        </div>
-      }
-    </section>
+      <app-user-photo-gallery
+        targetType="project"
+        [targetId]="proj.id"
+        kind="reference"
+        heading="Private Project Reference Photos"
+        description="Private inspiration, color scheme tests, or artwork for your own painting reference."
+      />
+    </app-collapsible-section>
 
     <!-- SECTION 4: ATTACHED COLORS -->
-    <section class="project-section studio-card">
-      <div class="section-header-bar">
-        <button
-          type="button"
-          class="section-toggle-btn"
-          [attr.aria-expanded]="colorsExpanded()"
-          (click)="colorsExpanded.set(!colorsExpanded())"
-        >
-          <span class="section-chevron" [class.expanded]="colorsExpanded()">▸</span>
-          <h2>💧 Colors ({{ attachedColors().length }})</h2>
-        </button>
-        <button
-          type="button"
-          class="btn btn-gold btn-sm"
-          (click)="activePickerModal.set('color')"
-        >
-          + Add Color to Project
-        </button>
-      </div>
+    <app-collapsible-section
+      [title]="'💧 Colors (' + attachedColors().length + ')'"
+      [(expanded)]="colorsExpanded"
+    >
+      <button
+        sectionActions
+        type="button"
+        class="btn btn-gold btn-sm"
+        (click)="activePickerModal.set('color')"
+      >
+        + Add Color to Project
+      </button>
 
-      @if (colorsExpanded()) {
-        <div class="section-content">
-          @if (attachedColors().length > 0) {
-            <div class="cards-grid">
-              @for (c of attachedColors(); track c.id) {
-                <div class="attached-card studio-card interactive">
-                  <div class="color-banner" [style.background]="c.hex"></div>
-                  <div class="attached-body">
-                    <h3>
-                      <a [routerLink]="['/colors', c.id]" class="card-stretched-link">
-                        {{ c.name }}
-                      </a>
-                    </h3>
-                    <p>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</p>
-                  </div>
-                  <div class="attached-footer">
-                    <button
-                      type="button"
-                      class="btn btn-ghost btn-sm danger-text"
-                      [attr.aria-label]="'Remove ' + c.name"
-                      (click)="userState.removeColorFromProject(proj.id, c.id)"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="empty-box">
-              <p>No Color Guides attached to this project yet.</p>
-              <button
-                type="button"
-                class="btn btn-gold btn-sm"
-                (click)="activePickerModal.set('color')"
-              >
-                + Add Color Guide
-              </button>
+      @if (attachedColors().length > 0) {
+        <div class="cards-grid">
+          @for (c of attachedColors(); track c.id) {
+            <div class="attached-card studio-card interactive">
+              <div class="color-banner" [style.background]="c.hex"></div>
+              <div class="attached-body">
+                <h3>
+                  <a [routerLink]="['/colors', c.id]" class="card-stretched-link">
+                    {{ c.name }}
+                  </a>
+                </h3>
+                <p>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</p>
+              </div>
+              <div class="attached-footer">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm danger-text"
+                  [attr.aria-label]="'Remove ' + c.name"
+                  (click)="userState.removeColorFromProject(proj.id, c.id)"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           }
         </div>
+      } @else {
+        <div class="empty-box">
+          <p>No Color Guides attached to this project yet.</p>
+          <button
+            type="button"
+            class="btn btn-gold btn-sm"
+            (click)="activePickerModal.set('color')"
+          >
+            + Add Color Guide
+          </button>
+        </div>
       }
-    </section>
+    </app-collapsible-section>
 
     <!-- SECTION 5: PROJECT NOTES & CHECKLISTS -->
     <app-project-notes-section

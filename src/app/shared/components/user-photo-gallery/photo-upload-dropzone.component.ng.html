@@ -1,0 +1,89 @@
+@if (!isAtLimit()) {
+  <div
+    class="upload-dropzone"
+    role="region"
+    tabindex="0"
+    aria-label="Photo upload area. Drag and drop images here, or press Ctrl+V to paste from clipboard."
+    [class.drag-active]="dragActive()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+    <div class="upload-controls-row">
+      <div class="caption-field-wrap">
+        <label [for]="captionInputId()" class="sr-only">Optional photo caption</label>
+        <input
+          [id]="captionInputId()"
+          type="text"
+          class="input-control caption-input"
+          [maxlength]="limits.MAX_PHOTO_CAPTION_LENGTH"
+          [placeholder]="isReference() ? 'Optional reference note (e.g., NMM gold armor lighting)...' : 'Optional caption (e.g., Finished squad leader, WIP basecoat)...'"
+          [formControl]="captionControl"
+        />
+      </div>
+
+      <div class="upload-action-btns">
+        <label
+          [for]="inputId()"
+          class="btn"
+          [class.btn-gold]="!isReference()"
+          [class.btn-secondary]="isReference()"
+          [class.disabled-btn]="uploading()"
+        >
+          @if (uploading()) {
+            <span>Uploading...</span>
+          } @else {
+            <span>{{ isReference() ? '+ Upload Reference Photo' : '+ Upload Photo' }}</span>
+          }
+        </label>
+        <input
+          [id]="inputId()"
+          type="file"
+          class="sr-only"
+          multiple
+          [accept]="acceptAttr()"
+          [disabled]="uploading()"
+          (change)="onFileInputChange($event)"
+        />
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="uploading()"
+          aria-label="Paste image from clipboard"
+          (click)="pasteRequested.emit()"
+        >
+          📋 Paste
+        </button>
+      </div>
+    </div>
+    <span class="drop-hint">
+      Or drag &amp; drop, click here &amp; press Ctrl+V, or use Paste ({{ remainingInSection() }} slot{{ remainingInSection() === 1 ? '' : 's' }} remaining)
+    </span>
+  </div>
+} @else {
+  <div class="limit-reached-banner">
+    @if (remainingInAccount() <= 0) {
+      <span>Account photo limit reached ({{ limits.MAX_TOTAL_USER_PHOTOS }} / {{ limits.MAX_TOTAL_USER_PHOTOS }}). Delete an existing photo to upload more.</span>
+    } @else {
+      <span>Section limit reached ({{ photoCount() }} / {{ sectionMax() }} photos). Remove a photo to upload another.</span>
+    }
+  </div>
+}
+
+@if (errorMessages().length > 0) {
+  <div class="upload-error-alert" role="alert">
+    <div class="error-list">
+      @for (msg of errorMessages(); track $index) {
+        <p>{{ msg }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm"
+      aria-label="Dismiss upload errors"
+      (click)="dismissErrors.emit()"
+    >
+      ✕
+    </button>
+  </div>
+}

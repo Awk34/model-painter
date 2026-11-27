@@ -8,14 +8,15 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { UserProject } from '../../../core/models/catalog.models';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { AppModalDialogComponent } from '../modal-dialog/modal-dialog.component';
 
 @Component({
   selector: 'app-add-to-project-modal',
-  imports: [FormsModule, AppModalDialogComponent],
+  imports: [ReactiveFormsModule, AppModalDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './add-to-project-modal.component.ng.html',
   styleUrl: './add-to-project-modal.component.css',
@@ -33,6 +34,8 @@ export class AddToProjectModalComponent {
   readonly closed = output<void>();
 
   readonly newProjectName = signal('');
+  readonly projectNameControl = new FormControl('', { nonNullable: true });
+  readonly createProjectForm = new FormGroup({ name: this.projectNameControl });
   readonly modalTitle = computed(() => `Add "${this.itemName()}" to Project`);
 
   constructor() {
@@ -40,6 +43,17 @@ export class AddToProjectModalComponent {
       this.open();
       this.itemId();
       this.newProjectName.set('');
+    });
+
+    effect(() => {
+      const name = this.newProjectName();
+      if (this.projectNameControl.value !== name) {
+        this.projectNameControl.setValue(name, { emitEvent: false });
+      }
+    });
+
+    this.projectNameControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((val) => {
+      this.newProjectName.set(val);
     });
   }
 

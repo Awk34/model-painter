@@ -10,8 +10,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   ModelRecipe,
   ProjectModelEntry,
@@ -21,7 +22,7 @@ import { UserStateService } from '../../../core/services/user-state.service';
 
 @Component({
   selector: 'app-project-model-workspace-bar',
-  imports: [FormsModule, RouterModule],
+  imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-model-workspace-bar.component.ng.html',
   styleUrl: './project-model-workspace-bar.component.css',
@@ -42,6 +43,9 @@ export class ProjectModelWorkspaceBarComponent {
   readonly nameDraft = signal('');
   readonly notesDraft = signal('');
   readonly notesSaved = signal(false);
+  readonly nameControl = new FormControl('', { nonNullable: true });
+  readonly nameForm = new FormGroup({ name: this.nameControl });
+  readonly notesControl = new FormControl('', { nonNullable: true });
   private lastSyncedEntryId: string | null = null;
   private lastSyncedNotes: string | null = null;
   private savedTimer: ReturnType<typeof setTimeout> | null = null;
@@ -86,6 +90,26 @@ export class ProjectModelWorkspaceBarComponent {
           this.notesDraft.set(currentNotes);
         }
       }
+    });
+
+    effect(() => {
+      const n = this.nameDraft();
+      if (this.nameControl.value !== n) {
+        this.nameControl.setValue(n, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const notes = this.notesDraft();
+      if (this.notesControl.value !== notes) {
+        this.notesControl.setValue(notes, { emitEvent: false });
+      }
+    });
+
+    this.nameControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.nameDraft.set(v);
+    });
+    this.notesControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.notesDraft.set(v);
     });
   }
 

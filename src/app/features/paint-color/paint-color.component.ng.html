@@ -18,11 +18,7 @@
       <span class="field-label">Filter by Color Family:</span>
 
       <label class="basing-toggle">
-        <input
-          type="checkbox"
-          [ngModel]="onlyBasing()"
-          (ngModelChange)="onlyBasing.set($event)"
-        />
+        <input type="checkbox" [formControl]="onlyBasingControl" />
         <app-icon name="bases" class="base-ic" />
         <span>Only show guides for painting bases ({{ basingGuideCount() }} Basing Guides)</span>
       </label>
@@ -55,59 +51,20 @@
   </section>
 
   <!-- Search, Range & Readiness Filter Bar -->
-  <section class="filters-bar studio-card">
-    <div class="search-input-wrap">
-      <label for="paint-color-search" class="sr-only">Search color guides</label>
-      <input
-        id="paint-color-search"
-        type="search"
-        class="input-control"
-        placeholder="Search colors by name, shade, or family (e.g., Ultramarine Blue, Pale Skin, Lava Base)..."
-        [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
-      />
-    </div>
-
-    <div class="filter-controls">
-      <label for="paint-color-stage" class="sr-only">Target finish stage</label>
-      <select
-        id="paint-color-stage"
-        class="input-control filter-select"
-        [ngModel]="targetStage()"
-        (ngModelChange)="targetStage.set($event)"
-        title="Target Finish Stage for Readiness Filtering"
-      >
-        <option value="base">Target: 1. Base Finish (Battle Ready)</option>
-        <option value="detail">Target: 2. Detail Finish (Parade Ready)</option>
-        <option value="artificer">Target: 3. Artificer Finish</option>
-      </select>
-
-      <label for="paint-color-readiness" class="sr-only">Readiness filter</label>
-      <select
-        id="paint-color-readiness"
-        class="input-control filter-select"
-        [ngModel]="readinessFilter()"
-        (ngModelChange)="readinessFilter.set($event)"
-      >
-        <option value="all">Can I Paint This? — All Colors</option>
-        <option value="ready100">✓ 100% Ready for Target Finish</option>
-        <option value="missing1">⚡ Missing ≤ 1 Paint for Target Finish</option>
-        <option value="sortReady">Sort by Highest Match % (Target Finish)</option>
-      </select>
-
-      <label for="paint-color-range" class="sr-only">Paint range filter</label>
-      <select
-        id="paint-color-range"
-        class="input-control filter-select"
-        [ngModel]="rangeFilter()"
-        (ngModelChange)="rangeFilter.set($event)"
-      >
-        <option value="all">All Paint Ranges</option>
-        <option value="warhammer_colour">Citadel Colour (Classic)</option>
-        <option value="warhammer_pro">Citadel Tone Pro</option>
-      </select>
-    </div>
-  </section>
+  <app-catalog-filter-bar
+    searchId="paint-color-search"
+    searchLabel="Search color guides"
+    searchPlaceholder="Search colors by name, shade, or family (e.g., Ultramarine Blue, Pale Skin, Lava Base)..."
+    stageSelectId="paint-color-stage"
+    readinessSelectId="paint-color-readiness"
+    rangeSelectId="paint-color-range"
+    readinessAllLabel="Can I Paint This? — All Colors"
+    [missingThreshold]="1"
+    [(searchQuery)]="searchQuery"
+    [(targetStage)]="targetStage"
+    [(readinessFilter)]="readinessFilter"
+    [(rangeFilter)]="rangeFilter"
+  />
 
   <div class="results-meta" aria-live="polite" aria-atomic="true">
     <span>Showing <strong>{{ filteredColors().length }}</strong> matching color guides</span>

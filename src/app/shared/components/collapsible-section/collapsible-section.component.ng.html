@@ -1,0 +1,20 @@
+<section class="project-section studio-card">
+  <div class="section-header-bar">
+    <button
+      type="button"
+      class="section-toggle-btn"
+      [attr.aria-expanded]="expanded()"
+      (click)="toggle()"
+    >
+      <span class="section-chevron" [class.expanded]="expanded()" aria-hidden="true">▸</span>
+      <h2>{{ title() }}</h2>
+    </button>
+    <ng-content select="[sectionActions]" />
+  </div>
+
+  @if (expanded()) {
+    <div class="section-content" [class]="contentClass()">
+      <ng-content />
+    </div>
+  }
+</section>

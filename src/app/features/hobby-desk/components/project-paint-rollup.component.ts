@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, model, output } from '@angular/core';
 import { FinishStageKey, StagedReadinessResult } from '../../../core/models/catalog.models';
 import { CatalogService } from '../../../core/services/catalog.service';
-import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
-import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
+import { CollapsibleSectionComponent } from '../../../shared/components/collapsible-section/collapsible-section.component';
+import { PaintActionRowComponent } from '../../../shared/components/paint-action-row/paint-action-row.component';
 
 export type ProjectRollupStage = FinishStageKey | 'all';
 
 @Component({
   selector: 'app-project-paint-rollup',
-  imports: [PaintSwatchComponent],
+  imports: [CollapsibleSectionComponent, PaintActionRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-paint-rollup.component.ng.html',
   styleUrl: './project-paint-rollup.component.css',
@@ -17,7 +17,6 @@ export type ProjectRollupStage = FinishStageKey | 'all';
 export class ProjectPaintRollupComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
-  readonly paintModal = inject(PaintModalService);
 
   readonly staged = input.required<StagedReadinessResult>();
   readonly expanded = model<boolean>(true);
@@ -60,4 +59,3 @@ export class ProjectPaintRollupComponent {
       .filter((x): x is NonNullable<typeof x> => Boolean(x));
   });
 }
-

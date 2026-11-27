@@ -8,7 +8,8 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { UserProject } from '../../../core/models/catalog.models';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
@@ -21,7 +22,7 @@ export type ProjectPickerMode = 'model' | 'color' | 'thumbnail' | null;
 
 @Component({
   selector: 'app-project-picker-modal',
-  imports: [FormsModule, AppModalDialogComponent, PaintSwatchComponent],
+  imports: [ReactiveFormsModule, AppModalDialogComponent, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-picker-modal.component.ng.html',
   styleUrl: './project-picker-modal.component.css',
@@ -37,6 +38,7 @@ export class ProjectPickerModalComponent {
   readonly closed = output<void>();
 
   readonly pickerSearch = signal('');
+  readonly searchControl = new FormControl('', { nonNullable: true });
 
   private lastProjectId: string | null = null;
   private lastMode: ProjectPickerMode = null;
@@ -54,6 +56,17 @@ export class ProjectPickerModalComponent {
       }
       this.lastMode = currentMode;
       this.lastProjectId = currentProjectId;
+    });
+
+    effect(() => {
+      const q = this.pickerSearch();
+      if (this.searchControl.value !== q) {
+        this.searchControl.setValue(q, { emitEvent: false });
+      }
+    });
+
+    this.searchControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((val) => {
+      this.pickerSearch.set(val);
     });
   }
 

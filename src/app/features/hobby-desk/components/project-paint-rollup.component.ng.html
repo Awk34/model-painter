@@ -1,192 +1,156 @@
-<section class="project-section studio-card">
-  <div class="section-header-bar">
+<app-collapsible-section
+  [title]="'🎨 Required & Missing Paints (' + rollupReadiness().totalRequired + ')'"
+  [(expanded)]="expanded"
+  contentClass="rollup-section"
+>
+  <div class="chip-bar">
     <button
       type="button"
-      class="section-toggle-btn"
-      [attr.aria-expanded]="expanded()"
-      (click)="expanded.set(!expanded())"
+      class="chip"
+      [class.active]="selectedStage() === 'base'"
+      (click)="selectedStage.set('base')"
     >
-      <span class="section-chevron" [class.expanded]="expanded()">▸</span>
-      <h2>🎨 Required & Missing Paints ({{ rollupReadiness().totalRequired }})</h2>
+      1. Base Finish ({{ staged().base.totalRequired }} Paints)
+    </button>
+    <button
+      type="button"
+      class="chip"
+      [class.active]="selectedStage() === 'detail'"
+      (click)="selectedStage.set('detail')"
+    >
+      2. Detail Finish ({{ staged().detail.totalRequired }} Paints)
+    </button>
+    <button
+      type="button"
+      class="chip"
+      [class.active]="selectedStage() === 'artificer'"
+      (click)="selectedStage.set('artificer')"
+    >
+      3. Artificer Finish ({{ staged().artificer.totalRequired }} Paints)
+    </button>
+    <button
+      type="button"
+      class="chip"
+      [class.active]="selectedStage() === 'all'"
+      (click)="selectedStage.set('all')"
+    >
+      All Stages Combined ({{ staged().overall.totalRequired }} Paints)
     </button>
   </div>
 
-  @if (expanded()) {
-    <div class="section-content rollup-section">
-      <div class="chip-bar">
-        <button
-          type="button"
-          class="chip"
-          [class.active]="selectedStage() === 'base'"
-          (click)="selectedStage.set('base')"
-        >
-          1. Base Finish ({{ staged().base.totalRequired }} Paints)
+  @if (staged().overall.totalRequired === 0) {
+    <div class="empty-box">
+      <h3>No Paints Required Yet</h3>
+      <p>
+        Add Model Painting Guides or Color Guides to this project to automatically compute all required &amp; missing paints.
+      </p>
+      <div class="empty-btn-row">
+        <button type="button" class="btn btn-gold" (click)="addModelClick.emit()">
+          + Add Model Guide
         </button>
-        <button
-          type="button"
-          class="chip"
-          [class.active]="selectedStage() === 'detail'"
-          (click)="selectedStage.set('detail')"
-        >
-          2. Detail Finish ({{ staged().detail.totalRequired }} Paints)
-        </button>
-        <button
-          type="button"
-          class="chip"
-          [class.active]="selectedStage() === 'artificer'"
-          (click)="selectedStage.set('artificer')"
-        >
-          3. Artificer Finish ({{ staged().artificer.totalRequired }} Paints)
-        </button>
-        <button
-          type="button"
-          class="chip"
-          [class.active]="selectedStage() === 'all'"
-          (click)="selectedStage.set('all')"
-        >
-          All Stages Combined ({{ staged().overall.totalRequired }} Paints)
+        <button type="button" class="btn btn-secondary" (click)="addColorClick.emit()">
+          + Add Color Guide
         </button>
       </div>
-
-      @if (staged().overall.totalRequired === 0) {
-        <div class="empty-box">
-          <h3>No Paints Required Yet</h3>
-          <p>
-            Add Model Painting Guides or Color Guides to this project to automatically compute all required & missing paints.
+    </div>
+  } @else {
+    <!-- Missing Paints Group -->
+    <div class="paint-group studio-card">
+      <div class="group-header">
+        <div>
+          <span class="badge badge-missing">Missing Paints ({{ missingPaintObjects().length }})</span>
+          <p class="group-sub">
+            Paints required by your project's models &amp; colors that are not yet in your Inventory.
           </p>
-          <div class="empty-btn-row">
-            <button type="button" class="btn btn-gold" (click)="addModelClick.emit()">
-              + Add Model Guide
-            </button>
-            <button type="button" class="btn btn-secondary" (click)="addColorClick.emit()">
-              + Add Color Guide
-            </button>
-          </div>
         </div>
-      } @else {
-        <!-- Missing Paints Group -->
-        <div class="paint-group studio-card">
-          <div class="group-header">
-            <div>
-              <span class="badge badge-missing">Missing Paints ({{ missingPaintObjects().length }})</span>
-              <p class="group-sub">
-                Paints required by your project's models & colors that are not yet in your Inventory.
-              </p>
-            </div>
-            @if (missingPaintObjects().length > 0) {
-              <div class="group-actions">
-                <button
-                  type="button"
-                  class="btn btn-gold btn-sm"
-                  (click)="userState.addManyToWishlist(rollupReadiness().missingPaintIds)"
-                >
-                  ★ Add All Missing to Wishlist
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-sm"
-                  (click)="userState.addManyToInventory(rollupReadiness().missingPaintIds)"
-                >
-                  ✓ Mark All as Owned
-                </button>
-              </div>
-            }
+        @if (missingPaintObjects().length > 0) {
+          <div class="group-actions">
+            <button
+              type="button"
+              class="btn btn-gold btn-sm"
+              (click)="userState.addManyToWishlist(rollupReadiness().missingPaintIds)"
+            >
+              ★ Add All Missing to Wishlist
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              (click)="userState.addManyToInventory(rollupReadiness().missingPaintIds)"
+            >
+              ✓ Mark All as Owned
+            </button>
           </div>
+        }
+      </div>
 
-          @if (missingPaintObjects().length > 0) {
-            <div class="rollup-paint-grid">
-              @for (p of missingPaintObjects(); track p.id) {
-                <div class="rollup-paint-card">
-                  <button type="button" class="rp-main" (click)="paintModal.openPaint(p.id)">
-                    <app-paint-swatch [paint]="p" />
-                    <div class="rp-info">
-                      <span class="rp-name">{{ p.name }}</span>
-                      <span class="rp-meta">{{ p.category }}</span>
-                    </div>
-                  </button>
-                  <div class="rp-btns">
-                    <button
-                      type="button"
-                      class="btn btn-sm"
-                      [class.btn-owned]="userState.isOwned(p.id)"
-                      [class.btn-ghost]="!userState.isOwned(p.id)"
-                      (click)="userState.toggleInventory(p.id)"
-                    >
-                      + Own
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-sm"
-                      [class.btn-wishlist]="userState.isWishlisted(p.id)"
-                      [class.btn-ghost]="!userState.isWishlisted(p.id)"
-                      (click)="userState.toggleWishlist(p.id)"
-                    >
-                      {{ userState.isWishlisted(p.id) ? '★ Wishlisted' : '☆ Wishlist' }}
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          } @else {
-            <p class="all-covered-msg">🎉 You own every paint (or a valid equivalent) needed for this project!</p>
+      @if (missingPaintObjects().length > 0) {
+        <div class="rollup-paint-grid">
+          @for (p of missingPaintObjects(); track p.id) {
+            <app-paint-action-row
+              [paintId]="p.id"
+              [name]="p.name"
+              [subtitle]="p.category"
+              [paint]="p"
+              actionMode="own-wish-text"
+              variant="row"
+            />
           }
         </div>
-
-        <!-- Covered by Equivalent (Tone Pro or 3rd-Party) -->
-        @if (substitutedList().length > 0) {
-          <div class="paint-group studio-card">
-            <div class="group-header">
-              <div>
-                <span class="badge badge-sub">
-                  Covered by Equivalent in Inventory ({{ substitutedList().length }})
-                </span>
-                <p class="group-sub">Required paints satisfied by equivalent paints you already own.</p>
-              </div>
-            </div>
-            <div class="rollup-paint-grid">
-              @for (item of substitutedList(); track item.paint.id) {
-                <div class="rollup-paint-card">
-                  <button type="button" class="rp-main" (click)="paintModal.openPaint(item.paint.id)">
-                    <app-paint-swatch [paint]="item.paint" />
-                    <div class="rp-info">
-                      <span class="rp-name">{{ item.paint.name }}</span>
-                      <span class="sub-note">
-                        ⇄ Covered by <strong>{{ item.sub.substituteName }}</strong> ({{ item.sub.substituteBrand }})
-                      </span>
-                    </div>
-                  </button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- Owned Directly -->
-        @if (ownedDirectObjects().length > 0) {
-          <div class="paint-group studio-card">
-            <div class="group-header">
-              <span class="badge badge-owned">
-                Owned Directly in Inventory ({{ ownedDirectObjects().length }})
-              </span>
-            </div>
-            <div class="rollup-paint-grid">
-              @for (p of ownedDirectObjects(); track p.id) {
-                <div class="rollup-paint-card">
-                  <button type="button" class="rp-main" (click)="paintModal.openPaint(p.id)">
-                    <app-paint-swatch [paint]="p" />
-                    <div class="rp-info">
-                      <span class="rp-name">{{ p.name }}</span>
-                      <span class="rp-meta">{{ p.category }}</span>
-                    </div>
-                  </button>
-                  <span class="badge badge-owned">✓ Owned</span>
-                </div>
-              }
-            </div>
-          </div>
-        }
+      } @else {
+        <p class="all-covered-msg">🎉 You own every paint (or a valid equivalent) needed for this project!</p>
       }
     </div>
-  }
-</section>
 
+    <!-- Covered by Equivalent (Tone Pro or 3rd-Party) -->
+    @if (substitutedList().length > 0) {
+      <div class="paint-group studio-card">
+        <div class="group-header">
+          <div>
+            <span class="badge badge-sub">
+              Covered by Equivalent in Inventory ({{ substitutedList().length }})
+            </span>
+            <p class="group-sub">Required paints satisfied by equivalent paints you already own.</p>
+          </div>
+        </div>
+        <div class="rollup-paint-grid">
+          @for (item of substitutedList(); track item.paint.id) {
+            <app-paint-action-row
+              [paintId]="item.paint.id"
+              [name]="item.paint.name"
+              [paint]="item.paint"
+              actionMode="none"
+              variant="row"
+            >
+              <span class="sub-note" paintRowMeta>
+                ⇄ Covered by <strong>{{ item.sub.substituteName }}</strong> ({{ item.sub.substituteBrand }})
+              </span>
+            </app-paint-action-row>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Owned Directly -->
+    @if (ownedDirectObjects().length > 0) {
+      <div class="paint-group studio-card">
+        <div class="group-header">
+          <span class="badge badge-owned">
+            Owned Directly in Inventory ({{ ownedDirectObjects().length }})
+          </span>
+        </div>
+        <div class="rollup-paint-grid">
+          @for (p of ownedDirectObjects(); track p.id) {
+            <app-paint-action-row
+              [paintId]="p.id"
+              [name]="p.name"
+              [subtitle]="p.category"
+              [paint]="p"
+              actionMode="owned-badge"
+              variant="row"
+            />
+          }
+        </div>
+      </div>
+    }
+  }
+</app-collapsible-section>

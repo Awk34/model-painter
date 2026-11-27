@@ -273,36 +273,6 @@
   margin-top: auto;
   padding-top: 10px;
   border-top: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.step-paint-main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-align: left;
-  min-width: 0;
-}
-
-.sp-info {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
-}
-
-.sp-info span {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
-.sp-actions {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

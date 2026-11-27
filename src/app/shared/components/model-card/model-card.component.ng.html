@@ -1,0 +1,65 @@
+<div class="model-card studio-card interactive" [class.compact]="compact()">
+  <div class="model-img-box">
+    <img
+      [src]="img.resolve(model().localPrimaryImage, model().primaryImage)"
+      [alt]="model().name"
+      loading="lazy"
+    />
+    @if (showRangeTag() && model().range === 'warhammer_pro') {
+      <span class="range-tag badge badge-pro">Tone Pro</span>
+    }
+  </div>
+
+  <div class="model-card-body">
+    @if (headingLevel() === 'h3') {
+      <h3 class="model-name">
+        <a [routerLink]="['/models', model().id]" class="card-stretched-link">
+          {{ model().name }}
+        </a>
+      </h3>
+    } @else {
+      <h2 class="model-name">
+        <a [routerLink]="['/models', model().id]" class="card-stretched-link">
+          {{ model().name }}
+        </a>
+      </h2>
+    }
+
+    @if (subtitleText()) {
+      <p class="model-factions">{{ subtitleText() }}</p>
+    }
+
+    @if (staged(); as readiness) {
+      <app-stage-readiness-pills
+        [staged]="readiness"
+        [activeStage]="activeStage()"
+      />
+    }
+  </div>
+
+  <div class="model-card-actions">
+    <button
+      type="button"
+      [class]="compact() ? 'btn btn-sm' : 'icon-toggle'"
+      [class.active-owned]="!compact() && userState.isModelOwned(model().id)"
+      [class.btn-owned]="compact() && userState.isModelOwned(model().id)"
+      [class.btn-ghost]="compact() && !userState.isModelOwned(model().id)"
+      title="Toggle Model Inventory"
+      (click)="userState.toggleModelInventory(model().id)"
+    >
+      {{ userState.isModelOwned(model().id) ? '✓ Owned' : '+ Own Model' }}
+    </button>
+    <button
+      type="button"
+      [class]="compact() ? 'btn btn-sm' : 'icon-toggle'"
+      [class.active-wish]="!compact() && userState.isModelWishlisted(model().id)"
+      [class.btn-wishlist]="compact() && userState.isModelWishlisted(model().id)"
+      [class.btn-ghost]="compact() && !userState.isModelWishlisted(model().id)"
+      [attr.aria-label]="(userState.isModelWishlisted(model().id) ? 'Remove from model wishlist: ' : 'Add to model wishlist: ') + model().name"
+      title="Toggle Model Wishlist"
+      (click)="userState.toggleModelWishlist(model().id)"
+    >
+      {{ userState.isModelWishlisted(model().id) ? '★' : '☆' }}
+    </button>
+  </div>
+</div>

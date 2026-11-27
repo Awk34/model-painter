@@ -7,8 +7,7 @@
         type="search"
         class="input-control"
         placeholder="Search your projects..."
-        [ngModel]="projectSearch()"
-        (ngModelChange)="projectSearch.set($event)"
+        [formControl]="searchControl"
       />
     </div>
 
@@ -17,8 +16,7 @@
       <select
         id="desk-projects-sort"
         class="input-control sort-select"
-        [ngModel]="projectSort()"
-        (ngModelChange)="projectSort.set($event)"
+        [formControl]="sortControl"
       >
         <option value="updated">Recently Updated</option>
         <option value="created">Newest Created</option>
@@ -125,16 +123,14 @@
   (closed)="closeNewProjectModal()"
 >
   @if (showNewProjectModal()) {
-    <form class="modal-body" (ngSubmit)="createNewProject()">
+    <form class="modal-body" [formGroup]="newProjectForm" (ngSubmit)="createNewProject()">
       <label class="field-label" for="new-hobby-project-name">Project Name</label>
       <input
         id="new-hobby-project-name"
-        name="newProjectName"
         type="text"
         class="input-control"
         placeholder="e.g., Ultramarines 2nd Company, Spearhead Box..."
-        [ngModel]="newProjectName()"
-        (ngModelChange)="newProjectName.set($event)"
+        [formControl]="newProjectNameControl"
         autofocus
       />
       <div class="modal-footer-btns">

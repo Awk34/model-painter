@@ -1,28 +1,33 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { formatBytes } from '../../core/config/user-limits.config';
+import { ChangeDetectionStrategy, Component, effect, inject, input, linkedSignal } from '@angular/core';
+import { Router } from '@angular/router';
+import { CollectionSubMode } from '../../core/models/catalog.models';
 import { UserStateService } from '../../core/services/user-state.service';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
-import { AccountSettingsPanelComponent } from './tabs/account-settings-panel.component';
+import { DeskHeaderComponent } from '../../shared/components/desk-header/desk-header.component';
 import { HobbyDeskConverterTabComponent } from './tabs/hobby-desk-converter-tab.component';
-import {
-  CollectionSubMode,
-  HobbyDeskModelsTabComponent,
-} from './tabs/hobby-desk-models-tab.component';
+import { HobbyDeskModelsTabComponent } from './tabs/hobby-desk-models-tab.component';
 import { HobbyDeskPaintsTabComponent } from './tabs/hobby-desk-paints-tab.component';
 import { HobbyDeskProjectsTabComponent } from './tabs/hobby-desk-projects-tab.component';
 
-export type HobbyDeskTab = 'projects' | 'models' | 'paints' | 'converter' | 'settings';
+export type HobbyDeskTab = 'projects' | 'models' | 'paints' | 'converter';
+
+function isHobbyDeskTab(value: string | undefined): value is HobbyDeskTab {
+  return value === 'projects' || value === 'models' || value === 'paints' || value === 'converter';
+}
+
+function isCollectionSubMode(value: string | undefined): value is CollectionSubMode {
+  return value === 'inventory' || value === 'wishlist' || value === 'catalogue';
+}
 
 @Component({
   selector: 'app-hobby-desk',
   imports: [
     AppIconComponent,
+    DeskHeaderComponent,
     HobbyDeskProjectsTabComponent,
     HobbyDeskModelsTabComponent,
     HobbyDeskPaintsTabComponent,
     HobbyDeskConverterTabComponent,
-    AccountSettingsPanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk.component.ng.html',
@@ -31,70 +36,45 @@ export type HobbyDeskTab = 'projects' | 'models' | 'paints' | 'converter' | 'set
 export class HobbyDeskComponent {
   readonly userState = inject(UserStateService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
-  readonly isAccountPage = signal(false);
-  readonly activeTab = signal<HobbyDeskTab>('projects');
-  readonly modelSubMode = signal<CollectionSubMode>('inventory');
-  readonly paintSubMode = signal<CollectionSubMode>('inventory');
+  readonly tab = input<string | undefined>(undefined);
+  readonly sub = input<string | undefined>(undefined);
 
-  readonly totalUploadedBytesLabel = computed(() => {
-    const total = this.userState.allUploadedPhotos().reduce((acc, p) => acc + p.sizeBytes, 0);
-    return formatBytes(total);
+  readonly activeTab = linkedSignal<string | undefined, HobbyDeskTab>({
+    source: () => this.tab(),
+    computation: (tabParam) => (isHobbyDeskTab(tabParam) ? tabParam : 'projects'),
+  });
+
+  readonly modelSubMode = linkedSignal<{ tab: string | undefined; sub: string | undefined }, CollectionSubMode>({
+    source: () => ({ tab: this.tab(), sub: this.sub() }),
+    computation: ({ tab, sub }) =>
+      tab === 'models' && isCollectionSubMode(sub) ? sub : 'inventory',
+  });
+
+  readonly paintSubMode = linkedSignal<{ tab: string | undefined; sub: string | undefined }, CollectionSubMode>({
+    source: () => ({ tab: this.tab(), sub: this.sub() }),
+    computation: ({ tab, sub }) =>
+      tab !== 'models' && isCollectionSubMode(sub) ? sub : 'inventory',
   });
 
   constructor() {
-    this.route.data.subscribe((data) => {
-      const isAccount = data['page'] === 'account' || this.router.url.startsWith('/account');
-      this.isAccountPage.set(isAccount);
-      if (isAccount) {
-        this.activeTab.set('settings');
-      }
-    });
-    this.route.queryParamMap.subscribe((params) => {
-      const tab = params.get('tab');
-      if (
-        tab === 'models' ||
-        tab === 'paints' ||
-        tab === 'projects' ||
-        tab === 'converter' ||
-        tab === 'settings'
-      ) {
-        this.activeTab.set(tab);
-      }
-      const sub = params.get('sub');
-      if (sub === 'inventory' || sub === 'wishlist' || sub === 'catalogue') {
-        if (tab === 'models') {
-          this.modelSubMode.set(sub);
-        } else {
-          this.paintSubMode.set(sub);
-        }
+    effect(() => {
+      if (this.tab() === 'settings') {
+        void this.router.navigate(['/account'], { replaceUrl: true });
       }
     });
   }
 
   openProjectsTab(): void {
-    if (this.isAccountPage()) {
-      this.router.navigate(['/hobby-desk'], { queryParams: { tab: 'projects' } });
-      return;
-    }
     this.activeTab.set('projects');
   }
 
   openModelsTab(sub: CollectionSubMode): void {
-    if (this.isAccountPage()) {
-      this.router.navigate(['/hobby-desk'], { queryParams: { tab: 'models', sub } });
-      return;
-    }
     this.activeTab.set('models');
     this.modelSubMode.set(sub);
   }
 
   openPaintsTab(sub: CollectionSubMode): void {
-    if (this.isAccountPage()) {
-      this.router.navigate(['/hobby-desk'], { queryParams: { tab: 'paints', sub } });
-      return;
-    }
     this.activeTab.set('paints');
     this.paintSubMode.set(sub);
   }

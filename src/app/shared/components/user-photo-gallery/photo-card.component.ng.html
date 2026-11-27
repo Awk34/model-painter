@@ -1,0 +1,86 @@
+<div class="photo-card studio-card">
+  <button
+    type="button"
+    class="photo-thumb-btn"
+    [attr.aria-label]="'Inspect photo: ' + (photo().caption || photo().fileName)"
+    (click)="inspect.emit()"
+  >
+    <img
+      [src]="photoUrl()"
+      [alt]="photo().caption || photo().fileName"
+      class="photo-thumb-img"
+      loading="lazy"
+    />
+    @if (isReference()) {
+      <span class="corner-pill private-pill">🔒 Private</span>
+    } @else if (allowSetCover() && isActiveCover()) {
+      <span class="corner-pill cover-pill">{{ activeCoverBadgeLabel() }}</span>
+    }
+  </button>
+
+  <div class="photo-card-body">
+    @if (isEditingCaption()) {
+      <form class="caption-edit-box" [formGroup]="editCaptionForm" (ngSubmit)="onSaveCaption()">
+        <label [for]="'edit-cap-' + photo().id" class="sr-only">Edit photo caption</label>
+        <input
+          [id]="'edit-cap-' + photo().id"
+          type="text"
+          class="input-control input-sm"
+          [maxlength]="limits.MAX_PHOTO_CAPTION_LENGTH"
+          placeholder="Add caption..."
+          [formControl]="editCaptionControl"
+        />
+        <div class="caption-edit-actions">
+          <button type="submit" class="btn btn-gold btn-sm">
+            Save
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEdit.emit()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    } @else {
+      <p class="photo-caption" [class.muted-caption]="!photo().caption">
+        {{ photo().caption || photo().fileName }}
+      </p>
+      <div class="photo-meta-line">
+        <span>{{ formatBytes(photo().sizeBytes) }}</span>
+        @if (photo().width && photo().height) {
+          <span>• {{ photo().width }}×{{ photo().height }}</span>
+        }
+        <span>• <time [attr.datetime]="photo().createdAt">{{ photo().createdAt | date:'shortDate' }}</time></span>
+      </div>
+    }
+  </div>
+
+  <div class="photo-card-footer">
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm"
+      (click)="startEdit.emit()"
+    >
+      ✎ Caption
+    </button>
+
+    @if (allowSetCover() && (!isReference() || targetType() === 'project_model')) {
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-gold]="isActiveCover()"
+        [class.btn-ghost]="!isActiveCover()"
+        (click)="toggleCover.emit()"
+      >
+        {{ isActiveCover() ? activeCoverBadgeLabel() : coverButtonLabel() }}
+      </button>
+    }
+
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm danger-text"
+      [attr.aria-label]="'Delete photo ' + (photo().caption || photo().fileName)"
+      (click)="deleteRequested.emit()"
+    >
+      🗑
+    </button>
+  </div>
+</div>

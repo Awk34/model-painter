@@ -1,72 +1,60 @@
-<section class="project-section studio-card">
-  <div class="section-header-bar">
-    <button
-      type="button"
-      class="section-toggle-btn"
-      [attr.aria-expanded]="expanded()"
-      (click)="expanded.set(!expanded())"
-    >
-      <span class="section-chevron" [class.expanded]="expanded()">▸</span>
-      <h2>📝 Notes &amp; Checklists ({{ project().notes.length }})</h2>
-    </button>
-    <button type="button" class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
-      + New Note / Checklist
-    </button>
-  </div>
+<app-collapsible-section
+  [title]="'📝 Notes & Checklists (' + project().notes.length + ')'"
+  [(expanded)]="expanded"
+>
+  <button sectionActions type="button" class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
+    + New Note / Checklist
+  </button>
 
-  @if (expanded()) {
-    <div class="section-content">
-      @if (project().notes.length > 0) {
-        <div class="notes-grid">
-          @for (note of project().notes; track note.id) {
-            <div class="note-card studio-card">
-              <div class="note-header">
-                <h3>{{ note.title }}</h3>
-                <div class="note-actions">
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="openNoteEditor(note)">
-                    ✎ Edit
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-sm danger-text"
-                    aria-label="Delete note"
-                    (click)="userState.deleteProjectNote(project().id, note.id)"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-
-              <div class="note-components">
-                @for (comp of note.components; track $index; let idx = $index) {
-                  @if (comp.type === 'checkbox') {
-                    <label class="note-checkbox-row" [class.done]="comp.checked">
-                      <input
-                        type="checkbox"
-                        [checked]="comp.checked"
-                        (change)="userState.toggleNoteCheckbox(project().id, note.id, idx)"
-                      />
-                      <span>{{ comp.value }}</span>
-                    </label>
-                  } @else {
-                    <p class="note-text-block">{{ comp.value }}</p>
-                  }
-                }
-              </div>
+  @if (project().notes.length > 0) {
+    <div class="notes-grid">
+      @for (note of project().notes; track note.id) {
+        <div class="note-card studio-card">
+          <div class="note-header">
+            <h3>{{ note.title }}</h3>
+            <div class="note-actions">
+              <button type="button" class="btn btn-ghost btn-sm" (click)="openNoteEditor(note)">
+                ✎ Edit
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm danger-text"
+                aria-label="Delete note"
+                (click)="userState.deleteProjectNote(project().id, note.id)"
+              >
+                ✕
+              </button>
             </div>
-          }
-        </div>
-      } @else {
-        <div class="empty-box">
-          <p>Add free-form painting notes, army recipe reminders, or interactive step checklists.</p>
-          <button type="button" class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
-            + Create First Note
-          </button>
+          </div>
+
+          <div class="note-components">
+            @for (comp of note.components; track $index; let idx = $index) {
+              @if (comp.type === 'checkbox') {
+                <label class="note-checkbox-row" [class.done]="comp.checked">
+                  <input
+                    type="checkbox"
+                    [checked]="comp.checked"
+                    (change)="userState.toggleNoteCheckbox(project().id, note.id, idx)"
+                  />
+                  <span>{{ comp.value }}</span>
+                </label>
+              } @else {
+                <p class="note-text-block">{{ comp.value }}</p>
+              }
+            }
+          </div>
         </div>
       }
     </div>
+  } @else {
+    <div class="empty-box">
+      <p>Add free-form painting notes, army recipe reminders, or interactive step checklists.</p>
+      <button type="button" class="btn btn-gold btn-sm" (click)="openNoteEditor(null)">
+        + Create First Note
+      </button>
+    </div>
   }
-</section>
+</app-collapsible-section>
 
 <!-- Modal: Block Note & Checklist Editor (with CDK Drag & Drop + Keyboard Reorder) -->
 <app-modal-dialog
@@ -77,16 +65,14 @@
   (closed)="closeNoteEditor()"
 >
   @if (editingNoteOpen()) {
-    <form class="modal-body" (ngSubmit)="saveNote()">
+    <form class="modal-body" [formGroup]="noteForm" (ngSubmit)="saveNote()">
       <label class="field-label" for="project-note-title">Note Title</label>
       <input
         id="project-note-title"
-        name="noteTitleDraft"
         type="text"
         class="input-control"
         placeholder="e.g., Batch Painting Checklist, Basing Recipe..."
-        [ngModel]="noteTitleDraft()"
-        (ngModelChange)="noteTitleDraft.set($event)"
+        [formControl]="noteTitleControl"
         autofocus
       />
 
@@ -137,10 +123,9 @@
             @if (block.type === 'checkbox') {
               <input
                 type="checkbox"
-                [ngModelOptions]="{ standalone: true }"
                 [attr.aria-label]="'Checklist item ' + (idx + 1) + ' completed'"
-                [ngModel]="block.checked ?? false"
-                (ngModelChange)="updateBlockChecked(idx, $event)"
+                [checked]="block.checked ?? false"
+                (change)="onBlockCheckedChange(idx, $event)"
               />
             } @else {
               <span class="block-tag">TXT</span>
@@ -148,11 +133,10 @@
             <input
               type="text"
               class="input-control"
-              [ngModelOptions]="{ standalone: true }"
               [attr.aria-label]="block.type === 'checkbox' ? 'Checklist step ' + (idx + 1) : 'Note paragraph ' + (idx + 1)"
               [placeholder]="block.type === 'checkbox' ? 'Checklist step...' : 'Note text...'"
-              [ngModel]="block.value"
-              (ngModelChange)="updateBlockValue(idx, $event)"
+              [value]="block.value"
+              (input)="onBlockValueInput(idx, $event)"
             />
             <button
               type="button"

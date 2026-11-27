@@ -1,18 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CatalogService } from '../../../core/services/catalog.service';
-import { PaintModalService } from '../../../core/services/paint-modal.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import {
   getCitadelBrandLabel,
   getPaintRepresentativeHex,
   PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
-import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
+import { PaintActionRowComponent } from '../../../shared/components/paint-action-row/paint-action-row.component';
 
 @Component({
   selector: 'app-hobby-desk-converter-tab',
-  imports: [FormsModule, PaintSwatchComponent],
+  imports: [ReactiveFormsModule, PaintActionRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-converter-tab.component.ng.html',
   styleUrl: './hobby-desk-converter-tab.component.css',
@@ -20,13 +20,47 @@ import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/pa
 export class HobbyDeskConverterTabComponent {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
-  readonly paintModal = inject(PaintModalService);
   readonly getCitadelBrandLabel = getCitadelBrandLabel;
 
   readonly converterMode = signal<'cross-brand' | 'tone-pro'>('cross-brand');
   readonly converterSearch = signal('');
   readonly converterTargetBrand = signal('all');
   readonly converterOnlyOwned = signal(false);
+
+  readonly searchControl = new FormControl('', { nonNullable: true });
+  readonly brandControl = new FormControl('all', { nonNullable: true });
+  readonly onlyOwnedControl = new FormControl(false, { nonNullable: true });
+
+  constructor() {
+    effect(() => {
+      const q = this.converterSearch();
+      if (this.searchControl.value !== q) {
+        this.searchControl.setValue(q, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const b = this.converterTargetBrand();
+      if (this.brandControl.value !== b) {
+        this.brandControl.setValue(b, { emitEvent: false });
+      }
+    });
+    effect(() => {
+      const owned = this.converterOnlyOwned();
+      if (this.onlyOwnedControl.value !== owned) {
+        this.onlyOwnedControl.setValue(owned, { emitEvent: false });
+      }
+    });
+
+    this.searchControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.converterSearch.set(v);
+    });
+    this.brandControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.converterTargetBrand.set(v);
+    });
+    this.onlyOwnedControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((v) => {
+      this.converterOnlyOwned.set(v);
+    });
+  }
 
   readonly filteredCrossBrandRows = computed(() => {
     const q = this.converterSearch().trim().toLowerCase();
@@ -114,4 +148,3 @@ export class HobbyDeskConverterTabComponent {
     return this.catalog.paintById().get(id);
   }
 }
-
