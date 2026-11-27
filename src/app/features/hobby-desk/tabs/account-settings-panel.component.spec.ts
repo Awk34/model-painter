@@ -36,6 +36,11 @@ describe('AccountSettingsPanelComponent', () => {
         cloudSyncStatus: signal('local_only' as never),
         allUploadedPhotos: signal([]),
         projects: signal([]),
+        inventoryPaintIds: signal([]),
+        wishlistPaintIds: signal([]),
+        inventoryModelIds: signal([]),
+        wishlistModelIds: signal([]),
+        customPaints: signal([]),
         preferences: signal({
           defaultRangeFilter: 'all',
           allowCompatibleSubstitutions: true,

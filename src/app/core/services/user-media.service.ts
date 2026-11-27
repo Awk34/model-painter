@@ -5,14 +5,18 @@ import {
   formatBytes,
 } from '../config/user-limits.config';
 import { UserUploadedPhoto } from '../models/catalog.models';
-import { getFirebaseHandles } from './firebase.config';
+import {
+  FirebaseStorageHandle,
+  getFirebaseStorage,
+  getLoadedFirebaseAuth,
+} from './firebase.config';
 import { createIdbStoreClient } from '../utils/idb.util';
-import { deleteObject, getBlob, ref, uploadBytes } from 'firebase/storage';
 
 const MEDIA_DB_NAME = 'whc_user_media_v1';
 const MEDIA_DB_VERSION = 1;
 const STORE_PHOTO_BLOBS = 'photo_blobs';
 const MAX_STORAGE_DIMENSION_PX = 32768;
+const CLOUD_SYNC_CONCURRENCY = 3;
 
 export interface ValidatedImageInfo {
   blob: Blob;
@@ -27,7 +31,8 @@ export interface ValidatedImageInfo {
 })
 export class UserMediaService {
   /** Reactive map of photoId -> active browser ObjectURL */
-  readonly photoUrls = signal<Record<string, string>>({});
+  private readonly _photoUrls = signal<Record<string, string>>({});
+  readonly photoUrls = this._photoUrls.asReadonly();
 
   private readonly idb = createIdbStoreClient(MEDIA_DB_NAME, MEDIA_DB_VERSION, [STORE_PHOTO_BLOBS]);
   private readonly loadingIds = new Set<string>();
@@ -36,28 +41,34 @@ export class UserMediaService {
   private readonly photoGenerations = new Map<string, number>();
   private mediaEpoch = 0;
 
-  protected getFbHandles() {
-    return getFirebaseHandles();
+  protected getFbStorage(): Promise<FirebaseStorageHandle | null> {
+    return getFirebaseStorage();
   }
 
   protected getCurrentUid(): string | null {
-    return this.getFbHandles()?.auth.currentUser?.uid ?? null;
+    return getLoadedFirebaseAuth()?.currentUser?.uid ?? null;
   }
 
   protected async fetchRemoteBlob(storagePath: string): Promise<Blob | null> {
-    const fb = this.getFbHandles();
-    if (!fb || !fb.auth.currentUser) {
+    if (!this.getCurrentUid()) {
       return null;
     }
-    return getBlob(ref(fb.storage, storagePath));
+    const fb = await this.getFbStorage();
+    if (!fb) {
+      return null;
+    }
+    return fb.getBlob(fb.ref(fb.storage, storagePath));
   }
 
   protected async deleteRemoteObject(storagePath: string): Promise<void> {
-    const fb = this.getFbHandles();
-    if (!fb || !fb.auth.currentUser) {
+    if (!this.getCurrentUid()) {
       return;
     }
-    await deleteObject(ref(fb.storage, storagePath));
+    const fb = await this.getFbStorage();
+    if (!fb) {
+      return;
+    }
+    await fb.deleteObject(fb.ref(fb.storage, storagePath));
   }
 
   protected async uploadStorageBytes(
@@ -65,12 +76,12 @@ export class UserMediaService {
     blob: Blob,
     photo: UserUploadedPhoto
   ): Promise<void> {
-    const fb = this.getFbHandles();
+    const fb = await this.getFbStorage();
     if (!fb) {
       throw new Error('Firebase handles unavailable.');
     }
-    const storageRef = ref(fb.storage, storagePath);
-    await uploadBytes(storageRef, blob, {
+    const storageRef = fb.ref(fb.storage, storagePath);
+    await fb.uploadBytes(storageRef, blob, {
       contentType: photo.mimeType,
       customMetadata: {
         kind: photo.kind,
@@ -314,13 +325,13 @@ export class UserMediaService {
     if (this.deletedIds.has(photoId)) {
       return '';
     }
-    const urls = this.photoUrls();
+    const urls = this._photoUrls();
     const existing = Object.hasOwn(urls, photoId) ? urls[photoId] : undefined;
     if (existing) {
       return existing;
     }
     const objUrl = URL.createObjectURL(blob);
-    this.photoUrls.update((prev) => {
+    this._photoUrls.update((prev) => {
       const next = { ...prev };
       Object.defineProperty(next, photoId, {
         value: objUrl,
@@ -368,7 +379,7 @@ export class UserMediaService {
     blob: Blob,
     uid: string
   ): Promise<string | undefined> {
-    const fb = this.getFbHandles();
+    const fb = await this.getFbStorage();
     if (!fb) {
       return undefined;
     }
@@ -468,19 +479,32 @@ export class UserMediaService {
     uid: string
   ): Promise<Map<string, string>> {
     const uploadedPaths = new Map<string, string>();
-    for (const photo of photos) {
-      if (photo.storagePath) {
-        continue;
-      }
-      const blob = await this.idb.get<Blob>(STORE_PHOTO_BLOBS, photo.id);
-      if (!blob) {
-        continue;
-      }
-      const path = await this.uploadToCloudStorage(photo, blob, uid);
-      if (path) {
-        uploadedPaths.set(photo.id, path);
-      }
+    const pending = photos.filter((photo) => !photo.storagePath);
+    if (pending.length === 0) {
+      return uploadedPaths;
     }
+
+    let nextIndex = 0;
+    const workerCount = Math.min(CLOUD_SYNC_CONCURRENCY, pending.length);
+    const worker = async (): Promise<void> => {
+      while (nextIndex < pending.length) {
+        const photo = pending[nextIndex++];
+        try {
+          const blob = await this.idb.get<Blob>(STORE_PHOTO_BLOBS, photo.id);
+          if (!blob) {
+            continue;
+          }
+          const path = await this.uploadToCloudStorage(photo, blob, uid);
+          if (path) {
+            uploadedPaths.set(photo.id, path);
+          }
+        } catch (err) {
+          console.warn(`Failed to sync photo ${photo.id} to Cloud Storage:`, err);
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
     return uploadedPaths;
   }
 
@@ -489,11 +513,11 @@ export class UserMediaService {
     this.nextPhotoGeneration(photo.id);
     this.failedAttemptKeys.delete(photo.id);
 
-    const urls = this.photoUrls();
+    const urls = this._photoUrls();
     const existingUrl = Object.hasOwn(urls, photo.id) ? urls[photo.id] : undefined;
     if (existingUrl) {
       URL.revokeObjectURL(existingUrl);
-      this.photoUrls.update((prev) => {
+      this._photoUrls.update((prev) => {
         const next = { ...prev };
         delete next[photo.id];
         return next;
@@ -514,11 +538,11 @@ export class UserMediaService {
     this.failedAttemptKeys.clear();
     this.deletedIds.clear();
     this.photoGenerations.clear();
-    const urls = Object.values(this.photoUrls());
+    const urls = Object.values(this._photoUrls());
     for (const u of urls) {
       URL.revokeObjectURL(u);
     }
-    this.photoUrls.set({});
+    this._photoUrls.set({});
     await this.idb.clearAll();
   }
 }

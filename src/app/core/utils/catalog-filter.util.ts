@@ -45,7 +45,7 @@ export function applyReadinessFilter<T extends { readiness: InventoryReadinessRe
     return items.filter((x) => x.readiness.totalRequired > 0 && x.readiness.missingCount <= 2);
   }
   if (filter === 'sortReady') {
-    return [...items].sort((a, b) => b.readiness.matchPercent - a.readiness.matchPercent);
+    return items.toSorted((a, b) => b.readiness.matchPercent - a.readiness.matchPercent);
   }
   return items;
 }
@@ -78,14 +78,15 @@ export interface NormalizedPaintBrand {
   variant: PaintBrandBadgeVariant;
 }
 
-const PAINT_BRAND_VALUES = Object.values(PaintBrand) as string[];
+const PAINT_BRAND_BY_LOWER = new Map<string, PaintBrand>(
+  (Object.values(PaintBrand) as PaintBrand[]).map((b) => [b.toLowerCase(), b])
+);
 
 export function isKnownPaintBrand(brand: string | null | undefined): brand is PaintBrand {
   if (!brand) {
     return false;
   }
-  const lower = brand.trim().toLowerCase();
-  return PAINT_BRAND_VALUES.some((b) => b.toLowerCase() === lower);
+  return PAINT_BRAND_BY_LOWER.has(brand.trim().toLowerCase());
 }
 
 /**
@@ -119,7 +120,7 @@ export function mergeCatalogBrands(
       return;
     }
     seenLower.add(lower);
-    const enumMatch = PAINT_BRAND_VALUES.find((b) => b.toLowerCase() === lower);
+    const enumMatch = PAINT_BRAND_BY_LOWER.get(lower);
     result.push(enumMatch ?? trimmed);
   };
 
@@ -151,9 +152,7 @@ export function normalizePaintBrand(
 
   if (trimmedBrand) {
     const lower = trimmedBrand.toLowerCase();
-    const enumMatch = PAINT_BRAND_VALUES.find((b) => b.toLowerCase() === lower) as
-      | PaintBrand
-      | undefined;
+    const enumMatch = PAINT_BRAND_BY_LOWER.get(lower);
 
     if (
       enumMatch === PaintBrand.CitadelTonePro ||

@@ -65,19 +65,19 @@
     <div class="sidebar-stats studio-card">
       <div class="stat-line">
         <span>Paints Owned</span>
-        <strong class="owned-txt">{{ userState.state().inventoryPaintIds.length }}</strong>
+        <strong class="owned-txt">{{ userState.inventoryPaintIds().length }}</strong>
       </div>
       <div class="stat-line">
         <span>Paint Wishlist</span>
-        <strong class="wish-txt">{{ userState.state().wishlistPaintIds.length }}</strong>
+        <strong class="wish-txt">{{ userState.wishlistPaintIds().length }}</strong>
       </div>
       <div class="stat-line">
         <span>Models Owned</span>
-        <strong class="owned-txt">{{ userState.state().inventoryModelIds.length }}</strong>
+        <strong class="owned-txt">{{ userState.inventoryModelIds().length }}</strong>
       </div>
       <div class="stat-line">
         <span>Model Wishlist</span>
-        <strong class="wish-txt">{{ userState.state().wishlistModelIds.length }}</strong>
+        <strong class="wish-txt">{{ userState.wishlistModelIds().length }}</strong>
       </div>
       @if (catalog.syncStatus() !== CatalogSyncStatus.UpToDate) {
         <div class="stat-line">

@@ -7,7 +7,7 @@
         [class.active]="subMode() === 'inventory'"
         (click)="subMode.set('inventory')"
       >
-        ✓ My Model Inventory ({{ userState.state().inventoryModelIds.length }})
+        ✓ My Model Inventory ({{ userState.inventoryModelIds().length }})
       </button>
       <button
         type="button"
@@ -15,7 +15,7 @@
         [class.active]="subMode() === 'wishlist'"
         (click)="subMode.set('wishlist')"
       >
-        ★ My Model Wishlist ({{ userState.state().wishlistModelIds.length }})
+        ★ My Model Wishlist ({{ userState.wishlistModelIds().length }})
       </button>
       <button
         type="button"

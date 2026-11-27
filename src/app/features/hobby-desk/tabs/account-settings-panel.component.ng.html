@@ -314,15 +314,15 @@
       </div>
       <div class="quota-row">
         <span>Owned Models / Model Wishlist</span>
-        <strong>{{ userState.state().inventoryModelIds.length }}/{{ userState.limits.MAX_INVENTORY_MODELS }} • {{ userState.state().wishlistModelIds.length }}/{{ userState.limits.MAX_WISHLIST_MODELS }}★</strong>
+        <strong>{{ userState.inventoryModelIds().length }}/{{ userState.limits.MAX_INVENTORY_MODELS }} • {{ userState.wishlistModelIds().length }}/{{ userState.limits.MAX_WISHLIST_MODELS }}★</strong>
       </div>
       <div class="quota-row">
         <span>Owned Paints / Paint Wishlist</span>
-        <strong>{{ userState.state().inventoryPaintIds.length }}/{{ userState.limits.MAX_INVENTORY_PAINTS }} • {{ userState.state().wishlistPaintIds.length }}/{{ userState.limits.MAX_WISHLIST_PAINTS }}★</strong>
+        <strong>{{ userState.inventoryPaintIds().length }}/{{ userState.limits.MAX_INVENTORY_PAINTS }} • {{ userState.wishlistPaintIds().length }}/{{ userState.limits.MAX_WISHLIST_PAINTS }}★</strong>
       </div>
       <div class="quota-row">
         <span>Custom 3rd-Party Paints</span>
-        <strong>{{ userState.state().customPaints.length }} / {{ userState.limits.MAX_CUSTOM_PAINTS }}</strong>
+        <strong>{{ userState.customPaints().length }} / {{ userState.limits.MAX_CUSTOM_PAINTS }}</strong>
       </div>
       <div class="quota-row">
         <span>Total Uploaded Photos ({{ totalUploadedBytesLabel() }})</span>

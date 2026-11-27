@@ -19,6 +19,7 @@ import {
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
 import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { isEditableElement } from '../../core/utils/clipboard-image.util';
@@ -78,6 +79,7 @@ export class ModelDetailComponent {
   readonly readinessService = inject(InventoryMatchService);
   readonly img = inject(ImageService);
   readonly media = inject(UserMediaService);
+  readonly projectImg = inject(ProjectImageResolverService);
 
   /** Route params: standalone `/models/:id` OR project-scoped `/projects/:projectId/models/:entryId` */
   readonly standaloneModelId = signal<string | null>(null);
@@ -157,7 +159,7 @@ export class ModelDetailComponent {
     if (!entry || !this.hasCustomOverlayFeatured()) {
       return null;
     }
-    return this.userState.resolveProjectModelImageUrl(entry, null, this.recipe());
+    return this.projectImg.resolveProjectModelImageUrl(entry, null, this.recipe());
   });
 
   readonly userModelPhotos = computed<UserUploadedPhoto[]>(() => {
@@ -244,52 +246,9 @@ export class ModelDetailComponent {
     );
   });
 
-  readonly stagedReadiness = computed(() => {
-    const r = this.recipe();
-    if (!r) {
-      return this.readinessService.evaluateStagedReadiness({});
-    }
-
-    const baseIds: string[] = [];
-    const detailIds: string[] = [];
-    const artificerIds: string[] = [];
-    const allIds: string[] = [];
-
-    for (const area of r.paintingAreas ?? []) {
-      for (const step of area.paintingSteps ?? []) {
-        const pid = step.paint?.id;
-        if (!pid) {
-          continue;
-        }
-        allIds.push(pid);
-        const stage = (step.paintingStage ?? '').toLowerCase();
-        if (stage.includes('base')) {
-          baseIds.push(pid);
-        } else if (stage.includes('detail')) {
-          detailIds.push(pid);
-        } else {
-          artificerIds.push(pid);
-        }
-      }
-    }
-
-    const summary = this.catalog.modelById().get(r.id);
-    if (allIds.length === 0 && summary) {
-      return this.readinessService.evaluateStagedReadiness({
-        base: summary.paintsByStage?.base,
-        detail: summary.paintsByStage?.detail,
-        artificer: summary.paintsByStage?.artificer,
-        all: summary.requiredPaintIds,
-      });
-    }
-
-    return this.readinessService.evaluateStagedReadiness({
-      base: baseIds.length ? baseIds : summary?.paintsByStage?.base,
-      detail: detailIds.length ? detailIds : summary?.paintsByStage?.detail,
-      artificer: artificerIds.length ? artificerIds : summary?.paintsByStage?.artificer,
-      all: allIds,
-    });
-  });
+  readonly stagedReadiness = computed(() =>
+    this.readinessService.evaluateModelRecipeStagedReadiness(this.recipe())
+  );
 
   readonly readiness = computed(() => this.stagedReadiness().overall);
 

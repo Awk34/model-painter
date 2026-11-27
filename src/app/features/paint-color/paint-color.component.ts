@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { FinishStageKey } from '../../core/models/catalog.models';
 import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
+import { UserStateService } from '../../core/services/user-state.service';
 import { applyReadinessFilter } from '../../core/utils/catalog-filter.util';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { StageReadinessPillsComponent } from '../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
@@ -19,12 +20,15 @@ import { StageReadinessPillsComponent } from '../../shared/components/stage-read
 export class PaintColorComponent {
   readonly catalog = inject(CatalogService);
   readonly readinessService = inject(InventoryMatchService);
+  readonly userState = inject(UserStateService);
   readonly img = inject(ImageService);
 
   readonly selectedGroup = signal<string | null>(null);
   readonly onlyBasing = signal<boolean>(false);
   readonly searchQuery = signal<string>('');
-  readonly rangeFilter = signal<'all' | 'warhammer_colour' | 'warhammer_pro'>('all');
+  readonly rangeFilter = linkedSignal<'all' | 'warhammer_colour' | 'warhammer_pro'>(
+    () => this.userState?.preferences?.()?.defaultRangeFilter ?? 'all'
+  );
   readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing1' | 'sortReady'>('all');
 

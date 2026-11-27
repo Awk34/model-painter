@@ -9,6 +9,7 @@ import { CatalogService } from '../../core/services/catalog.service';
 import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { PaintModalService } from '../../core/services/paint-modal.service';
+import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
 import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
@@ -83,10 +84,15 @@ describe('ProjectDetailComponent route switch state reset', () => {
             getProjectTotalMiniatures: () => 0,
             getPhotoQuotaLimit: () => 12,
             getPhotosForTarget: () => [],
-            resolveProjectCoverUrl: () => '/icons/ic_project.svg',
-            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
             isOwned: () => false,
             isWishlisted: () => false,
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectCoverUrl: () => '/icons/ic_project.svg',
+            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
           },
         },
         {
@@ -265,10 +271,15 @@ describe('ProjectDetailComponent route switch state reset', () => {
             getProjectTotalMiniatures: () => 2,
             getPhotoQuotaLimit: () => 12,
             getPhotosForTarget: () => [],
-            resolveProjectCoverUrl: () => '/icons/ic_project.svg',
-            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
             isOwned: () => false,
             isWishlisted: () => false,
+          },
+        },
+        {
+          provide: ProjectImageResolverService,
+          useValue: {
+            resolveProjectCoverUrl: () => '/icons/ic_project.svg',
+            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
           },
         },
         {

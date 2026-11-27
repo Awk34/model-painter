@@ -125,6 +125,8 @@ describe('PaintModelComponent faction/sub-faction filtering', () => {
           provide: UserStateService,
           useValue: {
             state: signal({ inventoryModelIds: [], wishlistModelIds: [] }),
+            inventoryModelIds: signal([]),
+            wishlistModelIds: signal([]),
             modelInventorySet: signal(new Set<string>()),
             modelWishlistSet: signal(new Set<string>()),
             isModelOwned: () => false,

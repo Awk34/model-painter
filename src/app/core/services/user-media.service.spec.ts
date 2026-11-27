@@ -275,9 +275,9 @@ describe('UserMediaService', () => {
     });
 
     spyOn(
-      service as unknown as { getFbHandles: () => unknown },
-      'getFbHandles'
-    ).and.returnValue({ auth: { currentUser: { uid: 'uid_1' } }, storage: {} });
+      service as unknown as { getFbStorage: () => Promise<unknown> },
+      'getFbStorage'
+    ).and.resolveTo({ storage: {} });
     const uploadSpy = spyOn(
       service as unknown as { uploadStorageBytes: () => Promise<void> },
       'uploadStorageBytes'
@@ -379,5 +379,71 @@ describe('UserMediaService', () => {
       expect(['', '.', '..']).not.toContain(parts[5]);
       expect(parts[5].endsWith('.png')).toBeTrue();
     }
+  });
+
+  it('uploads pending blobs in syncPendingBlobsToCloud with bounded concurrency of 3 and partial failure resilience', async () => {
+    // 0 pending items -> fast-return without touching IDB
+    const emptyResult = await service.syncPendingBlobsToCloud(
+      [makePhoto({ id: 'ph_synced', storagePath: 'users/u1/existing.jpg' })],
+      'u1'
+    );
+    expect(emptyResult.size).toBe(0);
+    expect(idbMock.get).not.toHaveBeenCalled();
+
+    const pendingPhotos = Array.from({ length: 7 }, (_, i) =>
+      makePhoto({ id: `ph_pending_${i}`, storagePath: undefined })
+    );
+    idbMock.get.and.callFake((async <T>(_store: string, key: string): Promise<T | null> => {
+      if (key === 'ph_pending_5') {
+        return null; // missing blob in IDB
+      }
+      return new Blob([key], { type: 'image/png' }) as unknown as T;
+    }) as typeof idbMock.get);
+
+    let activeUploads = 0;
+    let maxConcurrentUploads = 0;
+    const deferredByPhoto = new Map<string, Deferred<string | undefined>>();
+    spyOn(service, 'uploadToCloudStorage').and.callFake((photo) => {
+      activeUploads++;
+      maxConcurrentUploads = Math.max(maxConcurrentUploads, activeUploads);
+      const d = createDeferred<string | undefined>();
+      deferredByPhoto.set(photo.id, d);
+      return d.promise.finally(() => {
+        activeUploads--;
+      });
+    });
+
+    spyOn(console, 'warn');
+    const syncPromise = service.syncPendingBlobsToCloud(pendingPhotos, 'u1');
+
+    // Wait for initial batch of 3 uploads to start
+    await new Promise((r) => setTimeout(r, 0));
+    expect(maxConcurrentUploads).toBe(3);
+    expect(activeUploads).toBe(3);
+
+    // Resolve first 3, including one rejection on ph_pending_1
+    deferredByPhoto.get('ph_pending_0')!.resolve('cloud/0.png');
+    deferredByPhoto.get('ph_pending_1')!.reject(new Error('network blip'));
+    deferredByPhoto.get('ph_pending_2')!.resolve('cloud/2.png');
+
+    await new Promise((r) => setTimeout(r, 0));
+    expect(maxConcurrentUploads).toBe(3);
+
+    // Resolve remaining pending uploads (workers advance through ph_pending_3..6)
+    for (let round = 0; round < 3; round++) {
+      for (const [id, d] of deferredByPhoto.entries()) {
+        if (id !== 'ph_pending_0' && id !== 'ph_pending_1' && id !== 'ph_pending_2') {
+          d.resolve(`cloud/${id}.png`);
+        }
+      }
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
+    const uploaded = await syncPromise;
+    expect(maxConcurrentUploads).toBe(3);
+    expect(uploaded.get('ph_pending_0')).toBe('cloud/0.png');
+    expect(uploaded.has('ph_pending_1')).toBeFalse();
+    expect(uploaded.has('ph_pending_5')).toBeFalse();
+    expect(uploaded.get('ph_pending_6')).toBe('cloud/ph_pending_6.png');
   });
 });
