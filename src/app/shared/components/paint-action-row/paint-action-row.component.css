@@ -24,6 +24,8 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
+  content-visibility: var(--par-cv, visible);
+  contain-intrinsic-size: var(--par-cis, auto);
 }
 
 .par-container.variant-pill {

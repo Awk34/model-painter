@@ -67,13 +67,13 @@
   />
 
   <div class="results-meta" aria-live="polite" aria-atomic="true">
-    <span>Showing <strong>{{ filteredColors().length }}</strong> matching color guides</span>
+    <span>Showing <strong>{{ displayedColors().length }}</strong> of <strong>{{ filteredColors().length | number }}</strong> matching color guides</span>
   </div>
 
   <!-- Colors Grid -->
   @if (filteredColors().length > 0) {
     <div class="colors-grid">
-      @for (item of filteredColors(); track item.color.id) {
+      @for (item of displayedColors(); track item.color.id) {
         <a
           class="color-card studio-card interactive"
           [routerLink]="['/colors', item.color.id]"
@@ -83,7 +83,10 @@
               <img
                 [src]="img.resolve(item.color.localImagePath, item.color.imageUrl)"
                 [alt]="item.color.name"
+                width="155"
+                height="155"
                 loading="lazy"
+                decoding="async"
               />
             } @else {
               <div class="fallback-swatch" [style.background]="item.color.hex"></div>
@@ -116,6 +119,14 @@
         </a>
       }
     </div>
+
+    @if (filteredColors().length > visibleLimit()) {
+      <div class="load-more-row">
+        <button type="button" class="btn btn-secondary" (click)="loadMore()">
+          Load More Color Guides ({{ filteredColors().length - visibleLimit() | number }} remaining)
+        </button>
+      </div>
+    }
   } @else {
     <div class="empty-state studio-card">
       <h2>No Color Guides Match Your Filters</h2>

@@ -40,7 +40,15 @@
       <!-- Left: Interactive Space Marine Backpack Showcase Image Switcher -->
       <div class="showcase-panel studio-card">
         <div class="showcase-stage">
-          <img [src]="activeShowcaseImage()" [alt]="c.name" class="backpack-img" />
+          <img
+            [src]="activeShowcaseImage()"
+            [alt]="c.name"
+            class="backpack-img"
+            width="500"
+            height="500"
+            fetchpriority="high"
+            decoding="async"
+          />
         </div>
 
         <div class="tier-switcher">
@@ -116,12 +124,15 @@
       <section class="reverse-section studio-card">
         <h2>Models Using "{{ c.name }}" ({{ modelsUsingColor().length }})</h2>
         <div class="models-grid">
-          @for (m of modelsUsingColor().slice(0, 24); track m.id) {
+          @for (m of visibleModelsUsingColor(); track m.id) {
             <a class="model-mini-card studio-card interactive" [routerLink]="['/models', m.id]">
               <img
                 [src]="img.resolve(m.localPrimaryImage, m.primaryImage)"
                 [alt]="m.name"
+                width="170"
+                height="120"
                 loading="lazy"
+                decoding="async"
               />
               <div class="mm-info">
                 <strong>{{ m.name }}</strong>

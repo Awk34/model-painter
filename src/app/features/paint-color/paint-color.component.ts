@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -8,6 +9,7 @@ import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { UserStateService } from '../../core/services/user-state.service';
 import { applyReadinessFilter } from '../../core/utils/catalog-filter.util';
+import { createVisibleLimit } from '../../core/utils/pagination.util';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { CatalogFilterBarComponent } from '../../shared/components/catalog-filter-bar/catalog-filter-bar.component';
 import { StageReadinessPillsComponent } from '../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
@@ -15,6 +17,7 @@ import { StageReadinessPillsComponent } from '../../shared/components/stage-read
 @Component({
   selector: 'app-paint-color',
   imports: [
+    DecimalPipe,
     ReactiveFormsModule,
     RouterLink,
     AppIconComponent,
@@ -35,10 +38,20 @@ export class PaintColorComponent {
   readonly onlyBasing = signal<boolean>(false);
   readonly searchQuery = signal<string>('');
   readonly rangeFilter = linkedSignal<'all' | 'warhammer_colour' | 'warhammer_pro'>(
-    () => this.userState?.preferences?.()?.defaultRangeFilter ?? 'all'
+    () => this.userState.preferences().defaultRangeFilter ?? 'all'
   );
   readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing1' | 'sortReady'>('all');
+
+  private readonly pagination = createVisibleLimit(60, () => [
+    this.selectedGroup(),
+    this.onlyBasing(),
+    this.searchQuery(),
+    this.rangeFilter(),
+    this.targetStage(),
+    this.readinessFilter(),
+  ]);
+  readonly visibleLimit = this.pagination.limit;
 
   readonly onlyBasingControl = new FormControl(false, { nonNullable: true });
 
@@ -103,6 +116,14 @@ export class PaintColorComponent {
     return applyReadinessFilter(evaluated, rFilter);
   });
 
+  readonly displayedColors = computed(() =>
+    this.filteredColors().slice(0, this.visibleLimit())
+  );
+
+  loadMore(): void {
+    this.pagination.loadMore();
+  }
+
   resetFilters(): void {
     this.selectedGroup.set(null);
     this.onlyBasing.set(false);
@@ -110,5 +131,6 @@ export class PaintColorComponent {
     this.rangeFilter.set('all');
     this.targetStage.set('base');
     this.readinessFilter.set('all');
+    this.pagination.reset();
   }
 }

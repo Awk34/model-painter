@@ -49,6 +49,9 @@
           [src]="photoUrl()"
           [alt]="activePhoto.caption || activePhoto.fileName"
           class="lightbox-img"
+          [attr.width]="activePhoto.width || 800"
+          [attr.height]="activePhoto.height || 600"
+          decoding="async"
         />
 
         @if (totalCount() > 1) {

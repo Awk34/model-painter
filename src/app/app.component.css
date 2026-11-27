@@ -223,6 +223,7 @@
 .pulse-ic {
   width: 56px;
   height: 56px;
+  object-fit: contain;
 }
 .boot-loader p {
   font-family: var(--font-sans);

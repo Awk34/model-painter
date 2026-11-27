@@ -43,10 +43,25 @@ function makeColor(id: string, name: string): ColorDetails {
 describe('ColorDetailComponent async race, error, and 404 UI', () => {
   let paramMap$: BehaviorSubject<ParamMap>;
   let getColorDetailsSpy: jasmine.Spy;
+  let modelsUsingColorMapSignal: ReturnType<
+    typeof signal<
+      Map<
+        string,
+        Array<{
+          id: string;
+          name: string;
+          gameNames: string[];
+          localPrimaryImage?: string;
+          primaryImage?: string;
+        }>
+      >
+    >
+  >;
 
   beforeEach(async () => {
     paramMap$ = new BehaviorSubject<ParamMap>(convertToParamMap({ id: 'color-a' }));
     getColorDetailsSpy = jasmine.createSpy('getColorDetails');
+    modelsUsingColorMapSignal = signal(new Map());
 
     await TestBed.configureTestingModule({
       imports: [ColorDetailComponent],
@@ -60,7 +75,7 @@ describe('ColorDetailComponent async race, error, and 404 UI', () => {
           provide: CatalogService,
           useValue: {
             getColorDetails: getColorDetailsSpy,
-            modelsUsingColorMap: signal(new Map()),
+            modelsUsingColorMap: modelsUsingColorMapSignal,
           },
         },
         {
@@ -159,5 +174,44 @@ describe('ColorDetailComponent async race, error, and 404 UI', () => {
       fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>
     );
     expect(backLinks.some((a) => a.getAttribute('href')?.includes('/colors'))).toBeTrue();
+  });
+
+  it('caps visibleModelsUsingColor at 24 and sets hero fetchpriority="high" and mini-card lazy attributes', async () => {
+    const models = Array.from({ length: 30 }, (_, i) => ({
+      id: `m-${i}`,
+      name: `Model ${i}`,
+      gameNames: ['Warhammer 40,000'],
+      localPrimaryImage: `/models/m-${i}.png`,
+    }));
+    modelsUsingColorMapSignal.set(new Map([['color-a', models]]));
+    getColorDetailsSpy.and.resolveTo({
+      ...makeColor('color-a', 'Macragge Blue'),
+      localImagePath: '/colors/macragge.png',
+    });
+
+    const fixture = TestBed.createComponent(ColorDetailComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(comp.modelsUsingColor().length).toBe(30);
+    expect(comp.visibleModelsUsingColor().length).toBe(24);
+
+    const root = fixture.nativeElement as HTMLElement;
+    const heroImg = root.querySelector('.backpack-img') as HTMLImageElement;
+    expect(heroImg.getAttribute('fetchpriority')).toBe('high');
+    expect(heroImg.getAttribute('decoding')).toBe('async');
+    expect(heroImg.getAttribute('width')).toBe('500');
+    expect(heroImg.getAttribute('height')).toBe('500');
+    expect(heroImg.hasAttribute('loading')).toBeFalse();
+
+    const miniCards = root.querySelectorAll('.model-mini-card');
+    expect(miniCards.length).toBe(24);
+    const miniImg = miniCards[0].querySelector('img') as HTMLImageElement;
+    expect(miniImg.getAttribute('loading')).toBe('lazy');
+    expect(miniImg.getAttribute('decoding')).toBe('async');
+    expect(miniImg.getAttribute('width')).toBe('170');
+    expect(miniImg.getAttribute('height')).toBe('120');
   });
 });

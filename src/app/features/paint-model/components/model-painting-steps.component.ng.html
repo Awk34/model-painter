@@ -8,9 +8,10 @@
     </div>
 
     <div class="chip-bar">
-      @let baseProg = getStageProgress('Base Finish');
-      @let detailProg = getStageProgress('Detail Finish');
-      @let artificerProg = getStageProgress('Artificer Finish');
+      @let stageProg = stageProgressByKey();
+      @let baseProg = stageProg['Base Finish'];
+      @let detailProg = stageProg['Detail Finish'];
+      @let artificerProg = stageProg['Artificer Finish'];
 
       <button
         type="button"
@@ -93,41 +94,43 @@
   }
 
   <div class="areas-list">
-    @for (area of paintingAreas(); track area.id) {
-      @let areaProg = getAreaProgress(area);
-      <div class="area-card studio-card" [class.area-done]="modelId() && areaProg.isDone">
+    @for (vm of areaViewModels(); track vm.area.id) {
+      <div class="area-card studio-card" [class.area-done]="modelId() && vm.progress.isDone">
         <div class="area-header">
           <div class="area-title-group">
-            @if (area.localImagePath || area.imageUrl) {
+            @if (vm.thumbUrl; as thumbUrl) {
               <img
-                [src]="img.resolve(area.localImagePath, area.imageUrl)"
-                [alt]="area.name"
+                [src]="thumbUrl"
+                [alt]="vm.area.name"
                 class="area-thumb"
+                width="56"
+                height="56"
+                loading="lazy"
+                decoding="async"
               />
             }
             <div>
-              <h3>{{ area.name }}</h3>
-              @if (area.subsectionName) {
-                <span class="area-sub">{{ area.subsectionName }}</span>
+              <h3>{{ vm.area.name }}</h3>
+              @if (vm.area.subsectionName) {
+                <span class="area-sub">{{ vm.area.subsectionName }}</span>
               }
             </div>
           </div>
 
-          @if (modelId() && areaProg.total > 0) {
-            @let stageLabel = (areaProg.isDone ? 'Unmark stage done: ' : 'Mark stage done: ') + area.name;
+          @if (modelId() && vm.progress.total > 0) {
             <div class="area-progress-actions">
-              <span class="area-count-pill" [class.done]="areaProg.isDone">
-                {{ areaProg.done }}/{{ areaProg.total }}
+              <span class="area-count-pill" [class.done]="vm.progress.isDone">
+                {{ vm.progress.done }}/{{ vm.progress.total }}
               </span>
               <button
                 type="button"
                 class="done-icon-btn stage-done-btn"
-                [class.done]="areaProg.isDone"
-                [class.partial]="areaProg.done > 0 && !areaProg.isDone"
-                [attr.aria-pressed]="areaProg.isDone"
-                [title]="stageLabel"
-                [attr.aria-label]="stageLabel"
-                (click)="toggleAreaDone(area)"
+                [class.done]="vm.progress.isDone"
+                [class.partial]="vm.progress.done > 0 && !vm.progress.isDone"
+                [attr.aria-pressed]="vm.progress.isDone"
+                [title]="vm.stageLabel"
+                [attr.aria-label]="vm.stageLabel"
+                (click)="toggleAreaDone(vm.area)"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -148,28 +151,26 @@
         </div>
 
         <div class="steps-grid">
-          @for (step of filterSteps(area.paintingSteps); track step.id) {
-            @let stepDone = modelId() && isStepDone(step.id);
-            <div class="step-card" [class.done]="stepDone">
+          @for (stepVm of vm.steps; track stepVm.step.id) {
+            <div class="step-card" [class.done]="stepVm.done">
               <div class="step-top">
-                <span class="step-num-badge">Step {{ step.stepNumber || step.stepOrder }}</span>
-                <span class="stage-pill">{{ step.paintingStage }}</span>
-                @if (step.techniqueName) {
-                  <span class="tech-pill">{{ step.techniqueName }}</span>
+                <span class="step-num-badge">Step {{ stepVm.stepNum }}</span>
+                <span class="stage-pill">{{ stepVm.step.paintingStage }}</span>
+                @if (stepVm.step.techniqueName) {
+                  <span class="tech-pill">{{ stepVm.step.techniqueName }}</span>
                 }
-                @if (step.brushName) {
-                  <span class="brush-pill">🖌 {{ step.brushName }}</span>
+                @if (stepVm.step.brushName) {
+                  <span class="brush-pill">🖌 {{ stepVm.step.brushName }}</span>
                 }
                 @if (modelId()) {
-                  @let stepLabel = (stepDone ? 'Mark not done: ' : 'Mark done: ') + (step.text || step.paint?.name || 'Step ' + (step.stepNumber || step.stepOrder));
                   <button
                     type="button"
                     class="done-icon-btn step-done-btn"
-                    [class.done]="stepDone"
-                    [attr.aria-pressed]="stepDone"
-                    [title]="stepLabel"
-                    [attr.aria-label]="stepLabel"
-                    (click)="toggleStepDone(step.id)"
+                    [class.done]="stepVm.done"
+                    [attr.aria-pressed]="stepVm.done"
+                    [title]="stepVm.stepLabel"
+                    [attr.aria-label]="stepVm.stepLabel"
+                    (click)="toggleStepDone(stepVm.step.id)"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -188,21 +189,24 @@
                 }
               </div>
 
-              @if (step.localImagePath || step.imageUrl) {
+              @if (stepVm.imageUrl; as stepImageUrl) {
                 <div class="step-img-box">
                   <img
-                    [src]="img.resolve(step.localImagePath, step.imageUrl)"
-                    [alt]="step.title || step.techniqueName || ''"
+                    [src]="stepImageUrl"
+                    [alt]="stepVm.step.title || stepVm.step.techniqueName || ''"
+                    width="200"
+                    height="134"
                     loading="lazy"
+                    decoding="async"
                   />
                 </div>
               }
 
-              @if (step.text) {
-                <p class="step-text">{{ step.text }}</p>
+              @if (stepVm.step.text) {
+                <p class="step-text">{{ stepVm.step.text }}</p>
               }
 
-              @if (step.paint; as sp) {
+              @if (stepVm.step.paint; as sp) {
                 <div class="step-paint-box">
                   <app-paint-action-row
                     [paintId]="sp.id"

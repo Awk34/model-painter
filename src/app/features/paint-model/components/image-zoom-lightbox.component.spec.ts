@@ -22,6 +22,11 @@ describe('ImageZoomLightboxComponent', () => {
     const root = fixture.nativeElement as HTMLElement;
     const dialog = root.querySelector('dialog') as HTMLDialogElement;
     expect(dialog.open).toBeTrue();
+    const zoomImg = root.querySelector('.zoom-stage-img') as HTMLImageElement;
+    expect(zoomImg.getAttribute('decoding')).toBe('async');
+    expect(zoomImg.getAttribute('width')).toBe('800');
+    expect(zoomImg.getAttribute('height')).toBe('800');
+    expect(zoomImg.hasAttribute('loading')).toBeFalse();
 
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true }));
     expect(comp.zoomScale()).toBe(2.5);

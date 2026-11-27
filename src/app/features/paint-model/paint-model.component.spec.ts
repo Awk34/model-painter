@@ -125,6 +125,12 @@ describe('PaintModelComponent faction/sub-faction filtering', () => {
           provide: UserStateService,
           useValue: {
             state: signal({ inventoryModelIds: [], wishlistModelIds: [] }),
+            preferences: signal({
+              defaultRangeFilter: 'all' as const,
+              allowCompatibleSubstitutions: true,
+              allowThirdPartySubstitutions: true,
+              preferredThirdPartyBrands: [],
+            }),
             inventoryModelIds: signal([]),
             wishlistModelIds: signal([]),
             modelInventorySet: signal(new Set<string>()),

@@ -233,6 +233,26 @@ export interface PaintSwatchLike {
   gradientEndHex?: string | null;
 }
 
+const EMPTY_FALLBACK_SWATCH: PaintSwatchLike = Object.freeze({});
+const FALLBACK_SWATCH_CACHE = new Map<string, PaintSwatchLike>();
+
+/**
+ * Returns a referentially stable PaintSwatchLike fallback object for a given category
+ * so OnPush child components do not receive newly allocated object literals per CD pass.
+ */
+export function getFallbackSwatch(category?: string | null): PaintSwatchLike {
+  const key = category?.trim();
+  if (!key) {
+    return EMPTY_FALLBACK_SWATCH;
+  }
+  let cached = FALLBACK_SWATCH_CACHE.get(key);
+  if (!cached) {
+    cached = Object.freeze({ category: key });
+    FALLBACK_SWATCH_CACHE.set(key, cached);
+  }
+  return cached;
+}
+
 function parseHexRgb(hex: string | null | undefined): [number, number, number] | null {
   if (!hex) {
     return null;

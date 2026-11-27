@@ -30,7 +30,7 @@ export class PaintModelComponent {
   readonly searchQuery = signal<string>('');
   readonly collectionFilter = signal<'all' | 'inventory' | 'wishlist'>('all');
   readonly rangeFilter = linkedSignal<'all' | 'warhammer_colour' | 'warhammer_pro'>(
-    () => this.userState?.preferences?.()?.defaultRangeFilter ?? 'all'
+    () => this.userState.preferences().defaultRangeFilter ?? 'all'
   );
   readonly targetStage = signal<FinishStageKey>('base');
   readonly readinessFilter = signal<'all' | 'ready100' | 'missing2' | 'sortReady'>('all');

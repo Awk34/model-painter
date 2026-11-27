@@ -79,4 +79,21 @@ describe('PaintActionRowComponent', () => {
     fixture.detectChanges();
     expect(root.querySelector('.par-actions .badge-owned')?.textContent?.trim()).toBe('✓ Owned');
   });
+
+  it('sets loading="lazy", decoding="async", width, height on pot thumbnail and exposes isOwned/isWishlisted computed signals', () => {
+    const { fixture } = setup(['p1'], []);
+    fixture.componentRef.setInput('imageUrl', '/paints/macragge.png');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isOwned()).toBeTrue();
+    expect(fixture.componentInstance.isWishlisted()).toBeFalse();
+
+    const potImg = (fixture.nativeElement as HTMLElement).querySelector(
+      '.par-pot-thumb'
+    ) as HTMLImageElement;
+    expect(potImg.getAttribute('width')).toBe('38');
+    expect(potImg.getAttribute('height')).toBe('38');
+    expect(potImg.getAttribute('loading')).toBe('lazy');
+    expect(potImg.getAttribute('decoding')).toBe('async');
+  });
 });

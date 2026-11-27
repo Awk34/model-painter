@@ -120,4 +120,94 @@ describe('HobbyDeskPaintsTabComponent custom paint modal draft reset', () => {
     expect(dialog.getAttribute('aria-labelledby')).toBeTruthy();
     expect(dialog.querySelector('form button[type="submit"]')).not.toBeNull();
   });
+
+  it('paginates catalogue paints at 60, loads more, resets limit on filter changes, and preserves matching paints live region', async () => {
+    const paints = Array.from({ length: 65 }, (_, i) => ({
+      id: `p-${i}`,
+      name: `Paint ${i}`,
+      range: i % 2 === 0 ? ('warhammer_colour' as const) : ('warhammer_pro' as const),
+      category: i < 5 ? 'Base' : 'Layer',
+      gradientStartHex: '#112233',
+      localImagePath: `/paints/p-${i}.png`,
+    }));
+
+    await TestBed.configureTestingModule({
+      imports: [HobbyDeskPaintsTabComponent],
+      providers: [
+        {
+          provide: CatalogService,
+          useValue: {
+            paints: signal(paints),
+            paintById: signal(new Map(paints.map((p) => [p.id, p]))),
+            thirdPartyPaints: signal([]),
+            thirdPartyBrands: signal([]),
+          },
+        },
+        {
+          provide: UserStateService,
+          useValue: {
+            state: signal({ inventoryPaintIds: ['p-0'], wishlistPaintIds: [] }),
+            inventoryPaintIds: signal(['p-0']),
+            wishlistPaintIds: signal([]),
+            inventorySet: signal(new Set<string>(['p-0'])),
+            wishlistSet: signal(new Set<string>()),
+            customPaints: signal([]),
+            isOwned: (id: string) => id === 'p-0',
+            isWishlisted: () => false,
+            toggleInventory: () => {},
+            toggleWishlist: () => {},
+            addCustomPaint: () => null,
+          },
+        },
+        {
+          provide: PaintModalService,
+          useValue: { openPaint: () => {} },
+        },
+        {
+          provide: ImageService,
+          useValue: { resolve: (l?: string | null, r?: string | null) => l || r || '' },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(HobbyDeskPaintsTabComponent);
+    const comp = fixture.componentInstance;
+    comp.subMode.set('catalogue');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(comp.visibleLimit()).toBe(60);
+    expect(comp.displayedPaints().length).toBe(60);
+    expect(root.querySelectorAll('app-paint-action-row').length).toBe(60);
+    expect(root.querySelector('[aria-live="polite"]')?.textContent).toContain('Showing 60 of 65 matching paints');
+
+    const loadMoreBtn = root.querySelector('.load-more-row button') as HTMLButtonElement;
+    expect(loadMoreBtn.textContent).toContain('5 remaining');
+    loadMoreBtn.click();
+    fixture.detectChanges();
+
+    expect(comp.visibleLimit()).toBe(120);
+    expect(root.querySelectorAll('app-paint-action-row').length).toBe(65);
+    expect(root.querySelector('.load-more-row')).toBeNull();
+
+    // Filter resets
+    comp.paintSearch.set('Paint');
+    fixture.detectChanges();
+    expect(comp.visibleLimit()).toBe(60);
+
+    comp.loadMorePaints();
+    comp.selectedBrandFilter.set('Citadel Tone Pro');
+    fixture.detectChanges();
+    expect(comp.visibleLimit()).toBe(60);
+
+    comp.loadMorePaints();
+    comp.selectedCategoryFilter.set('Layer');
+    fixture.detectChanges();
+    expect(comp.visibleLimit()).toBe(60);
+
+    comp.loadMorePaints();
+    comp.subMode.set('inventory');
+    fixture.detectChanges();
+    expect(comp.visibleLimit()).toBe(60);
+  });
 });

@@ -3,7 +3,10 @@
     <img
       [src]="img.resolve(model().localPrimaryImage, model().primaryImage)"
       [alt]="model().name"
+      width="200"
+      height="166"
       loading="lazy"
+      decoding="async"
     />
     @if (showRangeTag() && model().range === 'warhammer_pro') {
       <span class="range-tag badge badge-pro">Tone Pro</span>

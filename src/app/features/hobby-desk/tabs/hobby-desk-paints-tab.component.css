@@ -8,6 +8,17 @@
   gap: 10px;
 }
 
+.paints-grid > app-paint-action-row:nth-child(n + 13) {
+  --par-cv: auto;
+  --par-cis: auto 64px;
+}
+
+.load-more-row {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
 .paint-card-meta {
   display: flex;
   gap: 5px;

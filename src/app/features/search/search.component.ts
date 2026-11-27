@@ -95,6 +95,16 @@ export class SearchComponent {
     return this.catalog.models().filter((m) => matchesModelSearch(m, q));
   });
 
+  readonly visibleCitadelPaints = computed(() => this.matchedCitadelPaints().slice(0, 24));
+
+  readonly visibleThirdPartyPaints = computed(() =>
+    this.matchedThirdPartyPaints().slice(0, 24)
+  );
+
+  readonly visibleColors = computed(() => this.matchedColors().slice(0, 24));
+
+  readonly visibleModels = computed(() => this.matchedModels().slice(0, 36));
+
   readonly totalCount = computed(
     () =>
       this.matchedCitadelPaints().length +

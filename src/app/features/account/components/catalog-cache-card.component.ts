@@ -17,10 +17,14 @@ export class CatalogCacheCardComponent {
     if (!mf?.bundles) {
       return [];
     }
-    return Object.entries(mf.bundles).map(([key, val]) => ({
-      key,
-      hash: typeof val === 'string' ? val : val?.hash ?? '',
-      updatedAt: typeof val === 'string' ? mf.updatedAt : val?.updatedAt ?? mf.updatedAt,
-    }));
+    return Object.entries(mf.bundles).map(([key, val]) => {
+      const hash = typeof val === 'string' ? val : val?.hash ?? '';
+      return {
+        key,
+        hash,
+        shortHash: hash.slice(0, 19),
+        updatedAt: typeof val === 'string' ? mf.updatedAt : val?.updatedAt ?? mf.updatedAt,
+      };
+    });
   });
 }

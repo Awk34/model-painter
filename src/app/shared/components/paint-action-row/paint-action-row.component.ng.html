@@ -4,7 +4,7 @@
       <span class="step-order-num">{{ stepOrder() }}</span>
     }
     @if (imageUrl(); as imgSrc) {
-      <img [src]="imgSrc" [alt]="name()" class="par-pot-thumb" loading="lazy" />
+      <img [src]="imgSrc" [alt]="name()" class="par-pot-thumb" width="38" height="38" loading="lazy" decoding="async" />
     } @else {
       <app-paint-swatch [paint]="paint()" [hex]="hex()" [size]="swatchSize()" />
     }
@@ -33,48 +33,48 @@
           <button
             type="button"
             class="btn btn-sm"
-            [class.btn-owned]="userState.isOwned(paintId())"
-            [class.btn-ghost]="!userState.isOwned(paintId())"
-            [attr.aria-label]="(userState.isOwned(paintId()) ? 'Remove from inventory: ' : 'Add to inventory: ') + name()"
+            [class.btn-owned]="isOwned()"
+            [class.btn-ghost]="!isOwned()"
+            [attr.aria-label]="(isOwned() ? 'Remove from inventory: ' : 'Add to inventory: ') + name()"
             (click)="userState.toggleInventory(paintId())"
           >
-            {{ userState.isOwned(paintId()) ? '✓' : '+' }}
+            {{ isOwned() ? '✓' : '+' }}
           </button>
         }
         @case ('own-only') {
           <button
             type="button"
             class="btn btn-sm"
-            [class.btn-owned]="userState.isOwned(paintId())"
-            [class.btn-ghost]="!userState.isOwned(paintId())"
+            [class.btn-owned]="isOwned()"
+            [class.btn-ghost]="!isOwned()"
             (click)="userState.toggleInventory(paintId())"
           >
-            {{ userState.isOwned(paintId()) ? '✓ Owned' : '+ Own' }}
+            {{ isOwned() ? '✓ Owned' : '+ Own' }}
           </button>
         }
         @case ('own-wish-text') {
           <button
             type="button"
             class="btn btn-sm"
-            [class.btn-owned]="userState.isOwned(paintId())"
-            [class.btn-ghost]="!userState.isOwned(paintId())"
+            [class.btn-owned]="isOwned()"
+            [class.btn-ghost]="!isOwned()"
             (click)="userState.toggleInventory(paintId())"
           >
-            {{ userState.isOwned(paintId()) ? '✓ Owned' : '+ Own' }}
+            {{ isOwned() ? '✓ Owned' : '+ Own' }}
           </button>
           <button
             type="button"
             class="btn btn-sm"
-            [class.btn-wishlist]="userState.isWishlisted(paintId())"
-            [class.btn-ghost]="!userState.isWishlisted(paintId())"
-            [attr.aria-label]="(userState.isWishlisted(paintId()) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
+            [class.btn-wishlist]="isWishlisted()"
+            [class.btn-ghost]="!isWishlisted()"
+            [attr.aria-label]="(isWishlisted() ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
             (click)="userState.toggleWishlist(paintId())"
           >
-            {{ userState.isWishlisted(paintId()) ? '★ Wishlisted' : '☆ Wishlist' }}
+            {{ isWishlisted() ? '★ Wishlisted' : '☆ Wishlist' }}
           </button>
         }
         @default {
-          @if (userState.isOwned(paintId())) {
+          @if (isOwned()) {
             @if (useIconToggle()) {
               <button
                 type="button"
@@ -87,12 +87,12 @@
               <button
                 type="button"
                 class="icon-toggle"
-                [class.active-wish]="userState.isWishlisted(paintId())"
-                [attr.aria-label]="(userState.isWishlisted(paintId()) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
+                [class.active-wish]="isWishlisted()"
+                [attr.aria-label]="(isWishlisted() ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
                 title="Toggle Wishlist"
                 (click)="userState.toggleWishlist(paintId())"
               >
-                {{ userState.isWishlisted(paintId()) ? '★' : '☆' }}
+                {{ isWishlisted() ? '★' : '☆' }}
               </button>
             } @else {
               <button
@@ -125,14 +125,14 @@
             <button
               type="button"
               [class]="useIconToggle() ? 'icon-toggle' : 'btn btn-sm'"
-              [class.active-wish]="useIconToggle() && userState.isWishlisted(paintId())"
-              [class.btn-wishlist]="!useIconToggle() && userState.isWishlisted(paintId())"
-              [class.btn-ghost]="!useIconToggle() && !userState.isWishlisted(paintId())"
-              [attr.aria-label]="(userState.isWishlisted(paintId()) ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
+              [class.active-wish]="useIconToggle() && isWishlisted()"
+              [class.btn-wishlist]="!useIconToggle() && isWishlisted()"
+              [class.btn-ghost]="!useIconToggle() && !isWishlisted()"
+              [attr.aria-label]="(isWishlisted() ? 'Remove from wishlist: ' : 'Add to wishlist: ') + name()"
               [title]="useIconToggle() ? 'Toggle Wishlist' : ''"
               (click)="userState.toggleWishlist(paintId())"
             >
-              {{ userState.isWishlisted(paintId()) ? '★' : '☆' }}
+              {{ isWishlisted() ? '★' : '☆' }}
             </button>
           }
         }

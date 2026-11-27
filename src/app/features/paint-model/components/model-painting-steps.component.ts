@@ -17,6 +17,22 @@ export interface PaintingProgressSummary {
   isDone: boolean;
 }
 
+export interface ModelPaintingStepViewModel {
+  step: ModelPaintingStep;
+  stepNum: string | number;
+  done: boolean;
+  stepLabel: string;
+  imageUrl: string | null;
+}
+
+export interface ModelPaintingAreaViewModel {
+  area: ModelPaintingArea;
+  progress: PaintingProgressSummary;
+  thumbUrl: string | null;
+  stageLabel: string;
+  steps: ModelPaintingStepViewModel[];
+}
+
 @Component({
   selector: 'app-model-painting-steps',
   imports: [PaintActionRowComponent],
@@ -66,6 +82,109 @@ export class ModelPaintingStepsComponent {
     return { done, total, isDone: total > 0 && done === total, percent };
   });
 
+  readonly stageProgressByKey = computed<
+    Record<Exclude<ModelStageFilter, 'all'>, PaintingProgressSummary>
+  >(() => {
+    const completed = this.completedStepSet();
+    const counts: Record<
+      Exclude<ModelStageFilter, 'all'>,
+      { done: number; total: number }
+    > = {
+      'Base Finish': { done: 0, total: 0 },
+      'Detail Finish': { done: 0, total: 0 },
+      'Artificer Finish': { done: 0, total: 0 },
+    };
+
+    for (const area of this.paintingAreas()) {
+      for (const step of area.paintingSteps ?? []) {
+        if (!step.id) {
+          continue;
+        }
+        const normalized = normalizePaintingStageLabel(step.paintingStage);
+        if (
+          normalized === 'Base Finish' ||
+          normalized === 'Detail Finish' ||
+          normalized === 'Artificer Finish'
+        ) {
+          counts[normalized].total += 1;
+          if (completed.has(step.id)) {
+            counts[normalized].done += 1;
+          }
+        }
+      }
+    }
+
+    return {
+      'Base Finish': {
+        done: counts['Base Finish'].done,
+        total: counts['Base Finish'].total,
+        isDone: counts['Base Finish'].total > 0 && counts['Base Finish'].done === counts['Base Finish'].total,
+      },
+      'Detail Finish': {
+        done: counts['Detail Finish'].done,
+        total: counts['Detail Finish'].total,
+        isDone:
+          counts['Detail Finish'].total > 0 &&
+          counts['Detail Finish'].done === counts['Detail Finish'].total,
+      },
+      'Artificer Finish': {
+        done: counts['Artificer Finish'].done,
+        total: counts['Artificer Finish'].total,
+        isDone:
+          counts['Artificer Finish'].total > 0 &&
+          counts['Artificer Finish'].done === counts['Artificer Finish'].total,
+      },
+    };
+  });
+
+  readonly areaViewModels = computed<ModelPaintingAreaViewModel[]>(() => {
+    const areas = this.paintingAreas();
+    const completed = this.completedStepSet();
+    const hasModelId = Boolean(this.modelId());
+    const sf = this.stageFilter();
+
+    return areas.map((area) => {
+      const rawSteps = area.paintingSteps ?? [];
+      const filteredSteps =
+        sf === 'all'
+          ? rawSteps
+          : rawSteps.filter((s) => normalizePaintingStageLabel(s.paintingStage) === sf);
+      const progress = this.computeAreaProgress(area, completed, filteredSteps);
+      const thumbUrl =
+        area.localImagePath || area.imageUrl
+          ? this.img.resolve(area.localImagePath, area.imageUrl)
+          : null;
+      const stageLabel = `${progress.isDone ? 'Unmark stage done: ' : 'Mark stage done: '}${area.name}`;
+
+      const steps: ModelPaintingStepViewModel[] = filteredSteps.map((step) => {
+        const stepNum = step.stepNumber || step.stepOrder;
+        const done = hasModelId && completed.has(step.id);
+        const stepLabel = `${done ? 'Mark not done: ' : 'Mark done: '}${
+          step.text || step.paint?.name || `Step ${stepNum}`
+        }`;
+        const imageUrl =
+          step.localImagePath || step.imageUrl
+            ? this.img.resolve(step.localImagePath, step.imageUrl)
+            : null;
+        return {
+          step,
+          stepNum,
+          done,
+          stepLabel,
+          imageUrl,
+        };
+      });
+
+      return {
+        area,
+        progress,
+        thumbUrl,
+        stageLabel,
+        steps,
+      };
+    });
+  });
+
   filterSteps(steps: ModelPaintingStep[]): ModelPaintingStep[] {
     const sf = this.stageFilter();
     if (sf === 'all') {
@@ -96,8 +215,22 @@ export class ModelPaintingStepsComponent {
   }
 
   getAreaProgress(area: ModelPaintingArea): PaintingProgressSummary {
-    const ids = this.getAreaTrackingIds(area, true);
-    const completed = this.completedStepSet();
+    return this.computeAreaProgress(area, this.completedStepSet());
+  }
+
+  private computeAreaProgress(
+    area: ModelPaintingArea,
+    completed: ReadonlySet<string>,
+    filteredSteps?: ModelPaintingStep[]
+  ): PaintingProgressSummary {
+    const rawSteps = area.paintingSteps ?? [];
+    const ids =
+      rawSteps.length === 0
+        ? area.id
+          ? [`area:${area.id}`]
+          : []
+        : (filteredSteps ?? this.filterSteps(rawSteps)).map((s) => s.id).filter(Boolean);
+
     let done = 0;
     for (const id of ids) {
       if (completed.has(id)) {
@@ -128,20 +261,7 @@ export class ModelPaintingStepsComponent {
   }
 
   getStageProgress(stage: Exclude<ModelStageFilter, 'all'>): PaintingProgressSummary {
-    const completed = this.completedStepSet();
-    let total = 0;
-    let done = 0;
-    for (const area of this.paintingAreas()) {
-      for (const step of area.paintingSteps ?? []) {
-        if (normalizePaintingStageLabel(step.paintingStage) === stage && step.id) {
-          total += 1;
-          if (completed.has(step.id)) {
-            done += 1;
-          }
-        }
-      }
-    }
-    return { done, total, isDone: total > 0 && done === total };
+    return this.stageProgressByKey()[stage];
   }
 
   clearProgress(): void {

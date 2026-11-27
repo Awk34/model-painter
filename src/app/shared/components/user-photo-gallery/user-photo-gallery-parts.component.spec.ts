@@ -64,6 +64,11 @@ describe('UserPhotoGallery decomposed subcomponents', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
+    const cardImg = root.querySelector('.photo-thumb-img') as HTMLImageElement;
+    expect(cardImg.getAttribute('loading')).toBe('lazy');
+    expect(cardImg.getAttribute('decoding')).toBe('async');
+    expect(cardImg.getAttribute('width')).toBe('220');
+    expect(cardImg.getAttribute('height')).toBe('175');
     expect(root.querySelector('time')?.getAttribute('datetime')).toBe('2026-11-26T00:00:00Z');
 
     const saveSpy = jasmine.createSpy('saveCaption');
@@ -94,6 +99,11 @@ describe('UserPhotoGallery decomposed subcomponents', () => {
     fixture.componentInstance.next.subscribe(nextSpy);
 
     const dialog = (fixture.nativeElement as HTMLElement).querySelector('dialog') as HTMLDialogElement;
+    const lbImg = dialog.querySelector('.lightbox-img') as HTMLImageElement;
+    expect(lbImg.getAttribute('decoding')).toBe('async');
+    expect(lbImg.getAttribute('width')).toBe('800');
+    expect(lbImg.getAttribute('height')).toBe('600');
+    expect(lbImg.hasAttribute('loading')).toBeFalse();
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
     expect(nextSpy).toHaveBeenCalledTimes(1);

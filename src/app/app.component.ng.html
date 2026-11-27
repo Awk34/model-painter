@@ -5,7 +5,7 @@
   <aside class="sidebar">
     <a class="brand-box" routerLink="/hobby-desk">
       <div class="brand-crest">
-        <img src="/logo.svg" alt="Model Painter logo" class="crest-img" />
+        <img src="/logo.svg" alt="Model Painter logo" class="crest-img" width="50" height="50" decoding="async" />
       </div>
       <div class="brand-titles">
         <span class="brand-main">Model Painter</span>
@@ -104,6 +104,10 @@
             referrerpolicy="no-referrer"
             alt="User profile picture"
             class="user-avatar"
+            width="36"
+            height="36"
+            loading="lazy"
+            decoding="async"
           />
         } @else {
           <app-icon name="profile" class="user-avatar placeholder" />
@@ -133,7 +137,7 @@
   <main #mainContent id="main-content" tabindex="-1" class="main-viewport">
     @if (catalog.loading() && catalog.models().length === 0) {
       <div class="boot-loader">
-        <img src="/logo.svg" alt="" class="pulse-ic" />
+        <img src="/logo.svg" alt="" class="pulse-ic" width="56" height="56" decoding="async" />
         <h1>Hydrating Paint Catalog...</h1>
         <p>Loading miniature recipes, color guides, paints &amp; cross-brand equivalents...</p>
       </div>

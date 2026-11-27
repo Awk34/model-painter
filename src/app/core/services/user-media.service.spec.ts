@@ -220,21 +220,29 @@ describe('UserMediaService', () => {
     fakeImg.width = 100;
     fakeImg.height = 10;
 
+    const closeSpy = jasmine.createSpy('close');
     spyOn(
       service as unknown as {
-        loadImageElement: () => Promise<{ img: HTMLImageElement; width: number; height: number }>;
+        decodeImageSource: () => Promise<{
+          source: CanvasImageSource;
+          width: number;
+          height: number;
+          close: () => void;
+        }>;
       },
-      'loadImageElement'
+      'decodeImageSource'
     ).and.resolveTo({
-      img: fakeImg as unknown as HTMLImageElement,
+      source: fakeImg,
       width: 35000,
       height: 100,
+      close: closeSpy,
     });
 
     const extremeValidated = await service.validateImageFile(extremeFile);
     expect(extremeValidated.wasDownscaled).toBeTrue();
     expect(extremeValidated.width).toBeLessThanOrEqual(USER_LIMITS.MAX_PHOTO_DIMENSION_PX);
     expect(extremeValidated.width).toBeLessThanOrEqual(32768);
+    expect(closeSpy).toHaveBeenCalledTimes(1);
 
     // And if downscaleImageToLimit itself returned > 32768px, validateImageFile throws
     spyOn(
@@ -445,5 +453,104 @@ describe('UserMediaService', () => {
     expect(uploaded.has('ph_pending_1')).toBeFalse();
     expect(uploaded.has('ph_pending_5')).toBeFalse();
     expect(uploaded.get('ph_pending_6')).toBe('cloud/ph_pending_6.png');
+  });
+
+  it('uses createImageBitmap({ imageOrientation: "from-image" }) and OffscreenCanvas.convertToBlob and closes bitmaps across all paths', async () => {
+    const smallCanvas = document.createElement('canvas');
+    smallCanvas.width = 64;
+    smallCanvas.height = 48;
+    smallCanvas.getContext('2d')!.fillRect(0, 0, 64, 48);
+    const smallPng = await new Promise<Blob>((resolve, reject) => {
+      smallCanvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+    });
+    const smallFile = new File([smallPng], 'small.png', { type: 'image/png' });
+
+    const realCreateBitmap = window.createImageBitmap.bind(window);
+    const closeSmallSpy = jasmine.createSpy('closeSmall');
+    const createBitmapSpy = spyOn(window, 'createImageBitmap') as unknown as jasmine.Spy<
+      (image: ImageBitmapSource, options?: ImageBitmapOptions) => Promise<ImageBitmap>
+    >;
+    createBitmapSpy.and.resolveTo({
+      width: 64,
+      height: 48,
+      close: closeSmallSpy,
+    } as unknown as ImageBitmap);
+
+    const validatedSmall = await service.validateImageFile(smallFile);
+    expect(createBitmapSpy).toHaveBeenCalledWith(smallFile, { imageOrientation: 'from-image' });
+    expect(validatedSmall.wasDownscaled).toBeFalse();
+    expect(validatedSmall.width).toBe(64);
+    expect(validatedSmall.height).toBe(48);
+    expect(closeSmallSpy).toHaveBeenCalledTimes(1);
+
+    // Downscaled path with OffscreenCanvas.convertToBlob
+    const bigCanvas = document.createElement('canvas');
+    bigCanvas.width = 3000;
+    bigCanvas.height = 2000;
+    bigCanvas.getContext('2d')!.fillRect(0, 0, 3000, 2000);
+    const bigPng = await new Promise<Blob>((resolve, reject) => {
+      bigCanvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+    });
+    const bigFile = new File([bigPng], 'big.png', { type: 'image/png' });
+
+    const realBitmap = await realCreateBitmap(bigFile);
+    const closeRealSpy = spyOn(realBitmap, 'close').and.callThrough();
+    createBitmapSpy.and.resolveTo(realBitmap);
+
+    const convertSpy =
+      typeof OffscreenCanvas !== 'undefined' && typeof OffscreenCanvas.prototype.convertToBlob === 'function'
+        ? spyOn(OffscreenCanvas.prototype, 'convertToBlob').and.callThrough()
+        : null;
+
+    const validatedBig = await service.validateImageFile(bigFile);
+    expect(validatedBig.wasDownscaled).toBeTrue();
+    expect(validatedBig.width).toBe(USER_LIMITS.MAX_PHOTO_DIMENSION_PX);
+    expect(closeRealSpy).toHaveBeenCalledTimes(1);
+    if (convertSpy) {
+      expect(convertSpy).toHaveBeenCalled();
+    }
+
+    // Invalid 0x0 bitmap closes immediately and rejects
+    const closeZeroSpy = jasmine.createSpy('closeZero');
+    createBitmapSpy.and.resolveTo({
+      width: 0,
+      height: 100,
+      close: closeZeroSpy,
+    } as unknown as ImageBitmap);
+    await expectAsync(service.validateImageFile(smallFile)).toBeRejectedWithError(
+      'Image has invalid dimensions.'
+    );
+    expect(closeZeroSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back cleanly to HTMLImageElement + HTMLCanvasElement when ImageBitmap and OffscreenCanvas are unavailable', async () => {
+    spyOn(
+      service as unknown as { canUseImageBitmap: () => boolean },
+      'canUseImageBitmap'
+    ).and.returnValue(false);
+    spyOn(
+      service as unknown as { canUseOffscreenCanvas: () => boolean },
+      'canUseOffscreenCanvas'
+    ).and.returnValue(false);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 3000;
+    canvas.height = 2000;
+    canvas.getContext('2d')!.fillRect(0, 0, 3000, 2000);
+    const pngBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+    });
+    const largeFile = new File([pngBlob], 'fallback-wide.png', { type: 'image/png' });
+
+    const createBitmapSpy = spyOn(window, 'createImageBitmap');
+    const validated = await service.validateImageFile(largeFile);
+    expect(createBitmapSpy).not.toHaveBeenCalled();
+    expect(validated.wasDownscaled).toBeTrue();
+    expect(validated.width).toBeLessThanOrEqual(USER_LIMITS.MAX_PHOTO_DIMENSION_PX);
+
+    // Invalid 0x0 dimensions in fallback path
+    const tinyPngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+    const badFile = new File([tinyPngBytes], 'bad.png', { type: 'image/png' });
+    await expectAsync(service.validateImageFile(badFile)).toBeRejected();
   });
 });

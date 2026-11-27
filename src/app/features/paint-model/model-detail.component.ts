@@ -417,6 +417,11 @@ export class ModelDetailComponent {
     this.stageFilter.set(this.stageFilter() === target ? 'all' : target);
   }
 
+  readonly formattedFactions = computed(() => {
+    const r = this.recipe();
+    return r ? this.formatFactions(r) : '';
+  });
+
   formatFactions(r: ModelRecipe): string {
     const names = new Set<string>();
     for (const f of r.factions ?? []) {

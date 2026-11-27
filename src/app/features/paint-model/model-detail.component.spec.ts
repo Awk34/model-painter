@@ -159,6 +159,14 @@ describe('ModelDetailComponent Zoom Lightbox', () => {
 
     const stagePins = overlayBox.querySelectorAll('.color-pin');
     expect(stagePins.length).toBe(2);
+
+    const heroImg = overlayBox.querySelector('.stage-img') as HTMLImageElement;
+    expect(heroImg.getAttribute('fetchpriority')).toBe('high');
+    expect(heroImg.getAttribute('decoding')).toBe('async');
+    expect(heroImg.getAttribute('width')).toBe('600');
+    expect(heroImg.getAttribute('height')).toBe('600');
+    expect(heroImg.hasAttribute('loading')).toBeFalse();
+    expect(fixture.componentInstance.formattedFactions()).toBe('Chaos Space Marines');
   });
 
   it('opens .zoom-modal-panel at 200% zoom with zero .color-pin orbs when .photo-zoom-btn is clicked', async () => {

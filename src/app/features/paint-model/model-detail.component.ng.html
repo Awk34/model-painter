@@ -93,7 +93,15 @@
         <div class="viewer-panel studio-card">
           <div class="main-img-stage">
             <div class="img-overlay-box">
-              <img [src]="activeImageUrl()" [alt]="projectModelEntry()?.customName || r.name" class="stage-img" />
+              <img
+                [src]="activeImageUrl()"
+                [alt]="projectModelEntry()?.customName || r.name"
+                class="stage-img"
+                width="600"
+                height="600"
+                fetchpriority="high"
+                decoding="async"
+              />
 
               <button
                 type="button"
@@ -173,8 +181,8 @@
             <h2 class="model-subtitle-heading">{{ r.name }} — Painting Guide</h2>
           }
 
-          @if (r.factions.length) {
-            <p class="factions-line">{{ formatFactions(r) }}</p>
+          @if (formattedFactions()) {
+            <p class="factions-line">{{ formattedFactions() }}</p>
           }
 
           <app-stage-readiness-bars
