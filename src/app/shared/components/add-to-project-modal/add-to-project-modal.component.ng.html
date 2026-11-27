@@ -1,9 +1,9 @@
 @if (open()) {
-  <div class="modal-backdrop" (click)="closed.emit()">
+  <div class="modal-backdrop" (click)="close()">
     <div class="modal-panel add-project-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Add "{{ itemName() }}" to Project</h3>
-        <button type="button" class="close-btn" aria-label="Close" (click)="closed.emit()">✕</button>
+        <button type="button" class="close-btn" aria-label="Close" (click)="close()">✕</button>
       </div>
       <div class="modal-body">
         @if (userState.projects().length > 0) {

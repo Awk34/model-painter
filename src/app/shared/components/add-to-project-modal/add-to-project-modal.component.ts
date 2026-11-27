@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { UserProject } from '../../../core/models/catalog.models';
 import { UserStateService } from '../../../core/services/user-state.service';
@@ -24,6 +32,19 @@ export class AddToProjectModalComponent {
 
   readonly newProjectName = signal('');
 
+  constructor() {
+    effect(() => {
+      this.open();
+      this.itemId();
+      this.newProjectName.set('');
+    });
+  }
+
+  close(): void {
+    this.newProjectName.set('');
+    this.closed.emit();
+  }
+
   getModelEntryCountInProject(project: UserProject): number {
     if (this.itemType() !== 'model') {
       return 0;
@@ -44,7 +65,7 @@ export class AddToProjectModalComponent {
 
   addToExistingProject(projectId: string): void {
     this.attachItem(projectId);
-    this.closed.emit();
+    this.close();
   }
 
   createProjectWithItem(): void {
@@ -59,8 +80,7 @@ export class AddToProjectModalComponent {
       return;
     }
     this.attachItem(created.id);
-    this.newProjectName.set('');
-    this.closed.emit();
+    this.close();
   }
 
   private attachItem(projectId: string): void {

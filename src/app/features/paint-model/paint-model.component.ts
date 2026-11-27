@@ -67,9 +67,7 @@ export class PaintModelComponent {
     let allowedRecipeSet: Set<string> | null = null;
     if (sfid && parentFac) {
       const sub = parentFac.childFactions?.find((c) => c.id === sfid);
-      if (sub) {
-        allowedRecipeSet = new Set(sub.recipeIds);
-      }
+      allowedRecipeSet = sub ? new Set(sub.recipeIds) : new Set();
     } else if (pfid && parentFac) {
       allowedRecipeSet = new Set(parentFac.recipeIds);
     } else if (gid && game) {
@@ -83,8 +81,10 @@ export class PaintModelComponent {
       if (cFilter === 'wishlist' && !modelWish.has(m.id)) {
         return false;
       }
-      if (allowedRecipeSet && !allowedRecipeSet.has(m.id) && (!gid || !m.gameIds.includes(gid))) {
-        return false;
+      if (allowedRecipeSet && !allowedRecipeSet.has(m.id)) {
+        if (pfid || sfid || !gid || !m.gameIds.includes(gid)) {
+          return false;
+        }
       }
       if (range !== 'all' && m.range !== range) {
         return false;
@@ -124,6 +124,11 @@ export class PaintModelComponent {
   selectParentFaction(faction: FactionNode | null): void {
     this.selectedParentFactionId.set(faction ? faction.id : null);
     this.selectedSubFactionId.set(null);
+    this.visibleLimit.set(60);
+  }
+
+  selectSubFaction(subFactionId: string | null): void {
+    this.selectedSubFactionId.set(subFactionId);
     this.visibleLimit.set(60);
   }
 

@@ -237,6 +237,23 @@ describe('InventoryMatchService', () => {
     expect(res.substitutedByPaintId['cit-abaddon'].deltaE).toBe(0.8);
   });
 
+  it('handles Object.prototype keys in evaluateReadiness without crashing when substitutions are enabled', () => {
+    preferences.set({
+      allowCompatibleSubstitutions: true,
+      allowThirdPartySubstitutions: true,
+    });
+    citadelToThirdPartyMap.set({});
+    customCompatibilityOverrides.set({});
+
+    const protoKeys = ['toString', 'constructor', 'valueOf', 'hasOwnProperty', '__proto__'];
+    const res = service.evaluateReadiness(protoKeys);
+
+    expect(res.totalRequired).toBe(5);
+    expect(res.missingCount).toBe(5);
+    expect(res.substitutedCount).toBe(0);
+    expect(res.missingPaintIds).toEqual(protoKeys);
+  });
+
   it('aggregates model and color stages in evaluateProjectStagedReadiness', () => {
     modelById.set(
       new Map<string, ModelSummary>([

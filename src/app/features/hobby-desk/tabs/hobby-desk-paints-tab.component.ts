@@ -27,6 +27,26 @@ interface UnifiedPaintRow {
   code?: string;
 }
 
+interface CustomPaintFormState {
+  brand: string;
+  range: string;
+  name: string;
+  category: string;
+  hex: string;
+  citadelPaintId: string;
+}
+
+function createDefaultCustomPaintForm(): CustomPaintFormState {
+  return {
+    brand: 'The Army Painter',
+    range: 'Warpaints Fanatic',
+    name: '',
+    category: 'Layer',
+    hex: '#3b82f6',
+    citadelPaintId: '',
+  };
+}
+
 @Component({
   selector: 'app-hobby-desk-paints-tab',
   imports: [FormsModule, PaintSwatchComponent],
@@ -46,14 +66,7 @@ export class HobbyDeskPaintsTabComponent {
   readonly selectedCategoryFilter = signal('all');
   readonly showCustomPaintModal = signal(false);
 
-  customPaintForm = {
-    brand: 'The Army Painter',
-    range: 'Warpaints Fanatic',
-    name: '',
-    category: 'Layer',
-    hex: '#3b82f6',
-    citadelPaintId: '',
-  };
+  readonly customPaintForm = signal<CustomPaintFormState>(createDefaultCustomPaintForm());
 
   readonly allUnifiedPaints = computed<UnifiedPaintRow[]>(() => {
     const rows: UnifiedPaintRow[] = [];
@@ -131,13 +144,28 @@ export class HobbyDeskPaintsTabComponent {
     });
   });
 
+  openCustomPaintModal(): void {
+    this.customPaintForm.set(createDefaultCustomPaintForm());
+    this.showCustomPaintModal.set(true);
+  }
+
+  closeCustomPaintModal(): void {
+    this.customPaintForm.set(createDefaultCustomPaintForm());
+    this.showCustomPaintModal.set(false);
+  }
+
+  patchCustomPaintForm(patch: Partial<CustomPaintFormState>): void {
+    this.customPaintForm.update((prev) => ({ ...prev, ...patch }));
+  }
+
   saveCustomPaint(): void {
-    if (!this.customPaintForm.name.trim()) {
+    const form = this.customPaintForm();
+    if (!form.name.trim()) {
       return;
     }
     const citadelMatches = [];
-    if (this.customPaintForm.citadelPaintId) {
-      const cp = this.catalog.paintById().get(this.customPaintForm.citadelPaintId);
+    if (form.citadelPaintId) {
+      const cp = this.catalog.paintById().get(form.citadelPaintId);
       if (cp) {
         citadelMatches.push({
           citadelPaintId: cp.id,
@@ -151,19 +179,18 @@ export class HobbyDeskPaintsTabComponent {
       }
     }
     const created = this.userState.addCustomPaint({
-      brand: this.customPaintForm.brand.trim() || 'Custom Brand',
-      range: this.customPaintForm.range.trim() || 'Custom Range',
-      name: this.customPaintForm.name.trim(),
-      category: this.customPaintForm.category,
-      hex: this.customPaintForm.hex,
+      brand: form.brand.trim() || 'Custom Brand',
+      range: form.range.trim() || 'Custom Range',
+      name: form.name.trim(),
+      category: form.category,
+      hex: form.hex,
       citadelMatches,
     });
     if (!created) {
       return;
     }
     this.userState.toggleInventory(created.id);
-    this.customPaintForm.name = '';
-    this.showCustomPaintModal.set(false);
+    this.closeCustomPaintModal();
   }
 }
 

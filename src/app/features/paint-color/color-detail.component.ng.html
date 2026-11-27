@@ -142,5 +142,17 @@
       [localThumbnailPath]="c.localImagePath"
       (closed)="showProjectModal.set(false)"
     />
+  } @else if (loadError()) {
+    <div class="empty-box studio-card" role="alert">
+      <h1>Color Guide Unavailable</h1>
+      <p>{{ loadError() }}</p>
+      <a routerLink="/colors" class="btn btn-gold">Back to Paint A Color</a>
+    </div>
+  } @else {
+    <div class="empty-box studio-card">
+      <h1>Color Guide Not Found</h1>
+      <p>No painting guide matches this color ID.</p>
+      <a routerLink="/colors" class="btn btn-gold">Back to Paint A Color</a>
+    </div>
   }
 </div>

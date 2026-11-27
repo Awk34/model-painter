@@ -37,7 +37,7 @@ export class HobbyDeskConverterTabComponent {
 
     const results = [];
     for (const cp of this.catalog.paints()) {
-      let matches = map[cp.id] ?? [];
+      let matches = (Object.hasOwn(map, cp.id) ? map[cp.id] : undefined) ?? [];
       if (brandFilter !== 'all') {
         matches = matches.filter((m) => m.brand === brandFilter);
       }

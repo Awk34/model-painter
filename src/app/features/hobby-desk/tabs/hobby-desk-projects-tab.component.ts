@@ -58,13 +58,22 @@ export class HobbyDeskProjectsTabComponent {
     this.router.navigate(['/projects', projectId]);
   }
 
+  openNewProjectModal(): void {
+    this.newProjectName.set('');
+    this.showNewProjectModal.set(true);
+  }
+
+  closeNewProjectModal(): void {
+    this.newProjectName.set('');
+    this.showNewProjectModal.set(false);
+  }
+
   createNewProject(): void {
     const created = this.userState.createProject(this.newProjectName());
     if (!created) {
       return;
     }
-    this.newProjectName.set('');
-    this.showNewProjectModal.set(false);
+    this.closeNewProjectModal();
     this.router.navigate(['/projects', created.id]);
   }
 

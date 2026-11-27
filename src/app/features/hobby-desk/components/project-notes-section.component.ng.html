@@ -70,7 +70,7 @@
 
 <!-- Modal: Block Note & Checklist Editor (with CDK Drag & Drop) -->
 @if (editingNoteOpen()) {
-  <div class="modal-backdrop" (click)="editingNoteOpen.set(false)">
+  <div class="modal-backdrop" (click)="closeNoteEditor()">
     <div class="modal-panel note-editor-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ editingNoteId() ? 'Edit Project Note' : 'New Project Note' }}</h3>
@@ -78,7 +78,7 @@
           type="button"
           class="close-btn"
           aria-label="Close"
-          (click)="editingNoteOpen.set(false)"
+          (click)="closeNoteEditor()"
         >
           ✕
         </button>
@@ -107,7 +107,7 @@
         </div>
 
         <div cdkDropList class="blocks-list" (cdkDropListDropped)="dropNoteBlock($event)">
-          @for (block of noteBlocksDraft(); track $index; let idx = $index) {
+          @for (block of noteBlocksDraft(); track block.id ?? idx; let idx = $index) {
             <div class="block-item" cdkDrag>
               <span class="drag-handle" cdkDragHandle title="Drag to reorder">☰</span>
               @if (block.type === 'checkbox') {
@@ -139,7 +139,7 @@
         </div>
 
         <div class="modal-footer-btns">
-          <button type="button" class="btn btn-ghost" (click)="editingNoteOpen.set(false)">
+          <button type="button" class="btn btn-ghost" (click)="closeNoteEditor()">
             Cancel
           </button>
           <button type="button" class="btn btn-gold" (click)="saveNote()">Save Note</button>

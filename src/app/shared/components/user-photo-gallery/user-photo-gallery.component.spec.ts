@@ -157,4 +157,38 @@ describe('UserPhotoGalleryComponent clipboard paste', () => {
       });
     }
   });
+
+  it('keeps dragActive true on child transition dragleave and clears it when leaving dropzone', () => {
+    const fixture = createComponent(false);
+    const dropzone: HTMLElement = fixture.nativeElement.querySelector('.upload-dropzone');
+    const childHint: HTMLElement = fixture.nativeElement.querySelector('.drop-hint');
+
+    fixture.componentInstance.dragActive.set(true);
+
+    // Leaving dropzone to an internal child keeps dragActive true
+    fixture.componentInstance.onDragLeave({
+      preventDefault: () => {},
+      currentTarget: dropzone,
+      relatedTarget: childHint,
+    } as unknown as DragEvent);
+    expect(fixture.componentInstance.dragActive()).toBeTrue();
+
+    // Leaving dropzone to an outside element clears dragActive
+    const outsideEl = document.createElement('div');
+    fixture.componentInstance.onDragLeave({
+      preventDefault: () => {},
+      currentTarget: dropzone,
+      relatedTarget: outsideEl,
+    } as unknown as DragEvent);
+    expect(fixture.componentInstance.dragActive()).toBeFalse();
+
+    // Leaving with null relatedTarget also clears dragActive
+    fixture.componentInstance.dragActive.set(true);
+    fixture.componentInstance.onDragLeave({
+      preventDefault: () => {},
+      currentTarget: dropzone,
+      relatedTarget: null,
+    } as unknown as DragEvent);
+    expect(fixture.componentInstance.dragActive()).toBeFalse();
+  });
 });

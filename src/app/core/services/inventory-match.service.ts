@@ -59,7 +59,12 @@ export class InventoryMatchService {
         (prefs.allowThirdPartySubstitutions ? this.findThirdPartyMatch(pid, invSet) : null);
 
       if (foundSub) {
-        substitutedByPaintId[pid] = foundSub;
+        Object.defineProperty(substitutedByPaintId, pid, {
+          value: foundSub,
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
       } else {
         missingPaintIds.push(pid);
       }
@@ -87,7 +92,9 @@ export class InventoryMatchService {
     requiredPaintId: string,
     invSet: Set<string>
   ): PaintSubstituteMatch | null {
-    const userOverrideIds = this.userState.customCompatibilityOverrides()[requiredPaintId] ?? [];
+    const overrides = this.userState.customCompatibilityOverrides();
+    const userOverrideIds =
+      (Object.hasOwn(overrides, requiredPaintId) ? overrides[requiredPaintId] : undefined) ?? [];
     if (userOverrideIds.length === 0) {
       return null;
     }
@@ -166,7 +173,9 @@ export class InventoryMatchService {
     requiredPaintId: string,
     invSet: Set<string>
   ): PaintSubstituteMatch | null {
-    const tpMatches = this.catalog.citadelToThirdPartyMap()[requiredPaintId] ?? [];
+    const tpMap = this.catalog.citadelToThirdPartyMap();
+    const tpMatches =
+      (Object.hasOwn(tpMap, requiredPaintId) ? tpMap[requiredPaintId] : undefined) ?? [];
     for (const tpm of tpMatches) {
       if (invSet.has(tpm.thirdPartyPaintId)) {
         return {

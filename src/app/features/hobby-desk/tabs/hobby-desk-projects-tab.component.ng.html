@@ -25,7 +25,7 @@
         type="button"
         class="btn btn-gold"
         [disabled]="userState.projects().length >= userState.limits.MAX_PROJECTS"
-        (click)="showNewProjectModal.set(true)"
+        (click)="openNewProjectModal()"
       >
         + New Project ({{ userState.projects().length }}/{{ userState.limits.MAX_PROJECTS }})
       </button>
@@ -93,7 +93,7 @@
         Create a hobby project to group model recipes, color guides, painting checklists, and see an automatic rollup of required & missing paints.
       </p>
       <div class="empty-btn-row">
-        <button type="button" class="btn btn-gold" (click)="showNewProjectModal.set(true)">
+        <button type="button" class="btn btn-gold" (click)="openNewProjectModal()">
           + Create First Project
         </button>
         <a routerLink="/account" class="btn btn-secondary">
@@ -106,7 +106,7 @@
 
 <!-- Modal: Create New Project -->
 @if (showNewProjectModal()) {
-  <div class="modal-backdrop" (click)="showNewProjectModal.set(false)">
+  <div class="modal-backdrop" (click)="closeNewProjectModal()">
     <div class="modal-panel small-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Create New Hobby Project</h3>
@@ -114,7 +114,7 @@
           type="button"
           class="close-btn"
           aria-label="Close"
-          (click)="showNewProjectModal.set(false)"
+          (click)="closeNewProjectModal()"
         >
           ✕
         </button>
@@ -131,7 +131,7 @@
           (keyup.enter)="createNewProject()"
         />
         <div class="modal-footer-btns">
-          <button type="button" class="btn btn-ghost" (click)="showNewProjectModal.set(false)">
+          <button type="button" class="btn btn-ghost" (click)="closeNewProjectModal()">
             Cancel
           </button>
           <button type="button" class="btn btn-gold" (click)="createNewProject()">

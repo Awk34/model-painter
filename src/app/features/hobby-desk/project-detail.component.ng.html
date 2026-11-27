@@ -40,7 +40,8 @@
             <input
               type="text"
               class="input-control"
-              [(ngModel)]="titleDraft"
+              [ngModel]="titleDraft()"
+              (ngModelChange)="titleDraft.set($event)"
               (keyup.enter)="saveTitle(proj.id)"
             />
             <button type="button" class="btn btn-gold btn-sm" (click)="saveTitle(proj.id)">

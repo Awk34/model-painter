@@ -1,7 +1,11 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ModelPaintingStepsComponent } from '../../features/paint-model/components/model-painting-steps.component';
-import { KNOWN_THIRD_PARTY_BRANDS } from '../models/catalog.models';
+import {
+  CatalogManifest,
+  CatalogSyncStatus,
+  KNOWN_THIRD_PARTY_BRANDS,
+} from '../models/catalog.models';
 import { CatalogService, normalizePaintingStageLabel } from './catalog.service';
 import { InventoryMatchService } from './inventory-match.service';
 import { UserStateService } from './user-state.service';
@@ -411,6 +415,314 @@ describe('CatalogService', () => {
       'Scale75',
       'Kimera Kolors',
     ]);
+  });
+
+  it('discovers models_index_* shards dynamically from manifest.bundles in numeric order without fetching nonexistent shards', async () => {
+    const shards: Record<string, string> = {
+      paints_bundle: 'sha256:paints_dyn',
+      third_party_paints_bundle: 'sha256:tp_dyn',
+      colours_bundle: 'sha256:colours_dyn',
+      games_factions_bundle: 'sha256:games_dyn',
+    };
+    for (let i = 0; i <= 7; i++) {
+      const key = `models_index_${i}`;
+      shards[key] = `sha256:${key}`;
+      routeResponses.set(`/data/catalog_meta/${key}.json`, () =>
+        jsonResponse({
+          models: [
+            {
+              id: `model-${i}`,
+              name: `Model ${i}`,
+              range: 'warhammer_colour',
+              gameIds: [],
+              gameNames: [],
+              factionIds: [],
+              factionNames: [],
+              colourIds: [],
+            },
+          ],
+        })
+      );
+    }
+    shards['models_index_10'] = 'sha256:models_index_10';
+    routeResponses.set('/data/catalog_meta/models_index_10.json', () =>
+      jsonResponse({
+        models: [
+          {
+            id: 'model-10',
+            name: 'Model 10',
+            range: 'warhammer_colour',
+            gameIds: [],
+            gameNames: [],
+            factionIds: [],
+            factionNames: [],
+            colourIds: [],
+          },
+        ],
+      })
+    );
+    routeResponses.set('/data/catalog_meta/manifest.json', () =>
+      jsonResponse({
+        schemaVersion: 1,
+        updatedAt: '2026-11-20T00:00:00Z',
+        bundles: shards,
+      })
+    );
+
+    const service = TestBed.inject(CatalogService);
+    await service.initializeCatalog(true);
+
+    expect(service.models().map((m) => m.id)).toEqual([
+      'model-0',
+      'model-1',
+      'model-2',
+      'model-3',
+      'model-4',
+      'model-5',
+      'model-6',
+      'model-7',
+      'model-10',
+    ]);
+
+    // When manifest only defines models_index_0, models_index_1..5 are NOT requested
+    fetchSpy.calls.reset();
+    routeResponses.set('/data/catalog_meta/manifest.json', () =>
+      jsonResponse({
+        schemaVersion: 1,
+        updatedAt: '2026-11-21T00:00:00Z',
+        bundles: {
+          paints_bundle: 'sha256:paints_single',
+          third_party_paints_bundle: 'sha256:tp_single',
+          colours_bundle: 'sha256:colours_single',
+          games_factions_bundle: 'sha256:games_single',
+          models_index_0: 'sha256:models_0_single',
+        },
+      })
+    );
+    await service.initializeCatalog(true);
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).not.toContain('/data/catalog_meta/models_index_1.json');
+    expect(requestedUrls).not.toContain('/data/catalog_meta/models_index_5.json');
+  });
+
+  it('logs console.warn on malformed entity JSON and still returns fetched recipe when idb.put fails', async () => {
+    const warnSpy = spyOn(console, 'warn');
+    const service = TestBed.inject(CatalogService);
+    await service.initializeCatalog(true);
+    await service.clearEntityCaches();
+
+    // 1. Malformed JSON logs console.warn
+    routeResponses.set('/data/recipes/bad-json.json', () =>
+      new Response('{not-json', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    const bad = await service.getModelRecipe('bad-json');
+    expect(bad).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+
+    // 2. idb.put rejection does NOT discard fetched ModelRecipe
+    const idbClient = (service as unknown as { idb: { put: jasmine.Spy } }).idb;
+    spyOn(idbClient, 'put').and.rejectWith(new DOMException('Quota exceeded', 'QuotaExceededError'));
+
+    const recipe = await service.getModelRecipe('model-dante');
+    expect(recipe).not.toBeNull();
+    expect(recipe!.id).toBe('model-dante');
+  });
+
+  it('ignores unsafe prototype keys in findStaleBundles and uses Object.hasOwn for cached manifest bundles', () => {
+    const service = TestBed.inject(CatalogService);
+    const findStaleBundles = (
+      service as unknown as {
+        findStaleBundles: (
+          remote: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> },
+          cached: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> } | null
+        ) => string[];
+      }
+    ).findStaleBundles.bind(service);
+
+    const remoteBundles = JSON.parse(
+      '{"__proto__":"sha256:evil","constructor":"sha256:evil2","prototype":"sha256:evil3","paints_bundle":"sha256:v2","toString":"sha256:custom"}'
+    ) as Record<string, string>;
+    const cachedBundles = {
+      paints_bundle: 'sha256:v2',
+    };
+
+    const stale = findStaleBundles(
+      { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: remoteBundles },
+      { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: cachedBundles }
+    );
+
+    expect(stale).toEqual(['toString']);
+  });
+
+  it('hydrates in-memory on idb.put failure for paints_bundle and does not advance manifest hash so reload re-fetches it', async () => {
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    const idbStore = new Map<string, unknown>();
+    let failPaintsPut = true;
+    const idbClient = (service as unknown as {
+      idb: {
+        get: (store: string, key: string) => Promise<unknown>;
+        put: (store: string, key: string, value: unknown) => Promise<void>;
+        clearAll: () => Promise<void>;
+      };
+    }).idb;
+
+    spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
+      return idbStore.get(`${store}:${key}`) ?? null;
+    });
+    spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
+      if (failPaintsPut && key === 'paints_bundle') {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      }
+      idbStore.set(`${store}:${key}`, value);
+    });
+    spyOn(idbClient, 'clearAll').and.callFake(async () => {
+      idbStore.clear();
+    });
+
+    service.paints.set([]);
+    service.models.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+
+    // Fetched paints_bundle is still hydrated in-memory despite idb.put failure
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.models().length).toBeGreaterThan(0);
+    const cachedManifest = idbStore.get('bundles:manifest') as CatalogManifest | undefined;
+    expect(cachedManifest).toBeDefined();
+    expect(cachedManifest?.bundles['paints_bundle']).toBeUndefined();
+    expect(cachedManifest?.bundles['models_index_0']).toBe('sha256:models_0_test');
+
+    // Simulate reload: clear in-memory signals and allow idb.put to succeed
+    failPaintsPut = false;
+    service.paints.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
+    expect(requestedUrls).not.toContain('/data/catalog_meta/colours_bundle.json');
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
+  });
+
+  it('re-fetches missing cached bundles even when cached manifest hashes match remote manifest', async () => {
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    const idbStore = new Map<string, unknown>([
+      [
+        'bundles:manifest',
+        {
+          schemaVersion: 1,
+          updatedAt: '2026-11-15T00:00:00Z',
+          bundles: {
+            paints_bundle: 'sha256:paints_test',
+            third_party_paints_bundle: 'sha256:tp_test',
+            colours_bundle: 'sha256:colours_test',
+            games_factions_bundle: 'sha256:games_test',
+            models_index_0: 'sha256:models_0_test',
+          },
+        },
+      ],
+      ['bundles:third_party_paints_bundle', { thirdPartyPaints: [], citadelToThirdPartyMap: {} }],
+      ['bundles:colours_bundle', { colourGroups: [], colours: [] }],
+      ['bundles:games_factions_bundle', { games: [] }],
+      ['bundles:models_index_0', { models: [] }],
+    ]);
+
+    const idbClient = (service as unknown as {
+      idb: {
+        get: (store: string, key: string) => Promise<unknown>;
+        put: (store: string, key: string, value: unknown) => Promise<void>;
+        clearAll: () => Promise<void>;
+      };
+    }).idb;
+
+    spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
+      return idbStore.get(`${store}:${key}`) ?? null;
+    });
+    spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
+      idbStore.set(`${store}:${key}`, value);
+    });
+
+    service.paints.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
+    expect(requestedUrls).not.toContain('/data/catalog_meta/colours_bundle.json');
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
+  });
+
+  it('treats malformed non-object cachedManifest.bundles as stale and triggers re-fetch', async () => {
+    const service = TestBed.inject(CatalogService);
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    const findStaleBundles = (
+      service as unknown as {
+        findStaleBundles: (
+          remote: { schemaVersion: number; updatedAt: string; bundles: Record<string, string> },
+          cached: { schemaVersion: number; updatedAt: string; bundles: unknown } | null
+        ) => string[];
+      }
+    ).findStaleBundles.bind(service);
+
+    expect(
+      findStaleBundles(
+        { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: { '0': 'h', paints_bundle: 'p' } },
+        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: 'h' }
+      )
+    ).toEqual(['0', 'paints_bundle']);
+
+    expect(
+      findStaleBundles(
+        { schemaVersion: 1, updatedAt: '2026-11-26T00:00:00Z', bundles: { '0': 'h' } },
+        { schemaVersion: 1, updatedAt: '2026-11-25T00:00:00Z', bundles: ['h'] }
+      )
+    ).toEqual(['0']);
+
+    const idbStore = new Map<string, unknown>([
+      [
+        'bundles:manifest',
+        {
+          schemaVersion: 1,
+          updatedAt: '2026-11-15T00:00:00Z',
+          bundles: 'malformed-bundles-string',
+        },
+      ],
+    ]);
+    const idbClient = (service as unknown as {
+      idb: {
+        get: (store: string, key: string) => Promise<unknown>;
+        put: (store: string, key: string, value: unknown) => Promise<void>;
+      };
+    }).idb;
+
+    spyOn(idbClient, 'get').and.callFake(async (store: string, key: string) => {
+      return idbStore.get(`${store}:${key}`) ?? null;
+    });
+    spyOn(idbClient, 'put').and.callFake(async (store: string, key: string, value: unknown) => {
+      idbStore.set(`${store}:${key}`, value);
+    });
+
+    service.paints.set([]);
+    fetchSpy.calls.reset();
+
+    await service.initializeCatalog(false);
+
+    const requestedUrls = fetchSpy.calls.allArgs().map((args) => args[0]);
+    expect(requestedUrls).toContain('/data/catalog_meta/paints_bundle.json');
+    expect(service.paints().length).toBeGreaterThan(0);
+    expect(service.syncStatus()).toBe(CatalogSyncStatus.UpToDate);
   });
 });
 

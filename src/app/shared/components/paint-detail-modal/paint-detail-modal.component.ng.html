@@ -177,7 +177,11 @@
             <div class="override-box">
               <label class="override-label">Link Custom or 3rd-Party Equivalent Override:</label>
               <div class="override-controls">
-                <select class="input-control" [(ngModel)]="selectedOverridePaintId">
+                <select
+                  class="input-control"
+                  [ngModel]="selectedOverridePaintId()"
+                  (ngModelChange)="selectedOverridePaintId.set($event)"
+                >
                   <option value="">Select a 3rd-party or custom paint...</option>
                   @for (tp of allThirdPartyAndCustomPaints(); track tp.id) {
                     <option [value]="tp.id">{{ tp.brand }} — {{ tp.name }} ({{ tp.range }})</option>
@@ -185,7 +189,7 @@
                 </select>
                 <button
                   class="btn btn-secondary"
-                  [disabled]="!selectedOverridePaintId"
+                  [disabled]="!selectedOverridePaintId()"
                   (click)="addCustomLink(pid)"
                 >
                   + Link Equivalent
