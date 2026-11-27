@@ -175,5 +175,72 @@ describe('clipboard-image.util', () => {
       ariaDialog.remove();
     }
     expect(hasOpenModalDialog()).toBeFalse();
+
+    const nonModalDialog = document.createElement('div');
+    nonModalDialog.setAttribute('role', 'dialog');
+    nonModalDialog.setAttribute('aria-modal', 'false');
+    document.body.appendChild(nonModalDialog);
+    try {
+      expect(hasOpenModalDialog()).toBeFalse();
+    } finally {
+      nonModalDialog.remove();
+    }
+  });
+
+  it('detects select, nested contenteditable descendants, and non-HTMLElement targets in isEditableElement()', () => {
+    const select = document.createElement('select');
+    const editableHost = document.createElement('div');
+    editableHost.setAttribute('contenteditable', 'true');
+    const innerSpan = document.createElement('span');
+    editableHost.appendChild(innerSpan);
+    document.body.appendChild(editableHost);
+
+    try {
+      expect(isEditableElement(select)).toBeTrue();
+      expect(isEditableElement(innerSpan)).toBeTrue();
+      expect(isEditableElement(document)).toBeFalse();
+    } finally {
+      editableHost.remove();
+    }
+  });
+
+  it('handles missing clipboardData, unavailable navigator.clipboard.read, non-image clipboard, and generic errors', async () => {
+    expect(extractClipboardImageFiles({} as ClipboardEvent)).toEqual([]);
+
+    const originalClipboard = navigator.clipboard;
+    try {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: undefined,
+      });
+      const unavailable = await readClipboardImageFiles();
+      expect(unavailable.files).toEqual([]);
+      expect(unavailable.error).toContain('Direct clipboard read is not available');
+
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          read: jasmine.createSpy('read').and.resolveTo([{ types: ['text/plain'], getType: async () => new Blob() }]),
+        },
+      });
+      const noImg = await readClipboardImageFiles();
+      expect(noImg.files).toEqual([]);
+      expect(noImg.error).toContain('No image found');
+
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          read: jasmine.createSpy('read').and.rejectWith(new Error('Unknown error')),
+        },
+      });
+      const genericErr = await readClipboardImageFiles();
+      expect(genericErr.files).toEqual([]);
+      expect(genericErr.error).toContain('Could not read image');
+    } finally {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: originalClipboard,
+      });
+    }
   });
 });

@@ -1,6 +1,8 @@
 import { ColorSummary, ModelSummary, Paint } from '../models/catalog.models';
 import {
+  enrichStepPaint,
   extractColorGroupNames,
+  inferPaintingStage,
   normalizeColorDetails,
   normalizeColorSummary,
   normalizeModelRecipe,
@@ -166,5 +168,30 @@ describe('catalog-normalizer.util', () => {
     expect(synthColor.baseFinish?.stages[0].paint?.id).toBe('p-base');
     expect(synthColor.detailFinish?.stages[0].paint?.id).toBe('p-shade');
     expect(synthColor.artificerFinish?.stages[0].paint?.id).toBe('p-layer');
+  });
+
+  it('handles undefined stepPaint, invalid colorPoint coordinates, and inferPaintingStage category heuristics', () => {
+    expect(enrichStepPaint(undefined, paintMap)).toBeUndefined();
+
+    const recipeWithBadPoint = normalizeModelRecipe(
+      {
+        id: 'm-bad-pt',
+        colourPoints: [
+          { colourId: 'c-red', point: { x: 'bad', y: 0.2 } },
+          { colourId: 'c-red', point: null },
+        ],
+        paintingAreas: [],
+      },
+      colorMap,
+      paintMap
+    );
+    expect(recipeWithBadPoint.colorPoints[0].point).toEqual({ x: 0.5, y: 0.5 });
+    expect(recipeWithBadPoint.colorPoints[1].point).toEqual({ x: 0.5, y: 0.5 });
+
+    const baseSet = new Set<string>();
+    const detailSet = new Set<string>();
+    expect(inferPaintingStage('p-spray', 'Spray', baseSet, detailSet)).toBe('Base Finish');
+    expect(inferPaintingStage('p-contrast', 'Contrast', baseSet, detailSet)).toBe('Detail Finish');
+    expect(inferPaintingStage('p-layer', 'Layer', baseSet, detailSet)).toBe('Artificer Finish');
   });
 });

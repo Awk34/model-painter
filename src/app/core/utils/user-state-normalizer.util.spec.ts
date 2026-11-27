@@ -1,12 +1,15 @@
 import { USER_LIMITS } from '../config/user-limits.config';
 import {
   CURRENT_SCHEMA_VERSION,
+  clampModelQuantity,
+  extractAccountDocPayload,
   normalizeAccountState,
   normalizeConfigurations,
   normalizeCustomCompatibilityOverrides,
   normalizeFeaturedImage,
   normalizeIncomingProject,
   normalizePreferences,
+  stripUndefinedDeep,
 } from './user-state-normalizer.util';
 
 describe('user-state-normalizer.util', () => {
@@ -365,5 +368,56 @@ describe('user-state-normalizer.util', () => {
       ) as Record<string, unknown>
     );
     expect(unsafePhotoState.uploadedPhotos.map((p) => p.id)).toEqual(['ph_safe']);
+  });
+
+  it('handles null state, legacy GW project format, clampModelQuantity, stripUndefinedDeep, and extractAccountDocPayload', () => {
+    const fallbackState = normalizeAccountState(null as never);
+    expect(fallbackState.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(fallbackState.projects).toEqual([]);
+
+    const gwProject = normalizeIncomingProject({
+      id: 'gw_proj_1',
+      name: 'GW API Project',
+      recipes: [
+        {
+          id: 'model-intercessor',
+          images: ['https://cdn.example/m.jpg'],
+          localImagePaths: ['assets/images/models/m.jpg'],
+        },
+      ],
+      colours: [{ id: 'c_gold' }, 'c_red'],
+    });
+    expect(gwProject.models.length).toBe(1);
+    expect(gwProject.models[0].recipeId).toBe('model-intercessor');
+    expect(gwProject.thumbnailUrl).toBe('https://cdn.example/m.jpg');
+    expect(gwProject.localThumbnailPath).toBe('assets/images/models/m.jpg');
+    expect(gwProject.colorIds).toEqual(['c_gold']);
+
+    expect(clampModelQuantity(Number.NaN)).toBe(1);
+    expect(clampModelQuantity(Infinity)).toBe(1);
+    expect(clampModelQuantity(0)).toBe(1);
+    expect(clampModelQuantity(3.9)).toBe(3);
+    expect(clampModelQuantity(USER_LIMITS.MAX_MODEL_QUANTITY + 50)).toBe(
+      USER_LIMITS.MAX_MODEL_QUANTITY
+    );
+
+    const stripped: unknown = stripUndefinedDeep({
+      keep: 1,
+      drop: undefined,
+      nested: { a: 'x', b: undefined },
+      arr: [1, undefined, { c: undefined, d: 2 }],
+    });
+    expect(stripped).toEqual({
+      keep: 1,
+      nested: { a: 'x' },
+      arr: [1, undefined, { d: 2 }],
+    });
+
+    const docPayload = extractAccountDocPayload({
+      ...fallbackState,
+      projects: [gwProject],
+    });
+    expect(Object.hasOwn(docPayload as Record<string, unknown>, 'projects')).toBeFalse();
+    expect(docPayload.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
   });
 });

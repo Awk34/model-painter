@@ -17,6 +17,22 @@ const userMediaSrc = fs.readFileSync(
   path.join(repoRoot, 'src/app/core/services/user-media.service.ts'),
   'utf8'
 );
+const userAccountModelsSrc = fs.readFileSync(
+  path.join(repoRoot, 'src/app/core/models/user-account.models.ts'),
+  'utf8'
+);
+const normalizerSrc = fs.readFileSync(
+  path.join(repoRoot, 'src/app/core/utils/user-state-normalizer.util.ts'),
+  'utf8'
+);
+const cloudSyncSrc = fs.readFileSync(
+  path.join(repoRoot, 'src/app/core/services/user-cloud-sync.service.ts'),
+  'utf8'
+);
+const userStateSrc = fs.readFileSync(
+  path.join(repoRoot, 'src/app/core/services/user-state.service.ts'),
+  'utf8'
+);
 
 function readNumericLimit(name) {
   const match = limitsSrc.match(new RegExp(`${name}:\\s*([^,\\n]+)`));
@@ -185,4 +201,153 @@ test('storage.rules and UserMediaService align on filename length <= 120, dot-se
   );
   assert.ok(userMediaSrc.includes('.slice(0, 110)'));
   assert.ok(userMediaSrc.includes('.slice(0, 100)'));
+});
+
+test('MAX_PROJECTS (50) and MAX_TITLE_LENGTH (120) parity across config, services, and firestore.rules', () => {
+  const maxProjects = readNumericLimit('MAX_PROJECTS');
+  assert.equal(maxProjects, 50);
+  // Firestore rules cannot count subcollection docs, so MAX_PROJECTS is enforced client-side in all 3 modules:
+  assert.ok(normalizerSrc.includes('USER_LIMITS.MAX_PROJECTS'));
+  assert.ok(cloudSyncSrc.includes('USER_LIMITS.MAX_PROJECTS'));
+  assert.ok(userStateSrc.includes('USER_LIMITS.MAX_PROJECTS'));
+
+  const maxTitleLength = readNumericLimit('MAX_TITLE_LENGTH');
+  assert.equal(maxTitleLength, 120);
+  const projectDocBlock = getFunctionBlock('isValidProjectDoc');
+  const projNameMatch = projectDocBlock.match(/proj\.name\.size\(\)\s*<=\s*(\d+)/);
+  assert.ok(projNameMatch, 'Missing proj.name.size() bound in isValidProjectDoc');
+  assert.ok(maxTitleLength <= Number(projNameMatch[1]));
+
+  const customPaintBlock = getFunctionBlock('isValidCustomPaint');
+  assert.ok(customPaintBlock.includes(`paint.id.size() <= ${maxTitleLength}`));
+  assert.ok(customPaintBlock.includes(`paint.name.size() <= ${maxTitleLength}`));
+});
+
+test('complete storage.rules security, targetType, payload, and default-deny parity', () => {
+  assert.match(
+    storageRules,
+    /function isSignedInOwner\(userId\)\s*\{\s*return request\.auth != null && request\.auth\.uid == userId;\s*\}/
+  );
+
+  // UserPhotoTargetType parity across user-account.models.ts, firestore.rules, and storage.rules
+  assert.ok(
+    userAccountModelsSrc.includes("export type UserPhotoTargetType = 'model' | 'project' | 'project_model';")
+  );
+  assert.match(
+    storageRules,
+    /function isValidTargetType\(targetType\)\s*\{\s*return targetType in \['model', 'project', 'project_model'\];\s*\}/
+  );
+
+  const pathSegMatch = storageRules.match(/function isValidPathSegments\b[\s\S]*?\n\s*\}/)?.[0] ?? '';
+  assert.ok(pathSegMatch.includes('targetId.size() > 0'));
+  assert.ok(pathSegMatch.includes('targetId.size() <= 120'));
+  assert.ok(pathSegMatch.includes("!(targetId in ['.', '..'])"));
+  assert.ok(pathSegMatch.includes('fileName.size() > 0'));
+  assert.ok(pathSegMatch.includes('fileName.size() <= 120'));
+  assert.ok(pathSegMatch.includes("!(fileName in ['.', '..'])"));
+
+  const payloadMatch = storageRules.match(/function isValidImagePayload\b[\s\S]*?\n\s*\}/)?.[0] ?? '';
+  assert.equal(readNumericLimit('MAX_PHOTO_FILE_SIZE_BYTES'), 5 * 1024 * 1024);
+  assert.ok(payloadMatch.includes('request.resource != null'));
+  assert.ok(payloadMatch.includes('request.resource.size > 0'));
+  assert.ok(payloadMatch.includes('request.resource.size <= 5 * 1024 * 1024'));
+  assert.ok(
+    payloadMatch.includes("request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']")
+  );
+
+  assert.match(
+    storageRules,
+    /match \/assets\/images\/\{allPaths=\*\*\}\s*\{\s*allow read:\s*if true;\s*allow write:\s*if false;\s*\}/
+  );
+
+  for (const folder of ['showcase', 'private_references']) {
+    const block =
+      storageRules.match(
+        new RegExp(`match \\/users\\/\\{userId\\}\\/${folder}\\/\\{targetType\\}\\/\\{targetId\\}\\/\\{fileName\\}[\\s\\S]*?\\n\\s*\\}`)
+      )?.[0] ?? '';
+    assert.ok(block.includes('allow read: if isSignedInOwner(userId);'), `Missing read owner check for ${folder}`);
+    assert.ok(
+      block.includes('allow create, update: if isSignedInOwner(userId)') &&
+        block.includes('isValidTargetType(targetType)') &&
+        block.includes('isValidPathSegments(targetId, fileName)') &&
+        block.includes('isValidImagePayload()'),
+      `Missing create/update guards for ${folder}`
+    );
+    assert.ok(block.includes('allow delete: if isSignedInOwner(userId);'), `Missing delete owner check for ${folder}`);
+  }
+
+  assert.match(
+    storageRules,
+    /match \/\{allOtherPaths=\*\*\}\s*\{\s*allow read, write:\s*if false;\s*\}/
+  );
+});
+
+test('UserMediaService.buildStoragePath cross-parity with firestore.rules isValidScopedStoragePath and storage.rules', () => {
+  const scopedFn = getFunctionBlock('isValidScopedStoragePath');
+  const patternMatch = scopedFn.match(
+    /storagePath\.matches\(\s*'\^users\/'\s*\+\s*userId\s*\+\s*\(kind == 'reference' \? '\/private_references\/' : '\/showcase\/'\)\s*\+\s*targetType\s*\+\s*'([^']+)'\s*\)/
+  );
+  assert.ok(patternMatch, 'Could not extract trailing regex from isValidScopedStoragePath');
+  const segmentTailRegex = patternMatch[1];
+
+  function buildExpectedStoragePath(uid, photo) {
+    const folder = photo.kind === 'reference' ? 'private_references' : 'showcase';
+    const ext = photo.mimeType === 'image/png' ? 'png' : photo.mimeType === 'image/webp' ? 'webp' : 'jpg';
+    const safeTargetId = photo.targetId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 100) || 'item';
+    const safePhotoId = photo.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 110) || 'photo';
+    return `users/${uid}/${folder}/${photo.targetType}/${safeTargetId}/${safePhotoId}.${ext}`;
+  }
+
+  assert.ok(userMediaSrc.includes("const folder = photo.kind === 'reference' ? 'private_references' : 'showcase';"));
+
+  const uid = 'user_abc-123';
+  for (const kind of ['showcase', 'reference']) {
+    for (const targetType of ['model', 'project', 'project_model']) {
+      for (const mimeType of ['image/jpeg', 'image/png', 'image/webp']) {
+        const storagePath = buildExpectedStoragePath(uid, {
+          id: `${'p'.repeat(130)}/../evil`,
+          targetId: `${'t'.repeat(130)}/../../etc`,
+          kind,
+          targetType,
+          mimeType,
+        });
+        const expectedFolder = kind === 'reference' ? 'private_references' : 'showcase';
+        const re = new RegExp(`^users/${uid}/${expectedFolder}/${targetType}${segmentTailRegex}`);
+        assert.match(storagePath, re, `Valid path failed regex: ${storagePath}`);
+
+        const parts = storagePath.split('/');
+        assert.equal(parts.length, 6);
+        assert.ok(parts[4].length > 0 && parts[4].length <= 120);
+        assert.ok(parts[5].length > 0 && parts[5].length <= 120);
+        assert.ok(!['.', '..'].includes(parts[4]));
+        assert.ok(!['.', '..'].includes(parts[5]));
+      }
+    }
+  }
+
+  const invalidCases = [
+    // Mismatched kind -> folder
+    {
+      path: `users/${uid}/showcase/model/m1/p1.jpg`,
+      re: new RegExp(`^users/${uid}/private_references/model${segmentTailRegex}`),
+    },
+    // Mismatched uid
+    {
+      path: `users/other_uid/showcase/model/m1/p1.jpg`,
+      re: new RegExp(`^users/${uid}/showcase/model${segmentTailRegex}`),
+    },
+    // Traversal dot segments
+    {
+      path: `users/${uid}/showcase/model/../p1.jpg`,
+      re: new RegExp(`^users/${uid}/showcase/model${segmentTailRegex}`),
+    },
+    {
+      path: `users/${uid}/showcase/model/m1/..`,
+      re: new RegExp(`^users/${uid}/showcase/model${segmentTailRegex}`),
+    },
+  ];
+
+  for (const c of invalidCases) {
+    assert.doesNotMatch(c.path, c.re, `Invalid path unexpectedly matched: ${c.path}`);
+  }
 });

@@ -1250,4 +1250,143 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     service.removeModelFromProject(proj.id, entry.id);
     expect(service.projectModelByIdMap().has(entry.id)).toBeFalse();
   });
+
+  it('recovers from malformed localStorage JSON, enforces MAX_PROJECTS (50) and quota caps, and updates project/note/photo metadata', async () => {
+    // 1. Malformed JSON in localStorage falls back cleanly to default state
+    TestBed.resetTestingModule();
+    localStorage.setItem(STORAGE_KEY, '{corrupt-json');
+    TestBed.configureTestingModule({
+      providers: [
+        UserStateService,
+        {
+          provide: UserMediaService,
+          useValue: {
+            resolvePhotoUrl: (ph: { id: string }) => `blob:${ph.id}`,
+            deletePhotoAssets: jasmine.createSpy('deletePhotoAssets').and.resolveTo(),
+            clearAllLocalMedia: jasmine.createSpy('clearAllLocalMedia').and.resolveTo(),
+            syncPendingBlobsToCloud: jasmine.createSpy('syncPendingBlobsToCloud').and.resolveTo(new Map()),
+          },
+        },
+      ],
+    });
+    service = TestBed.inject(UserStateService);
+    expect(service.projects()).toEqual([]);
+    expect(service.inventoryPaintIds()).toEqual([]);
+
+    service = setupService();
+
+    // 2. toggleInventory / toggleWishlist auto-removes from opposite list; addMany respects limits
+    service.toggleWishlist('p1');
+    expect(service.isWishlisted('p1')).toBeTrue();
+    service.toggleInventory('p1');
+    expect(service.isOwned('p1')).toBeTrue();
+    expect(service.isWishlisted('p1')).toBeFalse();
+
+    service.toggleModelWishlist('m1');
+    expect(service.isModelWishlisted('m1')).toBeTrue();
+    service.toggleModelInventory('m1');
+    expect(service.isModelOwned('m1')).toBeTrue();
+    expect(service.isModelWishlisted('m1')).toBeFalse();
+
+    service.addManyToInventory(['p1', 'p2', 'p3']);
+    service.addManyToWishlist(['p2', 'p4']);
+    expect(service.isOwned('p2')).toBeTrue();
+    expect(service.isWishlisted('p4')).toBeTrue();
+    expect(service.isWishlisted('p2')).toBeFalse();
+
+    // 3. MAX_PROJECTS (50) limit blocks 51st project creation
+    for (let i = 0; i < USER_LIMITS.MAX_PROJECTS; i++) {
+      expect(service.createProject(`Proj ${i}`)).not.toBeNull();
+    }
+    expect(service.createProject('Overflow Project')).toBeNull();
+    expect(service.toastMessage()).toContain('Project limit reached (50 projects max)');
+
+    // Delete all but one and verify renameProject, duplicateProject (strips photos & progress), colors, notes, and photo captions
+    const firstProj = service.projects()[0];
+    for (const p of service.projects().slice(1)) {
+      service.deleteProject(p.id);
+    }
+
+    service.renameProject(firstProj.id, 'Renamed Army');
+    expect(service.getProjectById(firstProj.id)?.name).toBe('Renamed Army');
+
+    service.addColorToProject(firstProj.id, 'color-gold');
+    expect(service.getProjectById(firstProj.id)?.colorIds).toEqual(['color-gold']);
+    service.removeColorFromProject(firstProj.id, 'color-gold');
+    expect(service.getProjectById(firstProj.id)?.colorIds).toEqual([]);
+
+    service.saveProjectNote(firstProj.id, null, 'Recipe Note', [
+      { id: 'blk_1', type: 'checkbox', value: 'Prime black', checked: false },
+    ]);
+    const note = service.getProjectById(firstProj.id)?.notes[0];
+    expect(note).toBeDefined();
+    service.toggleNoteCheckbox(firstProj.id, note!.id, 0);
+    expect(service.getProjectById(firstProj.id)?.notes[0].components[0].checked).toBeTrue();
+    service.deleteProjectNote(firstProj.id, note!.id);
+    expect(service.getProjectById(firstProj.id)?.notes).toEqual([]);
+
+    const entry = service.addModelToProject(firstProj.id, 'model-x')!;
+    service.toggleProjectModelStepDone(firstProj.id, entry.id, 'step-1');
+    const up = await service.uploadPhotos({
+      files: [new File([new Uint8Array([1, 2, 3])], 'pic.png', { type: 'image/png' })],
+      targetType: 'project',
+      targetId: firstProj.id,
+      kind: 'showcase',
+    });
+    expect(up.uploaded.length).toBe(1);
+    const photoId = up.uploaded[0].id;
+    service.updatePhotoCaption(photoId, 'Completed squad');
+    expect(service.getProjectById(firstProj.id)?.photos[0].caption).toBe('Completed squad');
+    service.setProjectCoverPhoto(firstProj.id, photoId);
+    expect(service.getProjectById(firstProj.id)?.coverPhotoId).toBe(photoId);
+    service.setProjectThumbnail(firstProj.id, 'assets/images/models/dante.jpg');
+    expect(service.getProjectById(firstProj.id)?.localThumbnailPath).toBe(
+      'assets/images/models/dante.jpg'
+    );
+
+    const dup = service.duplicateProject(firstProj.id)!;
+    expect(dup.name).toBe('Renamed Army (Copy)');
+    expect(dup.photos).toEqual([]);
+    expect(dup.coverPhotoId).toBeUndefined();
+    expect(dup.models[0].photos).toEqual([]);
+
+    // 4. getPhotoQuotaLimit across all 6 combinations
+    expect(service.getPhotoQuotaLimit('model', 'showcase')).toBe(
+      USER_LIMITS.MAX_MODEL_SHOWCASE_PHOTOS
+    );
+    expect(service.getPhotoQuotaLimit('model', 'reference')).toBe(
+      USER_LIMITS.MAX_MODEL_REFERENCE_PHOTOS
+    );
+    expect(service.getPhotoQuotaLimit('project', 'showcase')).toBe(
+      USER_LIMITS.MAX_PROJECT_SHOWCASE_PHOTOS
+    );
+    expect(service.getPhotoQuotaLimit('project', 'reference')).toBe(
+      USER_LIMITS.MAX_PROJECT_REFERENCE_PHOTOS
+    );
+    expect(service.getPhotoQuotaLimit('project_model', 'showcase')).toBe(
+      USER_LIMITS.MAX_PROJECT_MODEL_SHOWCASE_PHOTOS
+    );
+    expect(service.getPhotoQuotaLimit('project_model', 'reference')).toBe(
+      USER_LIMITS.MAX_PROJECT_MODEL_REFERENCE_PHOTOS
+    );
+
+    // 5. uploadPhotos error on missing project
+    const missingProjRes = await service.uploadPhotos({
+      files: [new File([new Uint8Array([1])], 'a.png', { type: 'image/png' })],
+      targetType: 'project',
+      targetId: 'does_not_exist',
+      kind: 'showcase',
+    });
+    expect(missingProjRes.uploaded).toEqual([]);
+    expect(missingProjRes.errors.some((e) => /deleted/i.test(e))).toBeTrue();
+
+    // 6. signInWithGoogle / signInWithEmail delegate to UserCloudSyncService
+    const cloudSync = TestBed.inject(UserCloudSyncService);
+    const gSpy = spyOn(cloudSync, 'signInWithGoogle').and.resolveTo();
+    const eSpy = spyOn(cloudSync, 'signInWithEmail').and.resolveTo();
+    await service.signInWithGoogle();
+    await service.signInWithEmail('u@example.com', 'pw123', false);
+    expect(gSpy).toHaveBeenCalledTimes(1);
+    expect(eSpy).toHaveBeenCalledWith('u@example.com', 'pw123', false);
+  });
 });

@@ -186,5 +186,36 @@ describe('firebase.config', () => {
     expect(auth1).not.toBeNull();
     expect(auth2).toBe(auth1);
     expect(getLoadedFirebaseAuth()).toBe(auth1!.auth);
+
+    const [fs1, fs2] = await Promise.all([getFirebaseFirestore(), getFirebaseFirestore()]);
+    expect(fs1).not.toBeNull();
+    expect(fs2).toBe(fs1);
+
+    const [st1, st2] = await Promise.all([getFirebaseStorage(), getFirebaseStorage()]);
+    expect(st1).not.toBeNull();
+    expect(st2).toBe(st1);
+
+    const [fn1, fn2] = await Promise.all([getFirebaseFunctions(), getFirebaseFunctions()]);
+    expect(fn1).not.toBeNull();
+    expect(fn2).toBe(fn1);
+  });
+
+  it('purges malformed JSON, arrays, and incomplete configs from localStorage', () => {
+    localStorage.setItem(FIREBASE_CONFIG_STORAGE_KEY, '{broken-json');
+    expect(getStoredFirebaseConfig()).toBeNull();
+    expect(localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY)).toBeNull();
+
+    resetRuntimeFirebaseConfigForTests();
+    localStorage.setItem(FIREBASE_CONFIG_STORAGE_KEY, JSON.stringify(['array']));
+    expect(getStoredFirebaseConfig()).toBeNull();
+    expect(localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY)).toBeNull();
+
+    resetRuntimeFirebaseConfigForTests();
+    localStorage.setItem(
+      FIREBASE_CONFIG_STORAGE_KEY,
+      JSON.stringify({ apiKey: '   ', authDomain: 'a', projectId: 'p' })
+    );
+    expect(getStoredFirebaseConfig()).toBeNull();
+    expect(localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY)).toBeNull();
   });
 });

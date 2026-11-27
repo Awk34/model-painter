@@ -553,4 +553,125 @@ describe('UserMediaService', () => {
     const badFile = new File([tinyPngBytes], 'bad.png', { type: 'image/png' });
     await expectAsync(service.validateImageFile(badFile)).toBeRejected();
   });
+
+  it('handles createImageBitmap TypeError fallback success, fallback rejection, and non-TypeError rejection cleanly', async () => {
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+    const pngFile = new File([pngBytes], 'test.png', { type: 'image/png' });
+
+    const closeSpy = jasmine.createSpy('close');
+    const createBitmapSpy = spyOn(window, 'createImageBitmap') as unknown as jasmine.Spy<
+      (image: ImageBitmapSource, options?: ImageBitmapOptions) => Promise<ImageBitmap>
+    >;
+
+    // 1. TypeError on { imageOrientation: 'from-image' } falls back to createImageBitmap(blob) and succeeds
+    createBitmapSpy.and.callFake(async (_blob, opts) => {
+      if (opts?.imageOrientation) {
+        throw new TypeError('Unsupported option imageOrientation');
+      }
+      return { width: 32, height: 32, close: closeSpy } as unknown as ImageBitmap;
+    });
+    const ok = await service.validateImageFile(pngFile);
+    expect(ok.width).toBe(32);
+    expect(ok.height).toBe(32);
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+
+    // 2. TypeError followed by DOMException in fallback normalizes to 'Could not decode image file.'
+    createBitmapSpy.and.callFake(async (_blob, opts) => {
+      if (opts?.imageOrientation) {
+        throw new TypeError('Unsupported option imageOrientation');
+      }
+      throw new DOMException('Corrupt image bytes', 'InvalidStateError');
+    });
+    await expectAsync(service.validateImageFile(pngFile)).toBeRejectedWithError(
+      'Could not decode image file.'
+    );
+
+    // 3. Non-TypeError on primary call normalizes to 'Could not decode image file.'
+    createBitmapSpy.and.rejectWith(new DOMException('Decode failed', 'EncodingError'));
+    await expectAsync(service.validateImageFile(pngFile)).toBeRejectedWithError(
+      'Could not decode image file.'
+    );
+  });
+
+  it('validates file size, MIME type, and magic bytes for PNG/JPEG/WebP', async () => {
+    const emptyFile = new File([], 'empty.png', { type: 'image/png' });
+    await expectAsync(service.validateImageFile(emptyFile)).toBeRejectedWithError(/empty/i);
+
+    const tooLargeFile = new File(
+      [new Uint8Array(USER_LIMITS.MAX_RAW_INPUT_FILE_SIZE_BYTES + 1)],
+      'huge.png',
+      { type: 'image/png' }
+    );
+    await expectAsync(service.validateImageFile(tooLargeFile)).toBeRejectedWithError(
+      /maximum upload file size/i
+    );
+
+    const badMime = new File([new Uint8Array([1, 2, 3])], 'note.txt', { type: 'text/plain' });
+    await expectAsync(service.validateImageFile(badMime)).toBeRejectedWithError(
+      /unsupported format/i
+    );
+
+    const spoofedPng = new File([new Uint8Array([0x00, 0x01, 0x02, 0x03])], 'fake.png', {
+      type: 'image/png',
+    });
+    await expectAsync(service.validateImageFile(spoofedPng)).toBeRejectedWithError(
+      /valid JPG, PNG, or WebP image header/i
+    );
+
+    // Valid JPEG & WebP magic headers pass validation
+    const createBitmapSpy = spyOn(window, 'createImageBitmap') as unknown as jasmine.Spy<
+      (image: ImageBitmapSource, options?: ImageBitmapOptions) => Promise<ImageBitmap>
+    >;
+    createBitmapSpy.and.callFake(async () => ({
+      width: 40,
+      height: 30,
+      close: () => undefined,
+    }) as unknown as ImageBitmap);
+
+    const jpegFile = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00])], 'photo.jpg', {
+      type: 'image/jpeg',
+    });
+    const jpegRes = await service.validateImageFile(jpegFile);
+    expect(jpegRes.mimeType).toBe('image/jpeg');
+
+    const webpBytes = new Uint8Array([
+      0x52, 0x49, 0x46, 0x46, 0x20, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+    ]);
+    const webpFile = new File([webpBytes], 'photo.webp', { type: 'image/webp' });
+    const webpRes = await service.validateImageFile(webpFile);
+    expect(webpRes.mimeType).toBe('image/webp');
+  });
+
+  it('returns undefined when uploadToCloudStorage has no storage handle or upload fails, and tolerates deleteRemoteObject failure', async () => {
+    const photo = makePhoto({
+      id: 'ph_cloud_err',
+      storagePath: 'users/u1/showcase/model/m1/ph_cloud_err.png',
+    });
+    const warnSpy = spyOn(console, 'warn');
+
+    const getFbStorageSpy = spyOn(
+      service as unknown as { getFbStorage: () => Promise<unknown> },
+      'getFbStorage'
+    ).and.resolveTo(null);
+    expect(
+      await service.uploadToCloudStorage(photo, new Blob(['x'], { type: 'image/png' }), 'u1')
+    ).toBeUndefined();
+
+    getFbStorageSpy.and.resolveTo({ storage: {} });
+    spyOn(
+      service as unknown as { uploadStorageBytes: () => Promise<void> },
+      'uploadStorageBytes'
+    ).and.rejectWith(new Error('upload blocked'));
+    expect(
+      await service.uploadToCloudStorage(photo, new Blob(['x'], { type: 'image/png' }), 'u1')
+    ).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalled();
+
+    currentUid = 'u1';
+    spyOn(
+      service as unknown as { deleteRemoteObject: () => Promise<void> },
+      'deleteRemoteObject'
+    ).and.rejectWith(new Error('not found'));
+    await expectAsync(service.deletePhotoAssets(photo)).toBeResolved();
+  });
 });

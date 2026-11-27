@@ -203,7 +203,11 @@ export class UserMediaService {
         bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
       } catch (err) {
         if (err instanceof TypeError) {
-          bitmap = await createImageBitmap(blob);
+          try {
+            bitmap = await createImageBitmap(blob);
+          } catch {
+            throw new Error('Could not decode image file.');
+          }
         } else {
           throw new Error('Could not decode image file.');
         }

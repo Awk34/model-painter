@@ -115,6 +115,22 @@ describe('Account decomposed cards', () => {
 
     comp.prefsForm.controls.allowThirdPartySubstitutions.setValue(true);
     expect(updatePreferences).toHaveBeenCalledWith({ allowThirdPartySubstitutions: true });
+
+    const root = fixture.nativeElement as HTMLElement;
+    const btns = Array.from(root.querySelectorAll('.backup-btn-row button')) as HTMLButtonElement[];
+    expect(btns.length).toBe(2);
+
+    btns[0].click();
+    expect(exportBackupJson).toHaveBeenCalledTimes(1);
+
+    const confirmSpy = spyOn(window, 'confirm').and.returnValue(false);
+    btns[1].click();
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(resetLocalData).not.toHaveBeenCalled();
+
+    confirmSpy.and.returnValue(true);
+    btns[1].click();
+    expect(resetLocalData).toHaveBeenCalledTimes(1);
   });
 
   it('CatalogCacheCardComponent renders manifest <time> and triggers refresh', () => {

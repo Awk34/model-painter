@@ -1,6 +1,6 @@
 import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { AppComponent } from './app.component';
 import { CatalogSyncStatus, CloudSyncStatus } from './core/models/catalog.models';
 import { CatalogService } from './core/services/catalog.service';
@@ -239,5 +239,40 @@ describe('AppComponent', () => {
     expect(root.querySelector('a.brand-box')).not.toBeNull();
     expect(root.querySelector('a.sidebar-user-widget')).not.toBeNull();
     expect(root.textContent ?? '').not.toContain('4,531');
+  });
+
+  it('navigates to /search on Ctrl+K / Cmd+K and restores focus on dismissToast()', () => {
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigate').and.resolveTo(true);
+
+    const ctrlK = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, cancelable: true });
+    window.dispatchEvent(ctrlK);
+    expect(ctrlK.defaultPrevented).toBeTrue();
+    expect(navSpy).toHaveBeenCalledWith(['/search']);
+
+    navSpy.calls.reset();
+    const metaK = new KeyboardEvent('keydown', { key: 'K', metaKey: true, cancelable: true });
+    window.dispatchEvent(metaK);
+    expect(metaK.defaultPrevented).toBeTrue();
+    expect(navSpy).toHaveBeenCalledWith(['/search']);
+
+    const root = fixture.nativeElement as HTMLElement;
+    const triggerBtn = root.querySelector('main#main-content[tabindex="-1"]') as HTMLElement;
+    triggerBtn.focus();
+    expect(document.activeElement).toBe(triggerBtn);
+
+    toastService.show('Saved!');
+    fixture.detectChanges();
+
+    const closeBtn = root.querySelector(
+      '#app-toast-popover button[aria-label="Dismiss notification"]'
+    ) as HTMLButtonElement;
+    closeBtn.focus();
+    expect(document.activeElement).toBe(closeBtn);
+
+    closeBtn.click();
+    fixture.detectChanges();
+    expect(toastService.message()).toBeNull();
+    expect(document.activeElement).toBe(triggerBtn);
   });
 });

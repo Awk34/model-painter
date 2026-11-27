@@ -173,4 +173,142 @@ describe('CatalogRepository', () => {
       'Bearer injected-pkce-bearer'
     );
   });
+
+  it('finds missing unchecked bundle IDs via idb.getMany and skips stale/unsafe keys', async () => {
+    const idbClient = (repo as unknown as {
+      idb: { getMany: jasmine.Spy };
+    }).idb;
+    spyOn(idbClient, 'getMany').and.resolveTo(
+      new Map<string, unknown>([['present_unchecked', { ok: true }]])
+    );
+
+    const presentIds = new Set<string>(['present_checked']);
+    const missing = await repo.findMissingBundleIds(
+      {
+        stale_bundle: 'h1',
+        present_checked: 'h2',
+        missing_checked: 'h3',
+        present_unchecked: 'h4',
+        missing_unchecked: 'h5',
+        __proto__: 'evil',
+      } as unknown as Record<string, string>,
+      new Set(['stale_bundle']),
+      new Set(['present_checked', 'missing_checked']),
+      presentIds
+    );
+
+    expect(missing).toEqual(['missing_checked', 'missing_unchecked']);
+    expect(presentIds.has('present_unchecked')).toBeTrue();
+  });
+
+  it('handles stale updatedAt re-fetch, offline fallback to stale cached entity, synthesis fallback, unsafe IDs, and Firestore getDoc hit/error', async () => {
+    const idbClient = (repo as unknown as {
+      idb: { get: jasmine.Spy; put: jasmine.Spy };
+    }).idb;
+    const getSpy = spyOn(idbClient, 'get').and.resolveTo(null);
+    spyOn(idbClient, 'put').and.resolveTo();
+    const fsSpy = spyOn(
+      repo as unknown as { getFirestoreHandle: () => Promise<unknown> },
+      'getFirestoreHandle'
+    ).and.resolveTo(null);
+
+    const paintMap = new Map<string, Paint>([
+      [
+        'p1',
+        {
+          id: 'p1',
+          name: 'Paint One',
+          range: 'warhammer_colour',
+          category: 'Base',
+          gradientStartHex: '#112233',
+        },
+      ],
+    ]);
+    const colorMap = new Map<string, ColorSummary>([
+      [
+        'c1',
+        {
+          id: 'c1',
+          name: 'Color One',
+          hex: '#112233',
+          range: 'warhammer_colour',
+          guideType: 'miniature',
+          colorGroups: [],
+          basePaintIds: ['p1'],
+          detailPaintIds: [],
+          artificerPaintIds: [],
+          requiredPaintIds: ['p1'],
+          updatedAt: '2026-11-20T00:00:00Z',
+        },
+      ],
+    ]);
+    const modelSummary: ModelSummary = {
+      id: 'm-stale',
+      name: 'Stale Marine',
+      range: 'warhammer_colour',
+      gameIds: [],
+      gameNames: [],
+      factionIds: [],
+      factionNames: [],
+      colorIds: ['c1'],
+      requiredPaintIds: ['p1'],
+      paintsByStage: { base: ['p1'], detail: [], artificer: [] },
+      updatedAt: '2026-11-20T00:00:00Z',
+    };
+
+    // 1. Stale updatedAt triggers remote fetch; if offline, falls back to stale cached entity
+    getSpy.and.resolveTo({
+      id: 'm-stale',
+      name: 'Cached Stale Marine',
+      updatedAt: '2026-11-01T00:00:00Z',
+      paintingAreas: [{ id: 'a1', name: 'Old Cached Area', paintingSteps: [] }],
+    });
+    fetchSpy.and.resolveTo(new Response('Not Found', { status: 404 }));
+    const staleFallback = await repo.getModelRecipe('m-stale', modelSummary, colorMap, paintMap);
+    expect(staleFallback?.paintingAreas[0].name).toBe('Old Cached Area');
+
+    // 2. No cache and static+API fail -> synthesizes ModelRecipe & ColorDetails from summary
+    getSpy.and.resolveTo(null);
+    const synthesizedModel = await repo.getModelRecipe('m-stale', modelSummary, colorMap, paintMap);
+    expect(synthesizedModel?.id).toBe('m-stale');
+    expect(synthesizedModel?.paintingAreas.length).toBeGreaterThan(0);
+
+    const synthesizedColor = await repo.getColorDetails('c1', colorMap.get('c1'), paintMap);
+    expect(synthesizedColor?.id).toBe('c1');
+    expect(synthesizedColor?.baseFinish?.stages[0].paint?.id).toBe('p1');
+
+    // 3. Unsafe entity ID skips fetch/Firestore and returns null when no summary
+    fetchSpy.calls.reset();
+    fsSpy.calls.reset();
+    expect(await repo.getModelRecipe('../evil', undefined, colorMap, paintMap)).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fsSpy).not.toHaveBeenCalled();
+
+    // 4. Firestore getDoc hit returns normalized recipe; Firestore error falls back to static fetch
+    fsSpy.and.resolveTo({
+      db: {},
+      doc: (_db: unknown, _col: string, id: string) => ({ id }),
+      getDoc: async () => ({
+        exists: () => true,
+        data: () => ({ id: 'm-fs', name: 'Firestore Marine', paintingAreas: [] }),
+      }),
+    });
+    const fsHit = await repo.getModelRecipe('m-fs', undefined, colorMap, paintMap);
+    expect(fsHit?.name).toBe('Firestore Marine');
+
+    const warnSpy = spyOn(console, 'warn');
+    fsSpy.and.resolveTo({
+      db: {},
+      doc: (_db: unknown, _col: string, id: string) => ({ id }),
+      getDoc: async () => {
+        throw new Error('permission-denied');
+      },
+    });
+    fetchSpy.and.resolveTo(
+      jsonResponse({ id: 'm-fs-err', name: 'Static Fallback Marine', paintingAreas: [] })
+    );
+    const fsFallback = await repo.getModelRecipe('m-fs-err', undefined, colorMap, paintMap);
+    expect(fsFallback?.name).toBe('Static Fallback Marine');
+    expect(warnSpy).toHaveBeenCalled();
+  });
 });

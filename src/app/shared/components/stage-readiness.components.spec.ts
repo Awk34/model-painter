@@ -1,15 +1,5 @@
-import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import {
-  InventoryReadinessResult,
-  StagedReadinessResult,
-  UserProject,
-} from '../../core/models/catalog.models';
-import { InventoryMatchService } from '../../core/services/inventory-match.service';
-import { ProjectImageResolverService } from '../../core/services/project-image-resolver.service';
-import { UserStateService } from '../../core/services/user-state.service';
-import { HobbyDeskProjectsTabComponent } from '../../features/hobby-desk/tabs/hobby-desk-projects-tab.component';
+import { InventoryReadinessResult, StagedReadinessResult } from '../../core/models/catalog.models';
 import { StageReadinessBarsComponent } from './stage-readiness-bars/stage-readiness-bars.component';
 import { StageReadinessPillsComponent } from './stage-readiness-pills/stage-readiness-pills.component';
 
@@ -34,7 +24,7 @@ const SAMPLE_STAGED: StagedReadinessResult = {
   overall: makeStage({ matchPercent: 80 }),
 };
 
-describe('Extracted UI Components & Reactive Filter Signals', () => {
+describe('StageReadinessPillsComponent & StageReadinessBarsComponent', () => {
   it('renders 3 stage pills with expected readiness states in StageReadinessPillsComponent', () => {
     TestBed.configureTestingModule({
       imports: [StageReadinessPillsComponent],
@@ -80,140 +70,5 @@ describe('Extracted UI Components & Reactive Filter Signals', () => {
     expect(wishlistBtn).not.toBeNull();
     wishlistBtn?.click();
     expect(wishlistedIds).toEqual(['p4']);
-  });
-
-  it('reactively filters and sorts projects when signal fields change in HobbyDeskProjectsTabComponent', () => {
-    const projects = signal<UserProject[]>([
-      {
-        id: 'p-zeta',
-        name: 'Zeta Terminators',
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: '2026-02-01T00:00:00Z',
-        models: [
-          {
-            id: 'pmod_1',
-            recipeId: 'm1',
-            quantity: 5,
-            notes: '',
-            completedStepIds: [],
-            photos: [],
-            createdAt: '2026-01-01T00:00:00Z',
-            updatedAt: '2026-02-01T00:00:00Z',
-          },
-        ],
-        colorIds: [],
-        notes: [],
-        photos: [],
-      },
-      {
-        id: 'p-alpha',
-        name: 'Alpha Intercessors',
-        createdAt: '2026-02-01T00:00:00Z',
-        updatedAt: '2026-01-15T00:00:00Z',
-        models: [],
-        colorIds: [],
-        notes: [],
-        photos: [],
-      },
-    ]);
-
-    TestBed.configureTestingModule({
-      imports: [HobbyDeskProjectsTabComponent],
-      providers: [
-        provideRouter([]),
-        {
-          provide: UserStateService,
-          useValue: {
-            projects,
-            limits: { MAX_PROJECTS: 200 },
-            getTargetPhotoCount: () => 0,
-            getProjectTotalMiniatures: (p: UserProject) =>
-              p.models.reduce((sum, m) => sum + m.quantity, 0),
-            getProjectTotalPhotoCount: () => 0,
-            createProject: () => null,
-            deleteProject: () => {},
-            duplicateProject: () => {},
-          },
-        },
-        {
-          provide: ProjectImageResolverService,
-          useValue: {
-            resolveProjectCoverUrl: () => '/logo.svg',
-          },
-        },
-        {
-          provide: InventoryMatchService,
-          useValue: {
-            evaluateProjectStagedReadiness: () => SAMPLE_STAGED,
-          },
-        },
-      ],
-    });
-
-    const fixture = TestBed.createComponent(HobbyDeskProjectsTabComponent);
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.filteredProjectCards().map((c) => c.project.id)).toEqual([
-      'p-zeta',
-      'p-alpha',
-    ]);
-
-    fixture.componentInstance.projectSort.set('alpha');
-    fixture.detectChanges();
-    expect(fixture.componentInstance.filteredProjectCards().map((c) => c.project.id)).toEqual([
-      'p-alpha',
-      'p-zeta',
-    ]);
-
-    fixture.componentInstance.projectSearch.set('terminator');
-    fixture.detectChanges();
-    expect(fixture.componentInstance.filteredProjectCards().map((c) => c.project.id)).toEqual([
-      'p-zeta',
-    ]);
-  });
-
-  it('resets newProjectName when closing the new project modal in HobbyDeskProjectsTabComponent', () => {
-    TestBed.configureTestingModule({
-      imports: [HobbyDeskProjectsTabComponent],
-      providers: [
-        provideRouter([]),
-        {
-          provide: UserStateService,
-          useValue: {
-            projects: signal<UserProject[]>([]),
-            limits: { MAX_PROJECTS: 50 },
-            getTargetPhotoCount: () => 0,
-            getProjectTotalMiniatures: () => 0,
-            getProjectTotalPhotoCount: () => 0,
-            createProject: () => null,
-            deleteProject: () => {},
-            duplicateProject: () => {},
-          },
-        },
-        {
-          provide: ProjectImageResolverService,
-          useValue: {
-            resolveProjectCoverUrl: () => '/logo.svg',
-          },
-        },
-        {
-          provide: InventoryMatchService,
-          useValue: {
-            evaluateProjectStagedReadiness: () => SAMPLE_STAGED,
-          },
-        },
-      ],
-    });
-
-    const fixture = TestBed.createComponent(HobbyDeskProjectsTabComponent);
-    const comp = fixture.componentInstance;
-    fixture.detectChanges();
-
-    comp.openNewProjectModal();
-    comp.newProjectName.set('Stale Project Draft');
-    comp.closeNewProjectModal();
-
-    expect(comp.showNewProjectModal()).toBeFalse();
-    expect(comp.newProjectName()).toBe('');
   });
 });

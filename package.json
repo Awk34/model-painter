@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:rules": "node --test scripts/rules_parity.test.mjs scripts/firestore_rules.test.mjs",
     "test:screenshot": "vitest run --config vitest.config.ts",
     "test:screenshot:update": "vitest run --config vitest.config.ts -u"
   },

@@ -8,6 +8,7 @@ import {
   applyReadinessFilter,
   createEntityId,
   getCitadelBrandLabel,
+  getFallbackSwatch,
   getPaintRepresentativeHex,
   getPaintSwatchBackground,
   isKnownPaintBrand,
@@ -315,6 +316,45 @@ describe('catalog-filter.util', () => {
       );
       expect(getPaintSwatchBackground(abaddonBlack)).toBe('#000000');
       expect(getPaintSwatchBackground(mephistonRed)).toBe('#960C09');
+    });
+
+    it('returns referentially stable frozen fallback swatches and safely handles prototype-named keys', () => {
+      const emptyNull = getFallbackSwatch(null);
+      const emptyBlank = getFallbackSwatch('   ');
+      expect(emptyNull).toBe(emptyBlank);
+      expect(Object.isFrozen(emptyNull)).toBeTrue();
+      expect(emptyNull).toEqual({});
+
+      const baseA = getFallbackSwatch('Base');
+      const baseB = getFallbackSwatch(' Base ');
+      expect(baseA).toBe(baseB);
+      expect(Object.isFrozen(baseA)).toBeTrue();
+      expect(baseA).toEqual({ category: 'Base' });
+
+      const protoA = getFallbackSwatch('__proto__');
+      const protoB = getFallbackSwatch('toString');
+      expect(protoA).toBe(getFallbackSwatch('__proto__'));
+      expect(protoB).toEqual({ category: 'toString' });
+    });
+
+    it('excludes Citadel variants in mergeCatalogBrands and supports 3-digit #rgb hex values', () => {
+      const merged = mergeCatalogBrands(
+        ['Citadel Colour', 'Citadel Classic', 'Citadel Tone Pro', 'Scale75'],
+        [{ brand: 'Citadel Classic' }, { brand: 'Kimera Kolors' }]
+      );
+      expect(merged).not.toContain('Citadel Colour');
+      expect(merged).not.toContain('Citadel Classic');
+      expect(merged).not.toContain('Citadel Tone Pro');
+      expect(merged).toContain('Scale75');
+      expect(merged).toContain('Kimera Kolors');
+
+      const shortMetallicBg = getPaintSwatchBackground({
+        potStyle: 'metallic',
+        category: 'base',
+        hex: '#fc0',
+      });
+      expect(shortMetallicBg).toContain('linear-gradient(135deg, #fc0 0%');
+      expect(shortMetallicBg).not.toContain('NaN');
     });
   });
 });
