@@ -37,6 +37,7 @@ import {
 import { CatalogService } from './catalog.service';
 import { FirebaseHandles, getFirebaseHandles } from './firebase.config';
 import { ImageService } from './image.service';
+import { ToastService } from './toast.service';
 import { UserMediaService } from './user-media.service';
 import { clearWarhammerTokenCache } from '../utils/warhammer-pkce-storage.util';
 import {
@@ -90,12 +91,13 @@ export class UserStateService implements OnDestroy {
   readonly media = inject(UserMediaService);
   private readonly catalog = inject(CatalogService);
   private readonly img = inject(ImageService);
+  private readonly toast = inject(ToastService);
   readonly limits = USER_LIMITS;
 
   readonly state = signal<UserAccountState>(this.loadInitialState());
   readonly currentUser = signal<User | null>(null);
   readonly cloudSyncStatus = signal<CloudSyncStatus>(CloudSyncStatus.LocalOnly);
-  readonly toastMessage = signal<string | null>(null);
+  readonly toastMessage = this.toast.message;
 
   /** Fast reactive sets and maps for O(1) lookup */
   readonly inventorySet = computed(() => new Set(this.state().inventoryPaintIds));
@@ -126,7 +128,6 @@ export class UserStateService implements OnDestroy {
   private unsubscribeUserFirestore: (() => void) | null = null;
   private unsubscribeProjectsFirestore: (() => void) | null = null;
   private unsubscribeAuth: (() => void) | null = null;
-  private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private authGeneration = 0;
   private activeSyncedUid: string | null = null;
   private pendingAccountWrites = 0;
@@ -144,10 +145,6 @@ export class UserStateService implements OnDestroy {
       this.unsubscribeAuth = null;
     }
     this.clearFirestoreListeners();
-    if (this.toastTimer) {
-      clearTimeout(this.toastTimer);
-      this.toastTimer = null;
-    }
   }
 
   private loadInitialState(): UserAccountState {
@@ -172,17 +169,7 @@ export class UserStateService implements OnDestroy {
   }
 
   showToast(msg: string): void {
-    if (this.toastTimer) {
-      clearTimeout(this.toastTimer);
-      this.toastTimer = null;
-    }
-    this.toastMessage.set(msg);
-    this.toastTimer = setTimeout(() => {
-      this.toastTimer = null;
-      if (this.toastMessage() === msg) {
-        this.toastMessage.set(null);
-      }
-    }, 3500);
+    this.toast.show(msg);
   }
 
   private commit(

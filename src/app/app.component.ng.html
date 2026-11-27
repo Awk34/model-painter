@@ -17,7 +17,7 @@
         routerLinkActive="active"
         class="nav-link"
       >
-        <img src="/icons/ic_hobby_desk.svg" alt="" class="nav-ic" />
+        <app-icon name="hobby_desk" class="nav-ic" />
         <span>Hobby Desk</span>
         @if (userState.projects().length > 0) {
           <span class="nav-count">{{ userState.projects().length }}</span>
@@ -29,7 +29,7 @@
         routerLinkActive="active"
         class="nav-link"
       >
-        <img src="/icons/ic_models.svg" alt="" class="nav-ic" />
+        <app-icon name="models" class="nav-ic" />
         <span>Paint A Model</span>
         <span class="nav-count muted">{{ catalog.models().length | number }}</span>
       </a>
@@ -39,7 +39,7 @@
         routerLinkActive="active"
         class="nav-link"
       >
-        <img src="/icons/ic_color.svg" alt="" class="nav-ic" />
+        <app-icon name="color" class="nav-ic" />
         <span>Paint A Color</span>
         <span class="nav-count muted">{{ catalog.colors().length }}</span>
       </a>
@@ -49,7 +49,7 @@
         routerLinkActive="active"
         class="nav-link"
       >
-        <img src="/icons/ic_search.svg" alt="" class="nav-ic" />
+        <app-icon name="search" class="nav-ic" />
         <span>Search</span>
         <kbd class="shortcut-kbd">⌘K</kbd>
       </a>
@@ -94,13 +94,17 @@
       routerLinkActive="active"
     >
       @if (userState.currentUser(); as user) {
-        <img
-          [src]="avatarUrl()"
-          (error)="onAvatarError()"
-          referrerpolicy="no-referrer"
-          alt="User profile picture"
-          class="user-avatar"
-        />
+        @if (avatarUrl(); as url) {
+          <img
+            [src]="url"
+            (error)="onAvatarError()"
+            referrerpolicy="no-referrer"
+            alt="User profile picture"
+            class="user-avatar"
+          />
+        } @else {
+          <app-icon name="profile" class="user-avatar placeholder" />
+        }
         <div class="user-meta">
           <strong class="user-name">{{ user.displayName || user.email || 'Hobbyist' }}</strong>
           @if (user.displayName && user.email) {
@@ -110,11 +114,7 @@
           }
         </div>
       } @else {
-        <img
-          src="/icons/ic_profile.svg"
-          alt="User placeholder"
-          class="user-avatar placeholder"
-        />
+        <app-icon name="profile" class="user-avatar placeholder" />
         <div class="user-meta">
           <span class="user-guest-label">Guest</span>
           <span class="user-sub">Local Mode</span>
@@ -146,23 +146,23 @@
   <!-- Mobile Bottom Nav Bar -->
   <nav class="mobile-bottom-nav">
     <a routerLink="/hobby-desk" routerLinkActive="active" class="mob-tab">
-      <img src="/icons/ic_hobby_desk.svg" alt="" />
+      <app-icon name="hobby_desk" class="mob-ic" />
       <span>Hobby Desk</span>
     </a>
     <a routerLink="/models" routerLinkActive="active" class="mob-tab">
-      <img src="/icons/ic_models.svg" alt="" />
+      <app-icon name="models" class="mob-ic" />
       <span>Paint Model</span>
     </a>
     <a routerLink="/colors" routerLinkActive="active" class="mob-tab">
-      <img src="/icons/ic_color.svg" alt="" />
+      <app-icon name="color" class="mob-ic" />
       <span>Paint Color</span>
     </a>
     <a routerLink="/search" routerLinkActive="active" class="mob-tab">
-      <img src="/icons/ic_search.svg" alt="" />
+      <app-icon name="search" class="mob-ic" />
       <span>Search</span>
     </a>
     <a routerLink="/account" routerLinkActive="active" class="mob-tab">
-      <img src="/icons/ic_profile.svg" alt="" />
+      <app-icon name="profile" class="mob-ic" />
       <span>Account</span>
     </a>
   </nav>
@@ -170,11 +170,33 @@
   <!-- Global Paint Detail Modal -->
   <app-paint-detail-modal></app-paint-detail-modal>
 
-  <!-- Toast Notification -->
-  @if (userState.toastMessage(); as msg) {
-    <div class="toast-banner">
-      <span>{{ msg }}</span>
+  <!-- Toast Notification Region -->
+  <div role="region" aria-label="Notifications" class="toast-region">
+    <span class="sr-only" aria-live="polite" aria-atomic="true">
+      {{ toast.message() ?? '' }}
+    </span>
+    <div
+      #toastPopover
+      id="app-toast-popover"
+      class="toast-banner"
+      popover="manual"
+      (mouseenter)="onToastMouseEnter()"
+      (mouseleave)="onToastMouseLeave()"
+      (focusin)="onToastFocusIn()"
+      (focusout)="onToastFocusOut($event)"
+    >
+      @if (toast.current(); as activeToast) {
+        <span class="toast-text">{{ activeToast.message }}</span>
+        <button
+          type="button"
+          class="toast-close-btn"
+          aria-label="Dismiss notification"
+          (click)="dismissToast()"
+        >
+          <app-icon name="close" class="toast-close-ic" />
+        </button>
+      }
     </div>
-  }
+  </div>
 </div>
 

@@ -51,7 +51,7 @@
 }
 
 .game-info span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
@@ -89,17 +89,32 @@
 
 .search-input-wrap {
   flex: 1;
-  min-width: 240px;
+  min-width: min(100%, 240px);
 }
 
 .filter-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .filter-select {
-  min-width: 210px;
+  min-width: min(100%, 210px);
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .filter-controls {
+    width: 100%;
+  }
+
+  select.filter-select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 .results-meta {
@@ -110,7 +125,7 @@
 
 .models-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr));
   gap: 16px;
 }
 

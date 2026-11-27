@@ -23,7 +23,25 @@
         ]
       },
       {
-        "source": "**/*.@(ttf|otf|svg|png|jpg|jpeg|webp)",
+        "source": "**/*.@(svg|png|jpg|jpeg|webp|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(ttf|otf|woff2)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "**/*-*.@(js|css)",
         "headers": [
           {
             "key": "Cache-Control",

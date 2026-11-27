@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { USER_LIMITS } from '../../../core/config/user-limits.config';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -135,5 +135,34 @@ describe('AccountSettingsPanelComponent', () => {
     await expectAsync(component.loadExtractedSnapshot()).toBeResolved();
     expect(component.snapshotBusy()).toBeFalse();
     expect(component.snapshotError()).toContain('not available in this environment');
+  });
+
+  it('resets avatarFailed when currentUser photoURL changes', () => {
+    const userSignal = userStateMock.currentUser as unknown as WritableSignal<{
+      uid: string;
+      email: string | null;
+      displayName: string | null;
+      photoURL: string | null;
+    } | null>;
+
+    userSignal.set({
+      uid: 'u1',
+      email: 'a@example.com',
+      displayName: 'Alice',
+      photoURL: 'https://example.invalid/a.png',
+    });
+    fixture.detectChanges();
+
+    component.onAvatarError();
+    expect(component.avatarFailed()).toBeTrue();
+
+    userSignal.set({
+      uid: 'u2',
+      email: 'b@example.com',
+      displayName: 'Bob',
+      photoURL: 'https://example.invalid/b.png',
+    });
+    fixture.detectChanges();
+    expect(component.avatarFailed()).toBeFalse();
   });
 });

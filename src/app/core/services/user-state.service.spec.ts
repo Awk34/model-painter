@@ -5,6 +5,7 @@ import { USER_LIMITS } from '../config/user-limits.config';
 import { CloudSyncStatus, ModelSummary } from '../models/catalog.models';
 import { CatalogService } from './catalog.service';
 import { ImageService } from './image.service';
+import { ToastService } from './toast.service';
 import { UserMediaService } from './user-media.service';
 import { UserStateService } from './user-state.service';
 import {
@@ -1135,5 +1136,18 @@ describe('UserStateService — M1 Data Integrity, Photo Quota & Auth/Sync Hotfix
     );
     await service.loadExtractedAccountSnapshot('merge');
     expect(service.state().inventoryPaintIds).toContain('paint-gold');
+  });
+
+  it('delegates showToast and toastMessage to ToastService', () => {
+    service = setupService();
+    const toastService = TestBed.inject(ToastService);
+    const showSpy = spyOn(toastService, 'show').and.callThrough();
+
+    service.showToast('Delegated');
+    expect(showSpy).toHaveBeenCalledOnceWith('Delegated');
+    expect(service.toastMessage()).toBe('Delegated');
+
+    toastService.dismiss();
+    expect(service.toastMessage()).toBeNull();
   });
 });

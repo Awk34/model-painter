@@ -7,13 +7,14 @@ import { ImageService } from '../../../core/services/image.service';
 import { InventoryMatchService } from '../../../core/services/inventory-match.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { matchesModelSearch } from '../../../core/utils/catalog-filter.util';
+import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
 import { StageReadinessPillsComponent } from '../../../shared/components/stage-readiness-pills/stage-readiness-pills.component';
 
 export type CollectionSubMode = 'inventory' | 'wishlist' | 'catalogue';
 
 @Component({
   selector: 'app-hobby-desk-models-tab',
-  imports: [DecimalPipe, FormsModule, RouterModule, StageReadinessPillsComponent],
+  imports: [DecimalPipe, FormsModule, RouterModule, AppIconComponent, StageReadinessPillsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-models-tab.component.ng.html',
   styleUrl: './hobby-desk-models-tab.component.css',

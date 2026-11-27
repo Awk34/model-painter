@@ -35,12 +35,17 @@
     @if (userState.currentUser(); as user) {
       <div class="signed-in-box">
         <div class="signed-in-profile">
-          <img
-            [src]="user.photoURL || '/icons/ic_profile.svg'"
-            referrerpolicy="no-referrer"
-            alt="User avatar"
-            class="account-avatar"
-          />
+          @if (user.photoURL && !avatarFailed()) {
+            <img
+              [src]="user.photoURL"
+              (error)="onAvatarError()"
+              referrerpolicy="no-referrer"
+              alt="User avatar"
+              class="account-avatar"
+            />
+          } @else {
+            <app-icon name="profile" class="account-avatar placeholder" />
+          }
           <div>
             <div>
               <strong>{{ user.displayName || user.email || user.uid }}</strong>

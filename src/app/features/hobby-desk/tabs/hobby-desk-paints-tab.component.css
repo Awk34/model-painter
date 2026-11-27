@@ -4,7 +4,7 @@
 
 .paints-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 295px), 1fr));
   gap: 10px;
 }
 
@@ -52,7 +52,7 @@
   display: flex;
   gap: 5px;
   font-family: var(--font-sans);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
@@ -94,5 +94,11 @@
   border-radius: var(--radius-xs);
   background: var(--bg-input);
   cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 

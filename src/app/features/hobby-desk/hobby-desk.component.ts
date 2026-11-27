@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { formatBytes } from '../../core/config/user-limits.config';
 import { UserStateService } from '../../core/services/user-state.service';
+import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { AccountSettingsPanelComponent } from './tabs/account-settings-panel.component';
 import { HobbyDeskConverterTabComponent } from './tabs/hobby-desk-converter-tab.component';
 import {
@@ -16,6 +17,7 @@ export type HobbyDeskTab = 'projects' | 'models' | 'paints' | 'converter' | 'set
 @Component({
   selector: 'app-hobby-desk',
   imports: [
+    AppIconComponent,
     HobbyDeskProjectsTabComponent,
     HobbyDeskModelsTabComponent,
     HobbyDeskPaintsTabComponent,

@@ -36,7 +36,7 @@
 
 .rollup-paint-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
   gap: 10px;
 }
 
@@ -75,13 +75,13 @@
 
 .rp-meta {
   font-family: var(--font-sans);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
 .sub-note {
   font-family: var(--font-sans);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--status-sub);
 }
 

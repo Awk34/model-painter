@@ -1,6 +1,6 @@
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
 }
 .sidebar {
@@ -12,7 +12,9 @@
   padding: 20px 16px;
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   flex-shrink: 0;
   gap: 12px;
 }
@@ -54,7 +56,7 @@
 }
 .brand-sub {
   font-family: var(--font-sans);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 .side-nav {
@@ -74,7 +76,7 @@
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: 0.9rem;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   border: 1px solid transparent;
 }
 .nav-link:hover {
@@ -92,7 +94,7 @@
 }
 .nav-count {
   margin-left: auto;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   padding: 2px 7px;
   border-radius: var(--radius-pill);
   background: var(--gold-soft);
@@ -105,7 +107,7 @@
 .shortcut-kbd {
   margin-left: auto;
   font-family: monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   padding: 2px 6px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.06);
@@ -132,7 +134,7 @@
   color: var(--status-wishlist);
 }
 .cache-dot {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--status-owned);
   text-transform: uppercase;
   font-weight: 700;
@@ -143,8 +145,8 @@
   gap: 10px;
   padding: 10px 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  border: 1px solid var(--border-subtle);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  border: 1px solid var(--border-strong);
 }
 .sidebar-user-widget:hover {
   border-color: var(--gold-border);
@@ -166,6 +168,10 @@
 .user-avatar.placeholder {
   padding: 5px;
   opacity: 0.85;
+  color: var(--text-secondary);
+}
+.sidebar-user-widget.active .user-avatar.placeholder {
+  color: var(--gold-bright);
 }
 .user-meta {
   display: flex;
@@ -184,7 +190,7 @@
   text-overflow: ellipsis;
 }
 .user-sub {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -204,7 +210,7 @@
   width: 100%;
 }
 .boot-loader {
-  height: 70vh;
+  min-height: 70dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -228,7 +234,7 @@
     display: none;
   }
   .main-viewport {
-    padding: 16px 14px 86px;
+    padding: 16px 14px calc(86px + env(safe-area-inset-bottom, 0px));
   }
   .mobile-bottom-nav {
     display: grid;
@@ -237,7 +243,10 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 66px;
+    min-height: 66px;
+    height: auto;
+    padding-block: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
     background: rgba(13, 14, 17, 0.96);
     backdrop-filter: blur(10px);
     border-top: 1px solid var(--border-strong);
@@ -249,12 +258,16 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
+    padding-inline: 2px;
     color: var(--text-secondary);
     font-family: var(--font-sans);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
   }
-  .mob-tab img {
+  .mob-tab .mob-ic,
+  .mob-tab app-icon {
     width: 22px;
     height: 22px;
   }
@@ -262,18 +275,97 @@
     color: var(--gold-bright);
   }
 }
-.toast-banner {
+
+.toast-region {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1200;
+  inset: auto;
+  pointer-events: none;
+}
+
+.toast-banner[popover] {
+  position: fixed;
+  inset: auto 24px 24px auto;
+  margin: 0;
+  max-width: min(440px, calc(100vw - 32px));
+  display: none;
+  align-items: center;
+  gap: 12px;
   background: var(--bg-void);
   border: 1px solid var(--gold-bright);
   color: var(--gold-bright);
-  padding: 12px 18px;
+  padding: 12px 14px 12px 18px;
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-modal);
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: 0.86rem;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.18s ease, transform 0.18s ease, display 0.18s ease, overlay 0.18s ease;
+  transition-behavior: allow-discrete;
+}
+
+.toast-banner[popover]:is(:popover-open, .\:popover-open) {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+  @starting-style {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.toast-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-close-btn {
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.toast-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.toast-close-ic {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 860px) {
+  .toast-banner[popover] {
+    inset: auto 14px calc(78px + env(safe-area-inset-bottom, 0px)) 14px;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-banner[popover] {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .nav-link.active,
+  .mob-tab.active,
+  .sidebar-user-widget.active {
+    border: 2px solid Highlight;
+    color: Highlight;
+  }
+  .toast-banner[popover] {
+    background: Canvas;
+    color: CanvasText;
+    border: 2px solid CanvasText;
+  }
 }
