@@ -17,12 +17,13 @@ import {
   getPaintRepresentativeHex,
   PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
+import { AppModalDialogComponent } from '../modal-dialog/modal-dialog.component';
 import { PaintBrandBadgeComponent } from '../paint-brand-badge/paint-brand-badge.component';
 import { PaintSwatchComponent } from '../paint-swatch/paint-swatch.component';
 
 @Component({
   selector: 'app-paint-detail-modal',
-  imports: [FormsModule, PaintBrandBadgeComponent, PaintSwatchComponent],
+  imports: [FormsModule, AppModalDialogComponent, PaintBrandBadgeComponent, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './paint-detail-modal.component.ng.html',
   styleUrl: './paint-detail-modal.component.css',

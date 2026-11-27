@@ -36,6 +36,7 @@ export class AppComponent {
   private readonly router = inject(Router);
   private readonly avatarFailed = signal(false);
   private readonly toastPopover = viewChild<ElementRef<HTMLElement>>('toastPopover');
+  private readonly mainContent = viewChild<ElementRef<HTMLElement>>('mainContent');
   private lastFocusBeforeToast: HTMLElement | null = null;
 
   readonly avatarUrl = computed(() => {
@@ -70,7 +71,7 @@ export class AppComponent {
             (el.matches(':hover') || el.matches(':focus-within')) &&
             !untracked(() => this.toast.isPaused())
           ) {
-            this.toast.pause();
+            untracked(() => this.toast.pause());
           }
         } else if (el.matches(':popover-open')) {
           el.hidePopover();
@@ -83,6 +84,11 @@ export class AppComponent {
 
   onAvatarError(): void {
     this.avatarFailed.set(true);
+  }
+
+  skipToMain(event: Event): void {
+    event.preventDefault();
+    this.mainContent()?.nativeElement.focus();
   }
 
   onToastMouseEnter(): void {

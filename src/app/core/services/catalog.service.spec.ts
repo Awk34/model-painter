@@ -975,6 +975,10 @@ describe('ModelPaintingStepsComponent stage filtering', () => {
     expect(comp.overallProgress()).toEqual({ done: 0, total: 2, isDone: false, percent: 0 });
     expect(comp.getAreaProgress(baseArea)).toEqual({ done: 0, total: 2, isDone: false });
 
+    const progressBar = fixture.nativeElement.querySelector('[role="progressbar"]') as HTMLElement | null;
+    expect(progressBar).not.toBeNull();
+    expect(progressBar?.getAttribute('aria-label')).toBeTruthy();
+
     const stageBtn = fixture.nativeElement.querySelector(
       '.stage-done-btn'
     ) as HTMLButtonElement;

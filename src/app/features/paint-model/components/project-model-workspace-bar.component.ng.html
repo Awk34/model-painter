@@ -7,19 +7,19 @@
       </div>
 
       @if (editingName()) {
-        <div class="name-edit-row">
+        <form class="name-edit-row" (ngSubmit)="saveCustomName()">
           <label for="project-model-custom-name" class="sr-only">Custom model label</label>
           <input
             id="project-model-custom-name"
+            name="nameDraft"
             type="text"
             class="input-control name-input"
             [maxlength]="userState.limits.MAX_TITLE_LENGTH"
             placeholder="e.g., Redemptor — Macro Plasma..."
             [ngModel]="nameDraft()"
             (ngModelChange)="nameDraft.set($event)"
-            (keyup.enter)="saveCustomName()"
           />
-          <button type="button" class="btn btn-gold btn-sm" (click)="saveCustomName()">Save</button>
+          <button type="submit" class="btn btn-gold btn-sm">Save</button>
           @if (hasCustomName()) {
             <button type="button" class="btn btn-ghost btn-sm" (click)="resetCustomName()">
               Reset
@@ -28,7 +28,7 @@
           <button type="button" class="btn btn-ghost btn-sm" (click)="editingName.set(false)">
             Cancel
           </button>
-        </div>
+        </form>
       } @else {
         <div class="name-display-row">
           <h1 class="workspace-title">{{ displayName() }}</h1>

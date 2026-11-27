@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
 import { InventoryMatchService } from '../../../core/services/inventory-match.service';
@@ -24,7 +24,6 @@ export class HobbyDeskModelsTabComponent {
   readonly userState = inject(UserStateService);
   readonly img = inject(ImageService);
   private readonly readinessService = inject(InventoryMatchService);
-  private readonly router = inject(Router);
 
   readonly subMode = model<CollectionSubMode>('inventory');
   readonly modelSearch = signal('');
@@ -89,10 +88,6 @@ export class HobbyDeskModelsTabComponent {
 
   loadMoreModels(): void {
     this.modelVisibleLimit.update((v) => v + 60);
-  }
-
-  openModel(modelId: string): void {
-    this.router.navigate(['/models', modelId]);
   }
 }
 

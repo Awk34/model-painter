@@ -1,7 +1,3 @@
-.add-project-modal {
-  max-width: 480px;
-}
-
 .proj-list {
   display: flex;
   flex-direction: column;
@@ -21,4 +17,3 @@
   display: flex;
   gap: 8px;
 }
-

@@ -1,77 +1,79 @@
-@if (mode(); as activeMode) {
-  <div class="modal-backdrop" (click)="close()">
-    <div class="modal-panel" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>{{ modalTitle() }}</h3>
-        <button type="button" class="close-btn" aria-label="Close" (click)="close()">✕</button>
-      </div>
-      <div class="modal-body">
-        <input
-          type="text"
-          class="input-control"
-          [placeholder]="searchPlaceholder()"
-          [ngModel]="pickerSearch()"
-          (ngModelChange)="pickerSearch.set($event)"
-        />
+<app-modal-dialog
+  [open]="mode() !== null"
+  [title]="modalTitle()"
+  size="lg"
+  closeLabel="Close picker dialog"
+  (closed)="close()"
+>
+  @if (mode(); as activeMode) {
+    <div class="modal-body">
+      <label for="project-picker-search" class="sr-only">{{ searchPlaceholder() }}</label>
+      <input
+        id="project-picker-search"
+        type="search"
+        class="input-control"
+        [placeholder]="searchPlaceholder()"
+        [ngModel]="pickerSearch()"
+        (ngModelChange)="pickerSearch.set($event)"
+        autofocus
+      />
 
-        @if (activeMode === 'color') {
-          <div class="picker-grid">
-            @for (c of pickerColors(); track c.id) {
-              <div class="picker-item studio-card">
-                <app-paint-swatch [paint]="c" />
-                <div class="picker-info">
-                  <strong>{{ c.name }}</strong>
-                  <span>{{ c.colorGroups.join(', ') }}</span>
-                </div>
+      @if (activeMode === 'color') {
+        <div class="picker-grid">
+          @for (c of pickerColors(); track c.id) {
+            <div class="picker-item studio-card">
+              <app-paint-swatch [paint]="c" />
+              <div class="picker-info">
+                <strong>{{ c.name }}</strong>
+                <span>{{ c.colorGroups.join(', ') }}</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-gold"
+                (click)="userState.addColorToProject(project().id, c.id)"
+              >
+                + Add
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="picker-grid">
+          @for (m of pickerModels(); track m.id) {
+            <div class="picker-item studio-card">
+              <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
+              <div class="picker-info">
+                <strong>{{ m.name }}</strong>
+                @if (activeMode === 'model') {
+                  <span>
+                    {{ m.gameNames[0] }}
+                    @if (getModelCount(m.id) > 0) {
+                      • {{ getModelCount(m.id) }} in project
+                    }
+                  </span>
+                }
+              </div>
+              @if (activeMode === 'model') {
                 <button
                   type="button"
                   class="btn btn-sm btn-gold"
-                  (click)="userState.addColorToProject(project().id, c.id)"
+                  (click)="addModel(m.id, m.localPrimaryImage)"
                 >
-                  + Add
+                  {{ getModelCount(m.id) > 0 ? '+ Add Another' : '+ Add' }}
                 </button>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="picker-grid">
-            @for (m of pickerModels(); track m.id) {
-              <div class="picker-item studio-card">
-                <img [src]="img.resolve(m.localPrimaryImage, m.primaryImage)" [alt]="m.name" />
-                <div class="picker-info">
-                  <strong>{{ m.name }}</strong>
-                  @if (activeMode === 'model') {
-                    <span>
-                      {{ m.gameNames[0] }}
-                      @if (getModelCount(m.id) > 0) {
-                        • {{ getModelCount(m.id) }} in project
-                      }
-                    </span>
-                  }
-                </div>
-                @if (activeMode === 'model') {
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-gold"
-                    (click)="addModel(m.id, m.localPrimaryImage)"
-                  >
-                    {{ getModelCount(m.id) > 0 ? '+ Add Another' : '+ Add' }}
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-gold"
-                    (click)="selectThumbnail(m.localPrimaryImage || '', m.primaryImage)"
-                  >
-                    Use Cover
-                  </button>
-                }
-              </div>
-            }
-          </div>
-        }
-      </div>
+              } @else {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-gold"
+                  (click)="selectThumbnail(m.localPrimaryImage || '', m.primaryImage)"
+                >
+                  Use Cover
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
     </div>
-  </div>
-}
-
+  }
+</app-modal-dialog>

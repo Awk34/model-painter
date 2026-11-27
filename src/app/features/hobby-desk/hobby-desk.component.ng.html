@@ -82,11 +82,12 @@
   </header>
 
   @if (!isAccountPage()) {
-    <nav class="subtab-bar">
+    <nav class="subtab-bar" aria-label="Hobby desk sections">
       <button
         type="button"
         class="subtab-btn"
         [class.active]="activeTab() === 'projects'"
+        [attr.aria-pressed]="activeTab() === 'projects'"
         (click)="activeTab.set('projects')"
       >
         <app-icon name="project" class="tab-ic" />
@@ -97,6 +98,7 @@
         type="button"
         class="subtab-btn"
         [class.active]="activeTab() === 'models'"
+        [attr.aria-pressed]="activeTab() === 'models'"
         (click)="activeTab.set('models')"
       >
         <app-icon name="models" class="tab-ic" />
@@ -107,16 +109,18 @@
         type="button"
         class="subtab-btn"
         [class.active]="activeTab() === 'paints'"
+        [attr.aria-pressed]="activeTab() === 'paints'"
         (click)="activeTab.set('paints')"
       >
         <app-icon name="paint" class="tab-ic" />
-        <span>My Paints & Catalogue</span>
+        <span>My Paints &amp; Catalogue</span>
       </button>
 
       <button
         type="button"
         class="subtab-btn"
         [class.active]="activeTab() === 'converter'"
+        [attr.aria-pressed]="activeTab() === 'converter'"
         (click)="activeTab.set('converter')"
       >
         <app-icon name="compare" class="tab-ic" />

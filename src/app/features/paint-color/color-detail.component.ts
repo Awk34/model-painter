@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { from, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { ColorDetails, ColorStageStep, FinishStageKey } from '../../core/models/catalog.models';
@@ -30,7 +30,6 @@ import { ColorTierBlock, ColorTierStepsComponent } from './components/color-tier
 })
 export class ColorDetailComponent {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
   readonly readinessService = inject(InventoryMatchService);
@@ -149,8 +148,4 @@ export class ColorDetailComponent {
     }
     return this.catalog.modelsUsingColorMap().get(c.id) ?? [];
   });
-
-  goToModel(id: string): void {
-    this.router.navigate(['/models', id]);
-  }
 }

@@ -31,6 +31,7 @@
   @if (!isAtLimit()) {
     <div
       class="upload-dropzone"
+      role="region"
       tabindex="0"
       aria-label="Photo upload area. Drag and drop images here, or press Ctrl+V to paste from clipboard."
       [class.drag-active]="dragActive()"
@@ -145,27 +146,27 @@
 
           <div class="photo-card-body">
             @if (editingCaptionId() === photo.id) {
-              <div class="caption-edit-box">
+              <form class="caption-edit-box" (ngSubmit)="saveCaption(photo.id)">
                 <label [for]="'edit-cap-' + photo.id" class="sr-only">Edit photo caption</label>
                 <input
                   [id]="'edit-cap-' + photo.id"
+                  name="editingCaptionText"
                   type="text"
                   class="input-control input-sm"
                   [maxlength]="limits.MAX_PHOTO_CAPTION_LENGTH"
                   placeholder="Add caption..."
                   [ngModel]="editingCaptionText()"
                   (ngModelChange)="editingCaptionText.set($event)"
-                  (keyup.enter)="saveCaption(photo.id)"
                 />
                 <div class="caption-edit-actions">
-                  <button type="button" class="btn btn-gold btn-sm" (click)="saveCaption(photo.id)">
+                  <button type="submit" class="btn btn-gold btn-sm">
                     Save
                   </button>
                   <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEditCaption()">
                     Cancel
                   </button>
                 </div>
-              </div>
+              </form>
             } @else {
               <p class="photo-caption" [class.muted-caption]="!photo.caption">
                 {{ photo.caption || photo.fileName }}
@@ -175,7 +176,7 @@
                 @if (photo.width && photo.height) {
                   <span>• {{ photo.width }}×{{ photo.height }}</span>
                 }
-                <span>• {{ photo.createdAt | date:'shortDate' }}</span>
+                <span>• <time [attr.datetime]="photo.createdAt">{{ photo.createdAt | date:'shortDate' }}</time></span>
               </div>
             }
           </div>
@@ -225,18 +226,20 @@
 </div>
 
 <!-- Lightbox Modal -->
-@if (activeLightboxPhoto(); as activePhoto) {
-  <div
-    class="modal-backdrop"
-    role="dialog"
-    aria-modal="true"
-    [attr.aria-label]="activePhoto.caption || activePhoto.fileName"
-    (click)="closeLightbox()"
-  >
-    <div class="modal-panel lightbox-panel" (click)="$event.stopPropagation()">
+<app-modal-dialog
+  [open]="activeLightboxPhoto() !== null"
+  [ariaLabelledBy]="activeLightboxPhoto() ? lightboxTitleId() : null"
+  size="xl"
+  (closed)="closeLightbox()"
+  (keydown)="onLightboxKeyDown($event)"
+>
+  @if (activeLightboxPhoto(); as activePhoto) {
+    <div class="lightbox-shell">
       <div class="lightbox-header">
         <div class="lightbox-title-wrap">
-          <strong>{{ activePhoto.caption || activePhoto.fileName }}</strong>
+          <h2 [id]="lightboxTitleId()" class="lightbox-title">
+            {{ activePhoto.caption || activePhoto.fileName }}
+          </h2>
           <span class="lightbox-meta">
             {{ formatBytes(activePhoto.sizeBytes) }}
             @if (activePhoto.width && activePhoto.height) {
@@ -251,6 +254,7 @@
           type="button"
           class="btn btn-ghost btn-sm"
           aria-label="Close photo preview"
+          autofocus
           (click)="closeLightbox()"
         >
           ✕ Close
@@ -300,5 +304,5 @@
         </button>
       </div>
     </div>
-  </div>
-}
+  }
+</app-modal-dialog>

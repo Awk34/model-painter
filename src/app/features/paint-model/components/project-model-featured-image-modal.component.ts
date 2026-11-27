@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  viewChildren,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { USER_LIMITS } from '../../../core/config/user-limits.config';
 import {
@@ -16,17 +27,17 @@ import {
   extractClipboardImageFiles,
   readClipboardImageFiles,
 } from '../../../core/utils/clipboard-image.util';
+import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
 
 export type FeaturedImagePickerTab = 'angles' | 'uploaded' | 'catalog';
 
 @Component({
   selector: 'app-project-model-featured-image-modal',
-  imports: [FormsModule],
+  imports: [FormsModule, AppModalDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-model-featured-image-modal.component.ng.html',
   styleUrl: './project-model-featured-image-modal.component.css',
   host: {
-    '(document:keydown.escape)': 'onEscape()',
     '(document:paste)': 'onDocumentPaste($event)',
   },
 })
@@ -48,6 +59,23 @@ export class ProjectModelFeaturedImageModalComponent {
   readonly catalogSearch = signal('');
   readonly uploading = signal(false);
   readonly uploadError = signal<string | null>(null);
+  readonly tabs: readonly FeaturedImagePickerTab[] = ['angles', 'uploaded', 'catalog'];
+  private readonly tabBtns = viewChildren<ElementRef<HTMLButtonElement>>('tabBtn');
+  private lastEntryId: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const isOpen = this.open();
+      const entryId = this.entry().id;
+      const entryChanged = this.lastEntryId !== null && this.lastEntryId !== entryId;
+      this.lastEntryId = entryId;
+      if (!isOpen || entryChanged) {
+        this.activeTab.set('angles');
+        this.catalogSearch.set('');
+        this.uploadError.set(null);
+      }
+    });
+  }
 
   readonly acceptAttr = USER_LIMITS.ALLOWED_IMAGE_MIME_TYPES.join(',');
 
@@ -203,10 +231,28 @@ export class ProjectModelFeaturedImageModalComponent {
     }
   }
 
-  onEscape(): void {
-    if (this.open()) {
-      this.close();
+  onTabKeyDown(event: KeyboardEvent, currentTab: FeaturedImagePickerTab): void {
+    const idx = this.tabs.indexOf(currentTab);
+    if (idx === -1) {
+      return;
     }
+    let nextIdx: number | null = null;
+    if (event.key === 'ArrowRight') {
+      nextIdx = (idx + 1) % this.tabs.length;
+    } else if (event.key === 'ArrowLeft') {
+      nextIdx = (idx - 1 + this.tabs.length) % this.tabs.length;
+    } else if (event.key === 'Home') {
+      nextIdx = 0;
+    } else if (event.key === 'End') {
+      nextIdx = this.tabs.length - 1;
+    }
+    if (nextIdx === null) {
+      return;
+    }
+    event.preventDefault();
+    const nextTab = this.tabs[nextIdx];
+    this.activeTab.set(nextTab);
+    this.tabBtns()[nextIdx]?.nativeElement.focus();
   }
 
   close(): void {

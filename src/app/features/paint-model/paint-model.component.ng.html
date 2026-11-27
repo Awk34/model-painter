@@ -17,7 +17,7 @@
     <div class="strip-header">
       <span class="field-label">Select Game System:</span>
       @if (selectedGameId()) {
-        <button class="btn btn-ghost btn-sm" (click)="selectGame(null)">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="selectGame(null)">
           ✕ Clear Game Filter (Show All {{ catalog.models().length | number }} Models)
         </button>
       }
@@ -25,6 +25,7 @@
 
     <div class="games-scroll">
       <button
+        type="button"
         class="game-card studio-card"
         [class.active]="!selectedGameId()"
         (click)="selectGame(null)"
@@ -37,6 +38,7 @@
 
       @for (g of catalog.games(); track g.id) {
         <button
+          type="button"
           class="game-card studio-card"
           [class.active]="selectedGameId() === g.id"
           (click)="selectGame(g)"
@@ -65,6 +67,7 @@
         <span class="field-label">Factions in {{ game.name }}:</span>
         <div class="chip-bar">
           <button
+            type="button"
             class="chip"
             [class.active]="!selectedParentFactionId()"
             (click)="selectParentFaction(null)"
@@ -73,6 +76,7 @@
           </button>
           @for (f of game.factions; track f.id) {
             <button
+              type="button"
               class="chip"
               [class.active]="selectedParentFactionId() === f.id"
               (click)="selectParentFaction(f)"
@@ -88,6 +92,7 @@
           <span class="field-label">Sub-Factions / Chapters / Warbands:</span>
           <div class="chip-bar">
             <button
+              type="button"
               class="chip"
               [class.active]="!selectedSubFactionId()"
               (click)="selectSubFaction(null)"
@@ -96,6 +101,7 @@
             </button>
             @for (sf of selectedParentFaction()!.childFactions!; track sf.id) {
               <button
+                type="button"
                 class="chip"
                 [class.active]="selectedSubFactionId() === sf.id"
                 (click)="selectSubFaction(sf.id)"
@@ -113,6 +119,7 @@
   <section class="filters-bar studio-card">
     <div class="chip-bar collection-chips">
       <button
+        type="button"
         class="chip"
         [class.active]="collectionFilter() === 'all'"
         (click)="collectionFilter.set('all'); visibleLimit.set(60)"
@@ -120,6 +127,7 @@
         All Models ({{ catalog.models().length | number }})
       </button>
       <button
+        type="button"
         class="chip"
         [class.active]="collectionFilter() === 'inventory'"
         (click)="collectionFilter.set('inventory'); visibleLimit.set(60)"
@@ -127,6 +135,7 @@
         ✓ My Model Inventory ({{ userState.state().inventoryModelIds.length }})
       </button>
       <button
+        type="button"
         class="chip"
         [class.active]="collectionFilter() === 'wishlist'"
         (click)="collectionFilter.set('wishlist'); visibleLimit.set(60)"
@@ -136,8 +145,10 @@
     </div>
 
     <div class="search-input-wrap">
+      <label for="paint-model-search" class="sr-only">Search models</label>
       <input
-        type="text"
+        id="paint-model-search"
+        type="search"
         class="input-control"
         placeholder="Search models by name, unit, character, or faction..."
         [ngModel]="searchQuery()"
@@ -146,7 +157,9 @@
     </div>
 
     <div class="filter-controls">
+      <label for="paint-model-stage" class="sr-only">Target finish stage</label>
       <select
+        id="paint-model-stage"
         class="input-control filter-select"
         [ngModel]="targetStage()"
         (ngModelChange)="targetStage.set($event); visibleLimit.set(60)"
@@ -157,7 +170,9 @@
         <option value="artificer">Target: 3. Artificer Finish</option>
       </select>
 
+      <label for="paint-model-readiness" class="sr-only">Readiness filter</label>
       <select
+        id="paint-model-readiness"
         class="input-control filter-select"
         [ngModel]="readinessFilter()"
         (ngModelChange)="readinessFilter.set($event); visibleLimit.set(60)"
@@ -168,7 +183,9 @@
         <option value="sortReady">Sort by Highest Match % (Target Finish)</option>
       </select>
 
+      <label for="paint-model-range" class="sr-only">Paint range filter</label>
       <select
+        id="paint-model-range"
         class="input-control filter-select"
         [ngModel]="rangeFilter()"
         (ngModelChange)="rangeFilter.set($event); visibleLimit.set(60)"
@@ -181,7 +198,7 @@
   </section>
 
   <!-- Results Count -->
-  <div class="results-meta">
+  <div class="results-meta" aria-live="polite" aria-atomic="true">
     <span>
       Showing <strong>{{ displayedModels().length }}</strong> of
       <strong>{{ filteredModels().length | number }}</strong> matching models
@@ -192,10 +209,7 @@
   @if (displayedModels().length > 0) {
     <div class="models-grid">
       @for (item of displayedModels(); track item.model.id) {
-        <div
-          class="model-card studio-card interactive"
-          (click)="openModel(item.model.id)"
-        >
+        <div class="model-card studio-card interactive">
           <div class="model-img-box">
             <img
               [src]="img.resolve(item.model.localPrimaryImage, item.model.primaryImage)"
@@ -208,7 +222,11 @@
           </div>
 
           <div class="model-card-body">
-            <h3 class="model-name">{{ item.model.name }}</h3>
+            <h2 class="model-name">
+              <a [routerLink]="['/models', item.model.id]" class="card-stretched-link">
+                {{ item.model.name }}
+              </a>
+            </h2>
             <p class="model-factions">
               {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Miniature' }}
             </p>
@@ -219,8 +237,9 @@
             />
           </div>
 
-          <div class="model-card-actions" (click)="$event.stopPropagation()">
+          <div class="model-card-actions">
             <button
+              type="button"
               class="icon-toggle"
               [class.active-owned]="userState.isModelOwned(item.model.id)"
               (click)="userState.toggleModelInventory(item.model.id)"
@@ -229,8 +248,10 @@
               {{ userState.isModelOwned(item.model.id) ? '✓ Owned' : '+ Own Model' }}
             </button>
             <button
+              type="button"
               class="icon-toggle"
               [class.active-wish]="userState.isModelWishlisted(item.model.id)"
+              [attr.aria-label]="(userState.isModelWishlisted(item.model.id) ? 'Remove from model wishlist: ' : 'Add to model wishlist: ') + item.model.name"
               (click)="userState.toggleModelWishlist(item.model.id)"
               title="Toggle Model Wishlist"
             >
@@ -243,16 +264,16 @@
 
     @if (filteredModels().length > visibleLimit()) {
       <div class="load-more-row">
-        <button class="btn btn-secondary" (click)="loadMore()">
+        <button type="button" class="btn btn-secondary" (click)="loadMore()">
           Load More Models ({{ filteredModels().length - visibleLimit() | number }} remaining)
         </button>
       </div>
     }
   } @else {
     <div class="empty-state studio-card">
-      <h3>No Models Match Your Filters</h3>
+      <h2>No Models Match Your Filters</h2>
       <p>Try clearing the "Can I Paint This?" readiness filter or search query.</p>
-      <button class="btn btn-gold" (click)="resetFilters()">Reset All Filters</button>
+      <button type="button" class="btn btn-gold" (click)="resetFilters()">Reset All Filters</button>
     </div>
   }
 </div>

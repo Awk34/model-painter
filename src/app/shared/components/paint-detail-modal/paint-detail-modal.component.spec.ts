@@ -78,6 +78,18 @@ describe('PaintDetailModalComponent draft reset', () => {
     const comp = fixture.componentInstance;
     fixture.detectChanges();
 
+    const root = fixture.nativeElement as HTMLElement;
+    const dialog = root.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeTrue();
+    expect(dialog.matches(':modal')).toBeTrue();
+    expect(dialog.getAttribute('aria-labelledby')).toBe('paint-detail-modal-title');
+    expect(root.querySelector('#paint-detail-modal-title')?.textContent?.trim()).toBe('Macragge Blue');
+    const overrideSelect = root.querySelector('#paint-override-select') as HTMLSelectElement | null;
+    expect(overrideSelect?.labels?.length).toBe(1);
+    const closeBtn = root.querySelector('.close-btn') as HTMLButtonElement;
+    expect(closeBtn.type).toBe('button');
+    expect(closeBtn.getAttribute('aria-label')).toBe('Close paint details');
+
     comp.selectedOverridePaintId.set('tp-1');
     comp.selectPaint('p2');
     fixture.detectChanges();

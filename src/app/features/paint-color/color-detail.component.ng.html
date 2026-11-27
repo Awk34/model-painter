@@ -117,7 +117,7 @@
         <h2>Models Using "{{ c.name }}" ({{ modelsUsingColor().length }})</h2>
         <div class="models-grid">
           @for (m of modelsUsingColor().slice(0, 24); track m.id) {
-            <div class="model-mini-card studio-card interactive" (click)="goToModel(m.id)">
+            <a class="model-mini-card studio-card interactive" [routerLink]="['/models', m.id]">
               <img
                 [src]="img.resolve(m.localPrimaryImage, m.primaryImage)"
                 [alt]="m.name"
@@ -127,7 +127,7 @@
                 <strong>{{ m.name }}</strong>
                 <span>{{ m.gameNames[0] }}</span>
               </div>
-            </div>
+            </a>
           }
         </div>
       </section>

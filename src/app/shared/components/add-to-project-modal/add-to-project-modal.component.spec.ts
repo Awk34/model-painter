@@ -76,5 +76,20 @@ describe('AddToProjectModalComponent draft reset', () => {
     fixture.componentRef.setInput('itemId', 'model-2');
     fixture.detectChanges();
     expect(fixture.componentInstance.newProjectName()).toBe('');
+
+    const root = fixture.nativeElement as HTMLElement;
+    const dialog = root.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeTrue();
+    const labelledBy = dialog.getAttribute('aria-labelledby');
+    expect(labelledBy).toBeTruthy();
+    expect(root.querySelector(`#${labelledBy}`)?.textContent).toContain('Intercessor');
+
+    const form = root.querySelector('form.create-proj-row') as HTMLFormElement;
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(submitBtn).not.toBeNull();
+    fixture.componentInstance.newProjectName.set('Submitted Project');
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    expect(createProjectSpy).toHaveBeenCalled();
   });
 });

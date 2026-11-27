@@ -9,6 +9,7 @@ import {
   getPaintRepresentativeHex,
   PaintSwatchLike,
 } from '../../../core/utils/catalog-filter.util';
+import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
 import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
 import { CollectionSubMode } from './hobby-desk-models-tab.component';
 
@@ -49,7 +50,7 @@ function createDefaultCustomPaintForm(): CustomPaintFormState {
 
 @Component({
   selector: 'app-hobby-desk-paints-tab',
-  imports: [FormsModule, PaintSwatchComponent],
+  imports: [FormsModule, AppModalDialogComponent, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './hobby-desk-paints-tab.component.ng.html',
   styleUrl: './hobby-desk-paints-tab.component.css',

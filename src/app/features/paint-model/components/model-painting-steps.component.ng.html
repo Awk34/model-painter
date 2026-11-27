@@ -79,7 +79,14 @@
           </button>
         }
       </div>
-      <div class="mp-track" role="progressbar" [attr.aria-valuenow]="totalProg.percent" aria-valuemin="0" aria-valuemax="100">
+      <div
+        class="mp-track"
+        role="progressbar"
+        aria-label="Model painting progress"
+        [attr.aria-valuenow]="totalProg.percent"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
         <div class="mp-fill" [class.complete]="totalProg.isDone" [style.width.%]="totalProg.percent"></div>
       </div>
     </div>

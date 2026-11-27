@@ -21,7 +21,9 @@ import { ImageService } from '../../core/services/image.service';
 import { InventoryMatchService } from '../../core/services/inventory-match.service';
 import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
+import { isEditableElement } from '../../core/utils/clipboard-image.util';
 import { AddToProjectModalComponent } from '../../shared/components/add-to-project-modal/add-to-project-modal.component';
+import { AppModalDialogComponent } from '../../shared/components/modal-dialog/modal-dialog.component';
 import { PaintBrandBadgeComponent } from '../../shared/components/paint-brand-badge/paint-brand-badge.component';
 import { PaintSwatchComponent } from '../../shared/components/paint-swatch/paint-swatch.component';
 import { StageReadinessBarsComponent } from '../../shared/components/stage-readiness-bars/stage-readiness-bars.component';
@@ -55,6 +57,7 @@ const FILTER_TO_STAGE_KEY: Record<ModelStageFilter, FinishStageKey | null> = {
     StageReadinessBarsComponent,
     ModelPaintingStepsComponent,
     AddToProjectModalComponent,
+    AppModalDialogComponent,
     PaintBrandBadgeComponent,
     PaintSwatchComponent,
     ProjectModelWorkspaceBarComponent,
@@ -64,7 +67,7 @@ const FILTER_TO_STAGE_KEY: Record<ModelStageFilter, FinishStageKey | null> = {
   templateUrl: './model-detail.component.ng.html',
   styleUrl: './model-detail.component.css',
   host: {
-    '(document:keydown.escape)': 'closeZoomModal()',
+    '(document:keydown)': 'onZoomModalKeyDown($event)',
   },
 })
 export class ModelDetailComponent {
@@ -471,10 +474,6 @@ export class ModelDetailComponent {
     this.selectedColorPointId.set(cpId);
   }
 
-  goToColor(colorId: string): void {
-    this.router.navigate(['/colors', colorId]);
-  }
-
   openZoomModal(): void {
     this.zoomScale.set(2);
     this.resetPan();
@@ -517,6 +516,64 @@ export class ModelDetailComponent {
     this.resetPan();
   }
 
+  panBy(dx: number, dy: number): void {
+    if (this.zoomScale() <= 1) {
+      return;
+    }
+    this.panX.update((v) => v + dx);
+    this.panY.update((v) => v + dy);
+  }
+
+  onZoomModalKeyDown(event: KeyboardEvent): void {
+    if (!this.zoomModalOpen() || isEditableElement(event.target)) {
+      return;
+    }
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    const step = event.shiftKey ? 80 : 32;
+    switch (event.key) {
+      case '+':
+      case '=':
+        event.preventDefault();
+        this.zoomIn();
+        break;
+      case '-':
+      case '_':
+        event.preventDefault();
+        this.zoomOut();
+        break;
+      case '0':
+        event.preventDefault();
+        this.resetZoom();
+        break;
+      case 'ArrowLeft':
+        if (this.zoomScale() > 1) {
+          event.preventDefault();
+          this.panBy(step, 0);
+        }
+        break;
+      case 'ArrowRight':
+        if (this.zoomScale() > 1) {
+          event.preventDefault();
+          this.panBy(-step, 0);
+        }
+        break;
+      case 'ArrowUp':
+        if (this.zoomScale() > 1) {
+          event.preventDefault();
+          this.panBy(0, step);
+        }
+        break;
+      case 'ArrowDown':
+        if (this.zoomScale() > 1) {
+          event.preventDefault();
+          this.panBy(0, -step);
+        }
+        break;
+    }
+  }
+
   toggleQuickZoom(): void {
     if (this.zoomScale() > 1) {
       this.resetZoom();
@@ -532,6 +589,8 @@ export class ModelDetailComponent {
   }
 
   onPanStart(event: PointerEvent): void {
+    const stageEl = event.currentTarget as HTMLElement | null;
+    stageEl?.focus?.({ preventScroll: true });
     if (this.zoomScale() <= 1 || event.button !== 0) {
       return;
     }
@@ -542,7 +601,7 @@ export class ModelDetailComponent {
     this.dragStartY = event.clientY;
     this.panOriginX = this.panX();
     this.panOriginY = this.panY();
-    (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
+    stageEl?.setPointerCapture?.(event.pointerId);
   }
 
   onPanMove(event: PointerEvent): void {

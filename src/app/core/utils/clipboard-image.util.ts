@@ -166,5 +166,7 @@ export function hasOpenModalDialog(): boolean {
   if (typeof document === 'undefined') {
     return false;
   }
-  return Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'));
+  return Boolean(
+    document.querySelector('dialog[open], dialog:modal, [role="dialog"][aria-modal="true"]')
+  );
 }

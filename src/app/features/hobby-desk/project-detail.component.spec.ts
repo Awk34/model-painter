@@ -11,6 +11,8 @@ import { InventoryMatchService } from '../../core/services/inventory-match.servi
 import { PaintModalService } from '../../core/services/paint-modal.service';
 import { UserMediaService } from '../../core/services/user-media.service';
 import { UserStateService } from '../../core/services/user-state.service';
+import { UserPhotoGalleryComponent } from '../../shared/components/user-photo-gallery/user-photo-gallery.component';
+import { ProjectNotesSectionComponent } from './components/project-notes-section.component';
 import { ProjectPickerModalComponent } from './components/project-picker-modal.component';
 import { ProjectDetailComponent } from './project-detail.component';
 
@@ -180,5 +182,175 @@ describe('ProjectDetailComponent route switch state reset', () => {
     comp.activePickerModal.set('thumbnail');
     fixture.detectChanges();
     expect(pickerModal.pickerSearch()).toBe('');
+  });
+
+  it('disables allowGlobalPaste when picker or notes editor modal is open and renders semantic cards, <time>, and <dialog>', () => {
+    const paramMap$ = new BehaviorSubject<ParamMap>(convertToParamMap({ id: 'proj_a' }));
+    const projects = signal<UserProject[]>([
+      {
+        id: 'proj_a',
+        name: 'Alpha Project',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-02T00:00:00Z',
+        models: [
+          {
+            id: 'pmod_1',
+            recipeId: 'm1',
+            quantity: 2,
+            notes: '',
+            completedStepIds: [],
+            photos: [],
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-02T00:00:00Z',
+          },
+        ],
+        colorIds: ['c1'],
+        notes: [],
+        photos: [],
+      },
+    ]);
+
+    TestBed.configureTestingModule({
+      imports: [ProjectDetailComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { paramMap: paramMap$.asObservable() },
+        },
+        {
+          provide: CatalogService,
+          useValue: {
+            modelById: signal(
+              new Map([
+                [
+                  'm1',
+                  {
+                    id: 'm1',
+                    name: 'Intercessor',
+                    gameNames: ['Warhammer 40,000'],
+                    factionNames: [],
+                    requiredPaintIds: [],
+                  },
+                ],
+              ])
+            ),
+            colorById: signal(
+              new Map([
+                [
+                  'c1',
+                  {
+                    id: 'c1',
+                    name: 'Ultramarine Blue',
+                    hex: '#0D407F',
+                    colorGroups: ['Blue'],
+                    requiredPaintIds: [],
+                  },
+                ],
+              ])
+            ),
+            paintById: signal(new Map()),
+            models: signal([]),
+            colors: signal([]),
+          },
+        },
+        {
+          provide: UserStateService,
+          useValue: {
+            projects,
+            allUploadedPhotos: signal([]),
+            limits: USER_LIMITS,
+            getTargetPhotoCount: () => 0,
+            getProjectTotalPhotoCount: () => 0,
+            getProjectTotalMiniatures: () => 2,
+            getPhotoQuotaLimit: () => 12,
+            getPhotosForTarget: () => [],
+            resolveProjectCoverUrl: () => '/icons/ic_project.svg',
+            resolveProjectModelImageUrl: () => '/icons/ic_models.svg',
+            isOwned: () => false,
+            isWishlisted: () => false,
+          },
+        },
+        {
+          provide: UserMediaService,
+          useValue: {
+            resolvePhotoUrl: () => '/icons/ic_image_loading_placeholder.svg',
+          },
+        },
+        {
+          provide: InventoryMatchService,
+          useValue: {
+            evaluateProjectStagedReadiness: () => SAMPLE_STAGED,
+          },
+        },
+        {
+          provide: ImageService,
+          useValue: {
+            resolve: (local?: string | null, remote?: string | null) =>
+              local || remote || '/icons/ic_project.svg',
+          },
+        },
+        {
+          provide: PaintModalService,
+          useValue: {
+            activePaintId: signal(null),
+            openPaint: () => {},
+            close: () => {},
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ProjectDetailComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const showcaseGallery = fixture.debugElement
+      .queryAll(By.directive(UserPhotoGalleryComponent))[0]
+      .componentInstance as UserPhotoGalleryComponent;
+    expect(showcaseGallery.allowGlobalPaste()).toBeTrue();
+
+    // Picker modal open disables global paste and opens native <dialog>
+    comp.activePickerModal.set('model');
+    fixture.detectChanges();
+    expect(showcaseGallery.allowGlobalPaste()).toBeFalse();
+    const pickerDialog = fixture.nativeElement.querySelector(
+      'app-project-picker-modal dialog'
+    ) as HTMLDialogElement;
+    expect(pickerDialog.open).toBeTrue();
+    const pickerSearch = pickerDialog.querySelector('#project-picker-search') as HTMLInputElement;
+    expect(pickerSearch.type).toBe('search');
+    expect(pickerSearch.labels?.length).toBe(1);
+    expect(pickerSearch.placeholder).not.toContain('4,531');
+
+    comp.activePickerModal.set(null);
+    fixture.detectChanges();
+    expect(showcaseGallery.allowGlobalPaste()).toBeTrue();
+
+    // Notes editor open disables global paste
+    const notesSection = fixture.debugElement
+      .query(By.directive(ProjectNotesSectionComponent))
+      .componentInstance as ProjectNotesSectionComponent;
+    notesSection.openNoteEditor(null);
+    fixture.detectChanges();
+    expect(comp.notesEditorOpen()).toBeTrue();
+    expect(showcaseGallery.allowGlobalPaste()).toBeFalse();
+    notesSection.closeNoteEditor();
+    fixture.detectChanges();
+    expect(showcaseGallery.allowGlobalPaste()).toBeTrue();
+
+    // Semantic checks: <time>, no aria-label on plain stepper div, heading order h1 -> h2 -> h3
+    const root = fixture.nativeElement as HTMLElement;
+    const timeEl = root.querySelector('time');
+    expect(timeEl?.getAttribute('datetime')).toBe('2026-01-02T00:00:00Z');
+    const qtyStepper = root.querySelector('.card-qty-stepper');
+    expect(qtyStepper?.hasAttribute('aria-label')).toBeFalse();
+    expect(root.querySelector('a.card-stretched-link')).not.toBeNull();
+    expect(root.querySelectorAll('h4').length).toBe(0);
+
+    // Not-found state uses <h1>
+    paramMap$.next(convertToParamMap({ id: 'missing_proj' }));
+    fixture.detectChanges();
+    expect(root.querySelector('h1')?.textContent?.trim()).toBe('Project Not Found');
   });
 });

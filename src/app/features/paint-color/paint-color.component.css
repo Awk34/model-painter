@@ -86,7 +86,8 @@
 .color-card {
   display: flex;
   flex-direction: column;
-  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
 }
 
 .color-preview-box {

@@ -11,13 +11,19 @@
       <div
         class="stage-ready-row"
         [class.active]="activeStage() === stage.key"
-        (click)="stageClick.emit(stage.key)"
       >
         <div class="stage-ready-top">
-          <div class="stage-ready-title">
-            <strong>{{ stage.title }}</strong>
-            <span class="stage-tier-hint">{{ stage.tierHint }}</span>
-          </div>
+          <button
+            type="button"
+            class="stage-ready-btn"
+            [attr.aria-pressed]="activeStage() === stage.key"
+            (click)="stageClick.emit(stage.key)"
+          >
+            <span class="stage-ready-title">
+              <strong>{{ stage.title }}</strong>
+              <span class="stage-tier-hint">{{ stage.tierHint }}</span>
+            </span>
+          </button>
 
           <div class="stage-ready-stats">
             @if (stage.data.totalRequired > 0) {
@@ -59,4 +65,3 @@
     }
   </div>
 </div>
-

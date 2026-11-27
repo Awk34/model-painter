@@ -34,8 +34,10 @@
 
   <div class="toolbar-row">
     <div class="search-box">
+      <label for="desk-models-search" class="sr-only">Search models</label>
       <input
-        type="text"
+        id="desk-models-search"
+        type="search"
         class="input-control"
         placeholder="Search models by name, faction, or game system..."
         [ngModel]="modelSearch()"
@@ -44,7 +46,9 @@
     </div>
 
     <div class="toolbar-right">
+      <label for="desk-models-game" class="sr-only">Filter models by game system</label>
       <select
+        id="desk-models-game"
         class="input-control filter-select"
         [ngModel]="selectedModelGameFilter()"
         (ngModelChange)="onGameFilterChange($event)"
@@ -57,13 +61,14 @@
     </div>
   </div>
 
+  <p class="sr-only" aria-live="polite" aria-atomic="true">
+    Showing {{ displayedModels().length }} of {{ filteredModels().length }} matching models
+  </p>
+
   @if (displayedModels().length > 0) {
     <div class="desk-models-grid">
       @for (item of displayedModels(); track item.model.id) {
-        <div
-          class="desk-model-card studio-card interactive"
-          (click)="openModel(item.model.id)"
-        >
+        <div class="desk-model-card studio-card interactive">
           <div class="desk-model-thumb-wrap">
             <img
               [src]="img.resolve(item.model.localPrimaryImage, item.model.primaryImage)"
@@ -74,7 +79,11 @@
           </div>
 
           <div class="desk-model-body">
-            <h3 class="desk-model-title">{{ item.model.name }}</h3>
+            <h2 class="desk-model-title">
+              <a [routerLink]="['/models', item.model.id]" class="card-stretched-link">
+                {{ item.model.name }}
+              </a>
+            </h2>
             <span class="desk-model-sub">
               {{ item.model.factionNames.slice(0, 2).join(' • ') || item.model.gameNames[0] || 'Miniature' }}
             </span>
@@ -82,7 +91,7 @@
             <app-stage-readiness-pills [staged]="item.staged" />
           </div>
 
-          <div class="desk-model-actions" (click)="$event.stopPropagation()">
+          <div class="desk-model-actions">
             <button
               type="button"
               class="icon-toggle"
@@ -96,6 +105,7 @@
               type="button"
               class="icon-toggle"
               [class.active-wish]="userState.isModelWishlisted(item.model.id)"
+              [attr.aria-label]="(userState.isModelWishlisted(item.model.id) ? 'Remove from model wishlist: ' : 'Add to model wishlist: ') + item.model.name"
               title="Toggle Model Wishlist"
               (click)="userState.toggleModelWishlist(item.model.id)"
             >
@@ -116,7 +126,7 @@
   } @else {
     <div class="empty-state studio-card">
       <app-icon name="models" class="empty-ic" />
-      <h3>No Matching Models</h3>
+      <h2>No Matching Models</h2>
       <p>
         @if (subMode() === 'inventory') {
           Your Model Inventory is empty or has no models matching the current filters. Switch to "All Models Catalogue" or visit "Paint A Model" to mark miniatures you own!
@@ -134,4 +144,3 @@
     </div>
   }
 </section>
-

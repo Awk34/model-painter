@@ -16,10 +16,11 @@ import {
 } from '../../../core/models/catalog.models';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { createEntityId } from '../../../core/utils/catalog-filter.util';
+import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
 
 @Component({
   selector: 'app-project-notes-section',
-  imports: [FormsModule, DragDropModule],
+  imports: [FormsModule, DragDropModule, AppModalDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-notes-section.component.ng.html',
   styleUrl: './project-notes-section.component.css',
@@ -29,8 +30,7 @@ export class ProjectNotesSectionComponent {
 
   readonly project = input.required<UserProject>();
   readonly expanded = model<boolean>(true);
-
-  readonly editingNoteOpen = signal(false);
+  readonly editingNoteOpen = model<boolean>(false);
   readonly editingNoteId = signal<string | null>(null);
   readonly noteTitleDraft = signal('');
   readonly noteBlocksDraft = signal<UserProjectNoteComponent[]>([]);
@@ -110,6 +110,17 @@ export class ProjectNotesSectionComponent {
   dropNoteBlock(event: CdkDragDrop<UserProjectNoteComponent[]>): void {
     const next = [...this.noteBlocksDraft()];
     moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.noteBlocksDraft.set(next);
+  }
+
+  moveNoteBlock(idx: number, delta: -1 | 1): void {
+    const targetIdx = idx + delta;
+    const list = this.noteBlocksDraft();
+    if (targetIdx < 0 || targetIdx >= list.length) {
+      return;
+    }
+    const next = [...list];
+    moveItemInArray(next, idx, targetIdx);
     this.noteBlocksDraft.set(next);
   }
 

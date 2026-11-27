@@ -280,8 +280,22 @@
 }
 
 /* Lightbox */
-.lightbox-panel {
-  max-width: 960px;
+.lightbox-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lightbox-title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.98rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-primary);
 }
 
 .lightbox-header {

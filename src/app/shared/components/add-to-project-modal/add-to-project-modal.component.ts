@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -10,10 +11,11 @@ import {
 import { FormsModule } from '@angular/forms';
 import { UserProject } from '../../../core/models/catalog.models';
 import { UserStateService } from '../../../core/services/user-state.service';
+import { AppModalDialogComponent } from '../modal-dialog/modal-dialog.component';
 
 @Component({
   selector: 'app-add-to-project-modal',
-  imports: [FormsModule],
+  imports: [FormsModule, AppModalDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './add-to-project-modal.component.ng.html',
   styleUrl: './add-to-project-modal.component.css',
@@ -31,6 +33,7 @@ export class AddToProjectModalComponent {
   readonly closed = output<void>();
 
   readonly newProjectName = signal('');
+  readonly modalTitle = computed(() => `Add "${this.itemName()}" to Project`);
 
   constructor() {
     effect(() => {

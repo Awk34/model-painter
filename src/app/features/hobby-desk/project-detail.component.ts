@@ -70,6 +70,7 @@ export class ProjectDetailComponent {
   readonly notesExpanded = signal(true);
   readonly selectedRollupStage = signal<ProjectRollupStage>('base');
   readonly activePickerModal = signal<ProjectPickerMode>(null);
+  readonly notesEditorOpen = signal(false);
 
   readonly editingTitle = signal(false);
   readonly titleDraft = signal('');
@@ -85,6 +86,7 @@ export class ProjectDetailComponent {
       this.editingTitle.set(false);
       this.titleDraft.set('');
       this.activePickerModal.set(null);
+      this.notesEditorOpen.set(false);
       this.selectedRollupStage.set('base');
     });
   }
@@ -208,19 +210,11 @@ export class ProjectDetailComponent {
     }
   }
 
-  goToProjectModel(projectId: string, entryId: string): void {
-    this.router.navigate(['/projects', projectId, 'models', entryId]);
-  }
-
   adjustModelQuantity(projectId: string, entry: ProjectModelEntry, delta: number): void {
     this.userState.adjustProjectModelQuantity(projectId, entry.id, delta);
   }
 
   duplicateModelEntry(projectId: string, entryId: string): void {
     this.userState.duplicateProjectModel(projectId, entryId);
-  }
-
-  goToColor(id: string): void {
-    this.router.navigate(['/colors', id]);
   }
 }

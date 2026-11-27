@@ -112,4 +112,48 @@ describe('ProjectNotesSectionComponent draft resets & block ID tracking', () => 
     expect(comp.noteTitleDraft()).toBe('');
     expect(comp.noteBlocksDraft()).toEqual([]);
   });
+
+  it('opens note editor in <dialog>, reorders blocks with keyboard ↑/↓ buttons, and labels block inputs', async () => {
+    const fixture = TestBed.createComponent(ProjectNotesSectionComponent);
+    const projA = makeProject('proj_a', 'Project A');
+    fixture.componentRef.setInput('project', projA);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.note-header h3')?.textContent?.trim()).toBe('Existing Note');
+
+    const comp = fixture.componentInstance;
+    comp.openNoteEditor(projA.notes[0]);
+    fixture.detectChanges();
+
+    const dialog = root.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBeTrue();
+    expect(dialog.matches(':modal')).toBeTrue();
+
+    const originalIds = comp.noteBlocksDraft().map((b) => b.id);
+    const moveDownFirst = root.querySelector(
+      'button[aria-label="Move block 1 down"]'
+    ) as HTMLButtonElement;
+    const moveUpFirst = root.querySelector(
+      'button[aria-label="Move block 1 up"]'
+    ) as HTMLButtonElement;
+    expect(moveUpFirst.disabled).toBeTrue();
+    expect(moveDownFirst.disabled).toBeFalse();
+
+    moveDownFirst.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(comp.noteBlocksDraft().map((b) => b.id)).toEqual([originalIds[1], originalIds[0]]);
+
+    const textInputs = Array.from(
+      root.querySelectorAll('.block-item input[type="text"]')
+    ) as HTMLInputElement[];
+    expect(textInputs[0].value).toBe('Second legacy block');
+    expect(textInputs[1].value).toBe('First legacy block');
+
+    const blockInputs = root.querySelectorAll('.block-item input');
+    for (const input of Array.from(blockInputs)) {
+      expect(input.getAttribute('aria-label')).toBeTruthy();
+    }
+  });
 });

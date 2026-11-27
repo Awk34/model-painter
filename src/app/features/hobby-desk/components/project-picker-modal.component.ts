@@ -14,13 +14,14 @@ import { CatalogService } from '../../../core/services/catalog.service';
 import { ImageService } from '../../../core/services/image.service';
 import { UserStateService } from '../../../core/services/user-state.service';
 import { matchesModelSearch } from '../../../core/utils/catalog-filter.util';
+import { AppModalDialogComponent } from '../../../shared/components/modal-dialog/modal-dialog.component';
 import { PaintSwatchComponent } from '../../../shared/components/paint-swatch/paint-swatch.component';
 
 export type ProjectPickerMode = 'model' | 'color' | 'thumbnail' | null;
 
 @Component({
   selector: 'app-project-picker-modal',
-  imports: [FormsModule, PaintSwatchComponent],
+  imports: [FormsModule, AppModalDialogComponent, PaintSwatchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-picker-modal.component.ng.html',
   styleUrl: './project-picker-modal.component.css',
@@ -71,10 +72,16 @@ export class ProjectPickerModalComponent {
   readonly searchPlaceholder = computed(() => {
     const m = this.mode();
     if (m === 'model') {
-      return 'Search 4,531 models by name or faction...';
+      const count = this.catalog.models().length;
+      return count > 0
+        ? `Search ${count.toLocaleString()} models by name or faction...`
+        : 'Search models by name or faction...';
     }
     if (m === 'color') {
-      return 'Search 596 color schemes...';
+      const count = this.catalog.colors().length;
+      return count > 0
+        ? `Search ${count.toLocaleString()} color schemes...`
+        : 'Search color schemes...';
     }
     return 'Search any miniature artwork to use as project cover...';
   });

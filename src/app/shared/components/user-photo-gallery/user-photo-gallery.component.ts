@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { USER_LIMITS, formatBytes } from '../../../core/config/user-limits.config';
 import {
@@ -15,15 +15,15 @@ import {
   isEditableElement,
   readClipboardImageFiles,
 } from '../../../core/utils/clipboard-image.util';
+import { AppModalDialogComponent } from '../modal-dialog/modal-dialog.component';
 
 @Component({
   selector: 'app-user-photo-gallery',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, AppModalDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './user-photo-gallery.component.ng.html',
   styleUrl: './user-photo-gallery.component.css',
   host: {
-    '(document:keydown.escape)': 'closeLightbox()',
     '(document:paste)': 'onDocumentPaste($event)',
   },
 })
@@ -61,6 +61,10 @@ export class UserPhotoGalleryComponent {
 
   readonly captionInputId = computed(
     () => `photo-caption-${this.targetType()}-${this.kind()}-${this.targetId()}`
+  );
+
+  readonly lightboxTitleId = computed(
+    () => `photo-lightbox-title-${this.targetType()}-${this.kind()}-${this.targetId()}`
   );
 
   readonly acceptAttr = USER_LIMITS.ALLOWED_IMAGE_MIME_TYPES.join(',');
@@ -102,6 +106,29 @@ export class UserPhotoGalleryComponent {
     }
     return list[idx];
   });
+
+  private lastTargetIdentity: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const identity = `${this.targetType()}|${this.targetId()}|${this.projectId() ?? ''}|${this.kind()}`;
+      if (this.lastTargetIdentity !== null && this.lastTargetIdentity !== identity) {
+        this.lightboxIndex.set(null);
+        this.editingCaptionId.set(null);
+        this.editingCaptionText.set('');
+        this.captionDraft.set('');
+        this.errorMessages.set([]);
+        this.dragActive.set(false);
+      }
+      this.lastTargetIdentity = identity;
+    });
+
+    effect(() => {
+      if (this.lightboxIndex() !== null && this.activeLightboxPhoto() === null) {
+        this.lightboxIndex.set(null);
+      }
+    });
+  }
 
   async onFileInputChange(event: Event): Promise<void> {
     const inputEl = event.target as HTMLInputElement;
@@ -161,7 +188,7 @@ export class UserPhotoGalleryComponent {
       event.defaultPrevented ||
       this.isAtLimit() ||
       this.uploading() ||
-      this.lightboxIndex() !== null ||
+      this.activeLightboxPhoto() !== null ||
       isEditableElement(event.target) ||
       hasOpenModalDialog()
     ) {
@@ -269,5 +296,18 @@ export class UserPhotoGalleryComponent {
       return;
     }
     this.lightboxIndex.set((idx + 1) % len);
+  }
+
+  onLightboxKeyDown(event: KeyboardEvent): void {
+    if (!this.activeLightboxPhoto() || this.photos().length <= 1 || isEditableElement(event.target)) {
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.prevPhoto();
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.nextPhoto();
+    }
   }
 }

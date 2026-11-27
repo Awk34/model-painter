@@ -1,8 +1,12 @@
-.paint-modal {
-  max-width: 780px;
+.paint-modal-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.paint-modal .modal-header {
+.paint-modal-shell .modal-header {
   align-items: flex-start;
   padding: 20px 24px;
 }
@@ -63,7 +67,7 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.paint-modal .modal-body {
+.paint-modal-shell .modal-body {
   gap: 24px;
 }
 

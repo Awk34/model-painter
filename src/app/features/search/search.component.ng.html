@@ -12,8 +12,10 @@
     </div>
 
     <div class="big-search-wrap">
+      <label for="global-search-input" class="sr-only">Global search</label>
       <input
-        type="text"
+        id="global-search-input"
+        type="search"
         class="input-control big-search"
         placeholder="Type any miniature, faction, paint brand or name, or color scheme..."
         [ngModel]="query()"
@@ -21,12 +23,13 @@
         autofocus
       />
       @if (query()) {
-        <button class="clear-btn" (click)="query.set('')">✕ Clear</button>
+        <button type="button" class="clear-btn" (click)="query.set('')">✕ Clear</button>
       }
     </div>
 
     <div class="chip-bar">
       <button
+        type="button"
         class="chip"
         [class.active]="tab() === 'all'"
         (click)="tab.set('all')"
@@ -34,6 +37,7 @@
         All Results ({{ totalCount() }})
       </button>
       <button
+        type="button"
         class="chip"
         [class.active]="tab() === 'models'"
         (click)="tab.set('models')"
@@ -41,6 +45,7 @@
         Models ({{ matchedModels().length }})
       </button>
       <button
+        type="button"
         class="chip"
         [class.active]="tab() === 'colors'"
         (click)="tab.set('colors')"
@@ -48,6 +53,7 @@
         Colors ({{ matchedColors().length }})
       </button>
       <button
+        type="button"
         class="chip"
         [class.active]="tab() === 'paints'"
         (click)="tab.set('paints')"
@@ -55,6 +61,10 @@
         Paints ({{ matchedCitadelPaints().length + matchedThirdPartyPaints().length }})
       </button>
     </div>
+
+    <p class="sr-only" aria-live="polite" aria-atomic="true">
+      {{ totalCount() }} total search results
+    </p>
   </header>
 
   <!-- Paints Section -->
@@ -67,7 +77,7 @@
       <div class="paints-grid">
         @for (cp of matchedCitadelPaints().slice(0, 24); track cp.id) {
           <div class="paint-item studio-card">
-            <button class="paint-main" (click)="paintModal.openPaint(cp.id)">
+            <button type="button" class="paint-main" (click)="paintModal.openPaint(cp.id)">
               <app-paint-swatch [paint]="cp" />
               <div class="p-info">
                 <strong>{{ cp.name }}</strong>
@@ -75,6 +85,7 @@
               </div>
             </button>
             <button
+              type="button"
               class="btn btn-sm"
               [class.btn-owned]="userState.isOwned(cp.id)"
               [class.btn-ghost]="!userState.isOwned(cp.id)"
@@ -87,7 +98,7 @@
 
         @for (tp of matchedThirdPartyPaints().slice(0, 24); track tp.id) {
           <div class="paint-item studio-card">
-            <button class="paint-main" (click)="paintModal.openPaint(tp.id)">
+            <button type="button" class="paint-main" (click)="paintModal.openPaint(tp.id)">
               <app-paint-swatch [paint]="tp" />
               <div class="p-info">
                 <strong>{{ tp.name }}</strong>
@@ -95,6 +106,7 @@
               </div>
             </button>
             <button
+              type="button"
               class="btn btn-sm"
               [class.btn-owned]="userState.isOwned(tp.id)"
               [class.btn-ghost]="!userState.isOwned(tp.id)"
@@ -114,16 +126,13 @@
       <h2>Color Guides ({{ matchedColors().length }})</h2>
       <div class="cards-grid">
         @for (c of matchedColors().slice(0, 24); track c.id) {
-          <div
-            class="result-card studio-card interactive"
-            (click)="router.navigate(['/colors', c.id])"
-          >
+          <a class="result-card studio-card interactive" [routerLink]="['/colors', c.id]">
             <div class="c-swatch-bar" [style.background]="c.hex"></div>
             <div class="r-body">
-              <strong>{{ c.name }}</strong>
+              <h3>{{ c.name }}</h3>
               <span>{{ c.colorGroups.join(', ') }} • {{ c.requiredPaintIds.length }} Paints</span>
             </div>
-          </div>
+          </a>
         }
       </div>
     </section>
@@ -135,10 +144,7 @@
       <h2>Model Painting Guides ({{ matchedModels().length }})</h2>
       <div class="cards-grid">
         @for (m of matchedModels().slice(0, 36); track m.id) {
-          <div
-            class="result-card studio-card interactive"
-            (click)="router.navigate(['/models', m.id])"
-          >
+          <div class="result-card studio-card interactive">
             <div class="m-img-box">
               <img
                 [src]="img.resolve(m.localPrimaryImage, m.primaryImage)"
@@ -147,11 +153,14 @@
               />
             </div>
             <div class="r-body">
-              <strong>{{ m.name }}</strong>
+              <h3>
+                <a [routerLink]="['/models', m.id]" class="card-stretched-link">{{ m.name }}</a>
+              </h3>
               <span>{{ m.factionNames.slice(0, 2).join(' • ') || m.gameNames[0] }}</span>
             </div>
-            <div class="r-actions" (click)="$event.stopPropagation()">
+            <div class="r-actions">
               <button
+                type="button"
                 class="btn btn-sm"
                 [class.btn-owned]="userState.isModelOwned(m.id)"
                 [class.btn-ghost]="!userState.isModelOwned(m.id)"
@@ -160,9 +169,11 @@
                 {{ userState.isModelOwned(m.id) ? '✓ Owned' : '+ Own Model' }}
               </button>
               <button
+                type="button"
                 class="btn btn-sm"
                 [class.btn-wishlist]="userState.isModelWishlisted(m.id)"
                 [class.btn-ghost]="!userState.isModelWishlisted(m.id)"
+                [attr.aria-label]="(userState.isModelWishlisted(m.id) ? 'Remove from model wishlist: ' : 'Add to model wishlist: ') + m.name"
                 (click)="userState.toggleModelWishlist(m.id)"
               >
                 {{ userState.isModelWishlisted(m.id) ? '★' : '☆' }}
