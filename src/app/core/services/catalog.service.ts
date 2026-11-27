@@ -24,6 +24,7 @@ import { getFirebaseHandles } from './firebase.config';
 import { createIdbStoreClient } from '../utils/idb.util';
 import { getPaintRepresentativeHex, mergeCatalogBrands } from '../utils/catalog-filter.util';
 import { isSafeRecordKey } from '../utils/user-state-normalizer.util';
+import { readCachedWarhammerBearer } from '../utils/warhammer-pkce-storage.util';
 import { doc, getDoc } from 'firebase/firestore';
 
 const IDB_NAME = 'whc_catalog_cache_v1';
@@ -32,7 +33,6 @@ const STORE_BUNDLES = 'bundles';
 const STORE_RECIPES = 'recipes';
 const STORE_COLORS = 'colors';
 const SAFE_ENTITY_ID_RE = /^[a-zA-Z0-9_-]+$/;
-const PKCE_TOKEN_CACHE_KEY = 'whc_pkce_token_cache';
 const MODEL_BUNDLE_PREFIX = 'models_index_';
 
 export function normalizePaintingStageLabel(stage: string | undefined): string {
@@ -70,30 +70,6 @@ export function extractColorGroupNames(rawGroups: unknown): string[] {
       return '';
     })
     .filter(Boolean);
-}
-
-function readCachedWarhammerBearer(): string | null {
-  try {
-    const raw =
-      sessionStorage.getItem(PKCE_TOKEN_CACHE_KEY) ??
-      localStorage.getItem(PKCE_TOKEN_CACHE_KEY);
-    if (!raw) {
-      return null;
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      'bearer' in parsed &&
-      typeof (parsed as { bearer?: unknown }).bearer === 'string'
-    ) {
-      const token = (parsed as { bearer: string }).bearer.trim();
-      return token.length > 0 ? token : null;
-    }
-  } catch (err) {
-    console.warn('Failed to read cached Warhammer bearer token:', err);
-  }
-  return null;
 }
 
 function indexById<T extends { id: string }>(items: readonly T[]): Map<string, T> {

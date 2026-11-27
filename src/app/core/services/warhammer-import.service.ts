@@ -1,12 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { getFirebaseHandles } from './firebase.config';
+import { getFirebaseHandles, FirebaseHandles } from './firebase.config';
 import { httpsCallable } from 'firebase/functions';
 import { UserStateService } from './user-state.service';
 import { CatalogService } from './catalog.service';
-
-const PKCE_VERIFIER_KEY = 'whc_pkce_code_verifier';
-const PKCE_STATE_KEY = 'whc_pkce_state';
-const PKCE_TOKEN_CACHE_KEY = 'whc_pkce_token_cache';
+import {
+  clearPkceTransaction,
+  readCachedWarhammerTokenEntry,
+  readPkceTransaction,
+  savePkceTransaction,
+  writeWarhammerTokenCache,
+} from '../utils/warhammer-pkce-storage.util';
 
 const AUTH0_CLIENT_ID = 'GfkrpDHeRsWqbwJM1tB6deAjJnd8U8jp';
 const AUTH0_REDIRECT_URI =
@@ -16,15 +19,15 @@ const AUTH0_SCOPE = 'openid profile offline_access';
 const AUTH0_TOKEN_PROXY_URL = '/gw-auth-api/oauth/token';
 
 const DEFAULT_FILTERS_BODY = '{}';
+const UPSTREAM_FETCH_TIMEOUT_MS = 15_000;
+const PROJECT_DETAIL_CONCURRENCY = 4;
+const SAFE_ENTITY_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 
-function saveDualStorage(key: string, value: string): void {
-  sessionStorage.setItem(key, value);
-  localStorage.setItem(key, value);
-}
-
-function readDualStorage(key: string): string | null {
-  return sessionStorage.getItem(key) ?? localStorage.getItem(key);
-}
+const CLOUD_FUNCTION_UNAVAILABLE_CODES = new Set([
+  'functions/not-found',
+  'functions/unavailable',
+  'functions/internal',
+]);
 
 @Injectable({
   providedIn: 'root',
@@ -41,10 +44,46 @@ export class WarhammerImportService {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
+  protected isLocalDevHost(): boolean {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  }
+
+  protected getFirebaseHandlesSafe(): FirebaseHandles | null {
+    return getFirebaseHandles();
+  }
+
+  protected async callImportCloudFunction(
+    fb: FirebaseHandles,
+    code: string,
+    codeVerifier: string
+  ): Promise<Record<string, unknown>> {
+    const callable = httpsCallable<
+      { code: string; codeVerifier: string },
+      Record<string, unknown>
+    >(fb.functions, 'importMyWarhammerAccount');
+    const result = await callable({ code, codeVerifier });
+    return result.data;
+  }
+
+  private isCloudFunctionUnavailableError(err: unknown): boolean {
+    if (err instanceof TypeError) {
+      return true;
+    }
+    if (err && typeof err === 'object' && 'code' in err) {
+      const code = (err as { code?: unknown }).code;
+      return typeof code === 'string' && CLOUD_FUNCTION_UNAVAILABLE_CODES.has(code);
+    }
+    return false;
+  }
+
   /**
    * Generates a fresh OAuth2 PKCE authorization URL for `login.mywarhammer.com`
    * matching the official Citadel Colour Android app (`com.gamesworkshop.citadelpaint` v3.1.1)
-   * parameters, and saves `code_verifier` in `localStorage` + `sessionStorage`.
+   * parameters, and saves `code_verifier` + `state` in `sessionStorage` only.
    */
   async generateMyWarhammerLoginUrl(): Promise<{
     authorizeUrl: string;
@@ -63,8 +102,7 @@ export class WarhammerImportService {
     const digest = await crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier));
     const codeChallenge = this.base64UrlEncode(new Uint8Array(digest));
 
-    saveDualStorage(PKCE_VERIFIER_KEY, codeVerifier);
-    saveDualStorage(PKCE_STATE_KEY, state);
+    savePkceTransaction(codeVerifier, state);
 
     const params = new URLSearchParams({
       client_id: AUTH0_CLIENT_ID,
@@ -85,80 +123,99 @@ export class WarhammerImportService {
   }
 
   /**
-   * Parses a pasted `citadel-colour://.../callback?code=...` URL, exchanges it via
-   * either the `importMyWarhammerAccount` Firebase Cloud Function or direct Auth0 PKCE +
-   * REST API calls, and merges into `UserStateService`.
+   * Parses a pasted `citadel-colour://.../callback?code=...&state=...` URL, verifies OAuth
+   * `state` against `sessionStorage`, exchanges the code via either the `importMyWarhammerAccount`
+   * Firebase Cloud Function or (in local dev only) `/gw-auth-api`, and merges into `UserStateService`.
    */
   async exchangeCallbackAndImport(
     callbackUrlInput: string,
     mode: 'merge' | 'replace' = 'merge'
   ): Promise<void> {
-    const code = this.extractAuthorizationCode(callbackUrlInput);
+    const { code, state, error, errorDescription } = this.extractCallbackParams(callbackUrlInput);
+    if (error) {
+      clearPkceTransaction();
+      throw new Error(`My Warhammer login returned an error: ${errorDescription || error}`);
+    }
     if (!code) {
       throw new Error(
-        'Could not find a valid ?code=... parameter in the pasted URL. Make sure you copied the full citadel-colour://.../callback?code=... link.'
+        'Could not find a valid ?code=... parameter in the pasted URL. Make sure you copied the full citadel-colour://.../callback?code=...&state=... link.'
       );
     }
 
-    const codeVerifier = readDualStorage(PKCE_VERIFIER_KEY) ?? '';
-    if (!codeVerifier) {
-      throw new Error(
-        'Missing PKCE code_verifier. Click "Open My Warhammer Login" or "Copy Login URL to Clipboard" in this browser first, sign in, and then paste the callback URL here.'
-      );
-    }
-
-    const fb = getFirebaseHandles();
-    if (fb) {
-      try {
-        const callable = httpsCallable<
-          { code: string; codeVerifier: string },
-          Record<string, unknown>
-        >(fb.functions, 'importMyWarhammerAccount');
-
-        const result = await callable({ code, codeVerifier });
-        this.userState.importAccountPayload(result.data, mode);
-        await this.catalog.clearEntityCaches();
-        return;
-      } catch {
-        // Fall through to direct browser / dev-proxy token exchange
+    try {
+      const { codeVerifier, state: expectedState } = readPkceTransaction();
+      if (!codeVerifier || !expectedState) {
+        throw new Error(
+          'Missing PKCE session state or code_verifier. Click "Open My Warhammer Login" or "Copy Login URL to Clipboard" in this browser tab first, sign in, and then paste the callback URL here.'
+        );
       }
-    }
 
-    const bearer = await this.resolveAuth0BearerToken(code, codeVerifier);
-    const payload = await this.fetchWarhammerAccountPayload(bearer);
-    this.userState.importAccountPayload(payload, mode);
-    await this.catalog.clearEntityCaches();
+      if (!state) {
+        throw new Error(
+          'Missing ?state=... parameter in the pasted callback URL. Paste the full callback URL including both code and state parameters.'
+        );
+      }
+
+      if (state !== expectedState) {
+        throw new Error('OAuth state mismatch. Please start a fresh My Warhammer login.');
+      }
+
+      const fb = this.getFirebaseHandlesSafe();
+      if (fb) {
+        try {
+          const payload = await this.callImportCloudFunction(fb, code, codeVerifier);
+          this.userState.importAccountPayload(payload, mode);
+          await this.catalog.clearEntityCaches();
+          return;
+        } catch (err) {
+          if (!this.isLocalDevHost() || !this.isCloudFunctionUnavailableError(err)) {
+            throw err instanceof Error
+              ? err
+              : new Error('My Warhammer Cloud Function import failed.');
+          }
+        }
+      } else if (!this.isLocalDevHost()) {
+        throw new Error(
+          'My Warhammer Cloud Function is not configured for this deployment. Please sign in or use JSON/CSV upload.'
+        );
+      }
+
+      const bearer = await this.resolveAuth0BearerToken(code, codeVerifier);
+      const payload = await this.fetchWarhammerAccountPayload(bearer);
+      this.userState.importAccountPayload(payload, mode);
+      await this.catalog.clearEntityCaches();
+    } finally {
+      clearPkceTransaction();
+    }
   }
 
-  private extractAuthorizationCode(callbackUrlInput: string): string | null {
+  private extractCallbackParams(callbackUrlInput: string): {
+    code: string | null;
+    state: string | null;
+    error: string | null;
+    errorDescription: string | null;
+  } {
     const trimmed = callbackUrlInput.trim();
+    if (!trimmed) {
+      return { code: null, state: null, error: null, errorDescription: null };
+    }
     try {
-      const normalizedUrl = trimmed.replace(/^citadel-colour:\/\//, 'https://');
+      const normalizedUrl = trimmed.replace(/^citadel-colour:\/\//i, 'https://');
       const parsed = new URL(normalizedUrl);
-      return parsed.searchParams.get('code');
+      const code = parsed.searchParams.get('code')?.trim() || null;
+      const state = parsed.searchParams.get('state')?.trim() || null;
+      const error = parsed.searchParams.get('error')?.trim() || null;
+      const errorDescription = parsed.searchParams.get('error_description')?.trim() || null;
+      return { code, state, error, errorDescription };
     } catch {
-      if (trimmed.length > 10 && !trimmed.includes(' ')) {
-        return trimmed;
-      }
-      return null;
+      return { code: null, state: null, error: null, errorDescription: null };
     }
   }
 
   private async resolveAuth0BearerToken(code: string, codeVerifier: string): Promise<string> {
-    let fallbackBearer = '';
-    try {
-      const cachedRaw = readDualStorage(PKCE_TOKEN_CACHE_KEY);
-      if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw) as { code?: string; bearer?: string };
-        if (cached.bearer) {
-          if (cached.code === code) {
-            return cached.bearer;
-          }
-          fallbackBearer = cached.bearer;
-        }
-      }
-    } catch {
-      // Ignore cache parse errors
+    const cached = readCachedWarhammerTokenEntry();
+    if (cached?.code === code && cached.bearer && cached.bearer.trim()) {
+      return cached.bearer.trim();
     }
 
     const tokenResp = await fetch(AUTH0_TOKEN_PROXY_URL, {
@@ -171,33 +228,33 @@ export class WarhammerImportService {
         code_verifier: codeVerifier,
         redirect_uri: AUTH0_REDIRECT_URI,
       }),
+      signal: AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
     });
 
     const tokenContentType = tokenResp.headers.get('content-type') ?? '';
     if (tokenResp.status === 404 || tokenContentType.includes('text/html')) {
       throw new Error(
-        'Local proxy (/gw-auth-api) is not active yet. Please stop and restart `npm run start` (or `pnpm run start`) in your terminal so Angular loads proxy.conf.json, then click Exchange & Import again.'
+        'Local proxy (/gw-auth-api) is not active yet. Please stop and restart `pnpm run start` in your terminal so Angular loads proxy.conf.json, then click Exchange & Import again.'
       );
     }
 
     if (!tokenResp.ok) {
-      if (fallbackBearer) {
-        return fallbackBearer;
-      }
       const errBody = await tokenResp.text();
-      throw new Error(`My Warhammer token exchange failed (${tokenResp.status}): ${errBody}`);
+      throw new Error(
+        `My Warhammer token exchange failed (${tokenResp.status}): ${errBody.slice(0, 300)}`
+      );
     }
 
     const tokenJson = (await tokenResp.json()) as {
       access_token?: string;
       id_token?: string;
     };
-    const bearer = tokenJson.access_token || tokenJson.id_token || '';
+    const bearer = (tokenJson.access_token || tokenJson.id_token || '').trim();
     if (!bearer) {
       throw new Error('No access_token returned from login.mywarhammer.com.');
     }
 
-    saveDualStorage(PKCE_TOKEN_CACHE_KEY, JSON.stringify({ code, bearer }));
+    writeWarhammerTokenCache(code, bearer);
     return bearer;
   }
 
@@ -218,6 +275,7 @@ export class WarhammerImportService {
         method,
         headers,
         body,
+        signal: AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
       });
       const contentType = resp.headers.get('content-type') ?? '';
       if (!resp.ok || !contentType.includes('application/json')) {
@@ -232,19 +290,39 @@ export class WarhammerImportService {
       fetchApi<Array<{ id: string }>>('/projects?locale=en', 'GET'),
     ]);
 
-    const detailedProjects = await Promise.all(
-      (projectsSummary ?? []).map(async (p) => {
-        try {
-          return await fetchApi<Record<string, unknown>>(`/projects/${p.id}?locale=en`, 'GET');
-        } catch {
-          return p as Record<string, unknown>;
-        }
-      })
-    );
+    const summaryList = Array.isArray(projectsSummary) ? projectsSummary : [];
+    const detailedProjects: Array<Record<string, unknown>> = new Array(summaryList.length);
+    for (let i = 0; i < summaryList.length; i += PROJECT_DETAIL_CONCURRENCY) {
+      const chunk = summaryList.slice(i, i + PROJECT_DETAIL_CONCURRENCY);
+      const chunkResults = await Promise.all(
+        chunk.map(async (p) => {
+          const projectId =
+            p && typeof p === 'object' && typeof p.id === 'string' ? p.id.trim() : '';
+          if (!SAFE_ENTITY_ID_RE.test(projectId)) {
+            return p as Record<string, unknown>;
+          }
+          try {
+            return await fetchApi<Record<string, unknown>>(
+              `/projects/${encodeURIComponent(projectId)}?locale=en`,
+              'GET'
+            );
+          } catch {
+            return p as Record<string, unknown>;
+          }
+        })
+      );
+      for (let j = 0; j < chunkResults.length; j++) {
+        detailedProjects[i + j] = chunkResults[j];
+      }
+    }
 
     return {
-      inventoryPaintIds: (inventoryList ?? []).map((p) => p.id).filter(Boolean),
-      wishlistPaintIds: (wishlistList ?? []).map((p) => p.id).filter(Boolean),
+      inventoryPaintIds: (Array.isArray(inventoryList) ? inventoryList : [])
+        .map((p) => p?.id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
+      wishlistPaintIds: (Array.isArray(wishlistList) ? wishlistList : [])
+        .map((p) => p?.id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
       projects: detailedProjects,
       importedAt: new Date().toISOString(),
     };

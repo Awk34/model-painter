@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { USER_LIMITS, formatBytes } from '../../../core/config/user-limits.config';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -13,7 +13,7 @@ import { WarhammerImportService } from '../../../core/services/warhammer-import.
   templateUrl: './account-settings-panel.component.ng.html',
   styleUrl: './account-settings-panel.component.css',
 })
-export class AccountSettingsPanelComponent {
+export class AccountSettingsPanelComponent implements OnInit {
   readonly catalog = inject(CatalogService);
   readonly userState = inject(UserStateService);
   readonly importer = inject(WarhammerImportService);
@@ -25,6 +25,10 @@ export class AccountSettingsPanelComponent {
   readonly pkceBusy = signal(false);
   readonly pkceError = signal<string | null>(null);
   readonly pkceUrlCopied = signal(false);
+
+  readonly snapshotBusy = signal(false);
+  readonly snapshotError = signal<string | null>(null);
+  readonly snapshotAvailable = signal<boolean | null>(null);
 
   authEmail = '';
   authPassword = '';
@@ -55,14 +59,48 @@ export class AccountSettingsPanelComponent {
     }));
   });
 
+  ngOnInit(): void {
+    void this.probeBundledSnapshot();
+  }
+
+  private async probeBundledSnapshot(): Promise<void> {
+    if (typeof fetch !== 'function') {
+      this.snapshotAvailable.set(false);
+      return;
+    }
+    try {
+      const resp = await fetch('/data/user_account_snapshot.json', {
+        method: 'HEAD',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(3000),
+      });
+      const contentType = (resp.headers.get('content-type') ?? '').toLowerCase();
+      this.snapshotAvailable.set(resp.ok && contentType.includes('application/json'));
+    } catch {
+      this.snapshotAvailable.set(false);
+    }
+  }
+
   async loadExtractedSnapshot(): Promise<void> {
-    await this.userState.loadExtractedAccountSnapshot(this.importMode);
+    this.snapshotBusy.set(true);
+    this.snapshotError.set(null);
+    try {
+      await this.userState.loadExtractedAccountSnapshot(this.importMode);
+    } catch (e: unknown) {
+      this.snapshotError.set(e instanceof Error ? e.message : String(e));
+    } finally {
+      this.snapshotBusy.set(false);
+    }
   }
 
   async startPkceLogin(): Promise<void> {
     this.pkceError.set(null);
-    const { authorizeUrl } = await this.importer.generateMyWarhammerLoginUrl();
-    window.open(authorizeUrl, '_blank', 'noopener');
+    try {
+      const { authorizeUrl } = await this.importer.generateMyWarhammerLoginUrl();
+      window.open(authorizeUrl, '_blank', 'noopener');
+    } catch (e: unknown) {
+      this.pkceError.set(e instanceof Error ? e.message : String(e));
+    }
   }
 
   async copyPkceLoginUrl(): Promise<void> {
@@ -129,4 +167,3 @@ export class AccountSettingsPanelComponent {
     }
   }
 }
-

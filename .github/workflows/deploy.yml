@@ -32,16 +32,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Write Firebase Web Config from secret (if provided)
+      - name: Build Angular production bundle
+        run: pnpm run build
+
+      - name: Write optional Firebase Web Config fallback post-build
         env:
           FIREBASE_WEB_CONFIG: ${{ secrets.FIREBASE_WEB_CONFIG }}
         run: |
           if [ -n "$FIREBASE_WEB_CONFIG" ]; then
-            printf '%s\n' "$FIREBASE_WEB_CONFIG" > public/firebase-config.local.json
+            printf '%s\n' "$FIREBASE_WEB_CONFIG" > dist/model-painter/browser/firebase-config.json
           fi
-
-      - name: Build Angular production bundle
-        run: pnpm run build
 
       - name: Deploy to Firebase Hosting (live)
         uses: FirebaseExtended/action-hosting-deploy@v0

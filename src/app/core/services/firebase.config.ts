@@ -15,20 +15,52 @@ export interface FirebaseClientConfig {
 }
 
 const FIREBASE_CONFIG_STORAGE_KEY = 'whc_firebase_config_v1';
-const REVOKED_API_KEYS = new Set(['AIzaSyByG509x0FEeglKVCT0REfX3dEC750iRu4']);
+const RUNTIME_CONFIG_TIMEOUT_MS = 3000;
+const REVOKED_KEY_DIGESTS = new Set(['39:d1f2b247:1f77526b']);
 
 let runtimeConfig: FirebaseClientConfig | null = null;
 let cachedHandles: FirebaseHandles | null = null;
 
+function fnv1a32(input: string, seed = 0x811c9dc5): string {
+  let hash = seed >>> 0;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+export function isRevokedApiKey(apiKey: string): boolean {
+  const trimmed = apiKey.trim();
+  const reversed = [...trimmed].reverse().join('');
+  const digest = `${trimmed.length}:${fnv1a32(trimmed)}:${fnv1a32(reversed, 0x9e3779b1)}`;
+  return REVOKED_KEY_DIGESTS.has(digest);
+}
+
+function isLocalFirebaseHost(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+}
+
 function isValidConfig(cfg: unknown): cfg is FirebaseClientConfig {
-  if (!cfg || typeof cfg !== 'object') {
+  if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) {
     return false;
   }
   const candidate = cfg as Partial<FirebaseClientConfig>;
-  if (!candidate.apiKey || !candidate.projectId || !candidate.authDomain) {
+  if (
+    typeof candidate.apiKey !== 'string' ||
+    !candidate.apiKey.trim() ||
+    typeof candidate.projectId !== 'string' ||
+    !candidate.projectId.trim() ||
+    typeof candidate.authDomain !== 'string' ||
+    !candidate.authDomain.trim()
+  ) {
     return false;
   }
-  if (REVOKED_API_KEYS.has(candidate.apiKey.trim())) {
+  if (isRevokedApiKey(candidate.apiKey)) {
     return false;
   }
   return true;
@@ -51,19 +83,34 @@ function readValidLocalConfig(): FirebaseClientConfig | null {
   return null;
 }
 
+export function resetRuntimeFirebaseConfigForTests(): void {
+  runtimeConfig = null;
+  cachedHandles = null;
+}
+
 /**
  * Loads Firebase client configuration at startup without hardcoding API keys in Git:
- * 1. Purges any legacy/revoked `localStorage` config (`whc_firebase_config_v1`).
- * 2. Checks `/firebase-config.local.json` (gitignored local dev config or CI-injected config).
- * 3. Checks `/__/firebase/init.json` (auto-served by Firebase Hosting in production/previews).
+ * 1. Resets cached runtime state and purges any legacy/revoked `localStorage` config (`whc_firebase_config_v1`).
+ * 2. On localhost, checks `/firebase-config.local.json` first, then `/__/firebase/init.json`.
+ * 3. On production/preview hosts, checks `/__/firebase/init.json` first, then `/firebase-config.json`.
  */
 export async function loadRuntimeFirebaseConfig(): Promise<void> {
+  runtimeConfig = null;
+  cachedHandles = null;
   readValidLocalConfig();
 
-  for (const endpoint of ['/firebase-config.local.json', '/__/firebase/init.json']) {
+  const endpoints = isLocalFirebaseHost()
+    ? ['/firebase-config.local.json', '/__/firebase/init.json']
+    : ['/__/firebase/init.json', '/firebase-config.json'];
+
+  for (const endpoint of endpoints) {
     try {
-      const resp = await fetch(endpoint, { cache: 'no-store' });
-      if (resp.ok) {
+      const resp = await fetch(endpoint, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(RUNTIME_CONFIG_TIMEOUT_MS),
+      });
+      const contentType = (resp.headers.get('content-type') ?? '').toLowerCase();
+      if (resp.ok && contentType.includes('application/json')) {
         const data: unknown = await resp.json();
         if (isValidConfig(data)) {
           runtimeConfig = data;
@@ -72,7 +119,7 @@ export async function loadRuntimeFirebaseConfig(): Promise<void> {
         }
       }
     } catch {
-      // Ignore missing runtime endpoint and try next source
+      // Ignore missing/timed-out runtime endpoint and try next source
     }
   }
 }

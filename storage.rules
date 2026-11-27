@@ -12,15 +12,17 @@ service firebase.storage {
     function isValidPathSegments(targetId, fileName) {
       return targetId.size() > 0
         && targetId.size() <= 120
+        && !(targetId in ['.', '..'])
         && fileName.size() > 0
-        && fileName.size() <= 120;
+        && fileName.size() <= 120
+        && !(fileName in ['.', '..']);
     }
 
     function isValidImagePayload() {
       return request.resource != null
         && request.resource.size > 0
         && request.resource.size <= 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+        && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp'];
     }
 
     // Public read-only catalog images

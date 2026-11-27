@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "lib/index.js",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "scripts": {
     "build": "tsc"
@@ -13,6 +13,7 @@
     "firebase-functions": "^6.0.1"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.2"
   }
 }

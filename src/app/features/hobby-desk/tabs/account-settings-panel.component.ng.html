@@ -3,14 +3,24 @@
     <h3>Start Fresh or Import a My Warhammer Account</h3>
     <p>
       Your local browser Hobby Desk starts with a clean slate. Sign in below to sync across devices, import your own live
-      <strong>My Warhammer</strong> account via Auth0 PKCE, or load the extracted APK account snapshot (64 owned paints, 34 wishlist paints, and 5 projects) with one click.
+      <strong>My Warhammer</strong> account via Auth0 PKCE, or upload a JSON/CSV backup.
     </p>
   </div>
-  <div class="onboarding-actions">
-    <button type="button" class="btn btn-gold" (click)="loadExtractedSnapshot()">
-      ⚡ Load Extracted Account Snapshot
-    </button>
-  </div>
+  @if (snapshotAvailable() === true) {
+    <div class="onboarding-actions">
+      <button
+        type="button"
+        class="btn btn-gold"
+        [disabled]="snapshotBusy()"
+        (click)="loadExtractedSnapshot()"
+      >
+        {{ snapshotBusy() ? 'Loading Snapshot...' : '⚡ Load Extracted Account Snapshot' }}
+      </button>
+      @if (snapshotError()) {
+        <p class="error-msg" role="alert">{{ snapshotError() }}</p>
+      }
+    </div>
+  }
 </div>
 
 <section class="tab-content settings-grid">
@@ -99,23 +109,33 @@
     </div>
 
     <div class="wizard-steps">
-      <div class="wizard-step">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <strong>Quick Snapshot (Extracted APK Account)</strong>
-          <p>Load the pre-extracted account snapshot (64 owned paints, 34 wishlist paints, 5 projects).</p>
-          <button type="button" class="btn btn-gold btn-sm" (click)="loadExtractedSnapshot()">
-            ⚡ Import Extracted Account Snapshot
-          </button>
+      @if (snapshotAvailable() === true) {
+        <div class="wizard-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Quick Snapshot (Extracted APK Account)</strong>
+            <p>Load the pre-extracted account snapshot (64 owned paints, 34 wishlist paints, 5 projects).</p>
+            <button
+              type="button"
+              class="btn btn-gold btn-sm"
+              [disabled]="snapshotBusy()"
+              (click)="loadExtractedSnapshot()"
+            >
+              {{ snapshotBusy() ? 'Importing...' : '⚡ Import Extracted Account Snapshot' }}
+            </button>
+            @if (snapshotError()) {
+              <p class="error-msg" role="alert">{{ snapshotError() }}</p>
+            }
+          </div>
         </div>
-      </div>
+      }
 
       <div class="wizard-step">
         <div class="step-num">2</div>
         <div class="step-content">
           <strong>Self-Service My Warhammer Login (Auth0 PKCE)</strong>
           <p>
-            Click below to open <code>login.mywarhammer.com</code> in a new tab. After signing in, open DevTools Network tab, copy the <code>citadel-colour://.../callback?code=...</code> redirect URL, and paste it below.
+            Click below to open <code>login.mywarhammer.com</code> in a new tab. After signing in, open DevTools Network tab, copy the full <code>citadel-colour://.../callback?code=...&amp;state=...</code> redirect URL, and paste it below.
           </p>
           <div class="step-actions">
             <button type="button" class="btn btn-secondary btn-sm" (click)="startPkceLogin()">
@@ -129,7 +149,7 @@
             <input
               type="text"
               class="input-control"
-              placeholder="Paste citadel-colour://login.mywarhammer.com/.../callback?code=... here"
+              placeholder="Paste citadel-colour://login.mywarhammer.com/.../callback?code=...&state=... here"
               [(ngModel)]="pastedCallbackUrl"
             />
             <button

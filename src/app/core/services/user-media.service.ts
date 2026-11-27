@@ -347,6 +347,22 @@ export class UserMediaService {
     return this.registerObjectUrl(photoId, blob);
   }
 
+  buildStoragePath(
+    photo: Pick<UserUploadedPhoto, 'id' | 'targetType' | 'targetId' | 'kind' | 'mimeType'>,
+    uid: string
+  ): string {
+    const folder = photo.kind === 'reference' ? 'private_references' : 'showcase';
+    const ext =
+      photo.mimeType === 'image/png'
+        ? 'png'
+        : photo.mimeType === 'image/webp'
+          ? 'webp'
+          : 'jpg';
+    const safeTargetId = photo.targetId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 100) || 'item';
+    const safePhotoId = photo.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 110) || 'photo';
+    return `users/${uid}/${folder}/${photo.targetType}/${safeTargetId}/${safePhotoId}.${ext}`;
+  }
+
   async uploadToCloudStorage(
     photo: UserUploadedPhoto,
     blob: Blob,
@@ -356,16 +372,7 @@ export class UserMediaService {
     if (!fb) {
       return undefined;
     }
-    const folder = photo.kind === 'reference' ? 'private_references' : 'showcase';
-    const ext =
-      photo.mimeType === 'image/png'
-        ? 'png'
-        : photo.mimeType === 'image/webp'
-        ? 'webp'
-        : 'jpg';
-    const safeTargetId = photo.targetId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 100) || 'item';
-    const safePhotoId = photo.id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 110) || 'photo';
-    const storagePath = `users/${uid}/${folder}/${photo.targetType}/${safeTargetId}/${safePhotoId}.${ext}`;
+    const storagePath = this.buildStoragePath(photo, uid);
     try {
       await this.uploadStorageBytes(storagePath, blob, photo);
       return storagePath;
