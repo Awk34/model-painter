@@ -4,12 +4,7 @@ import { CollapsibleSectionComponent } from './collapsible-section.component';
 
 @Component({
   imports: [CollapsibleSectionComponent],
-  template: `
-    <app-collapsible-section title="Models (2)" [(expanded)]="expanded">
-      <button type="button" sectionActions class="action-btn">+ Add</button>
-      <p class="body-copy">Section body</p>
-    </app-collapsible-section>
-  `,
+  templateUrl: './collapsible-section.component.spec.ng.html',
 })
 class TestHostComponent {
   readonly expanded = signal(true);

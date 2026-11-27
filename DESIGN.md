@@ -47,7 +47,7 @@
 - **Borders:** Subtle `rgba(255, 255, 255, 0.08)` for resting cards; Strong `rgba(255, 255, 255, 0.16)` for inputs and modals.
 
 ### Original Mobile App Reference Tokens (`Paint Warhammer` Light Mode)
-When referencing or adapting layouts from the official mobile app (`screenshots/original-app/`):
+When referencing or adapting layouts from the official mobile app (`design-artifacts/screenshots/original-app/`):
 - **Light Gallery Canvas (`#F8F8F8` / `#FFFFFF`):** Bright white cards with soft elevation (`0 2px 10px rgba(0, 0, 0, 0.07)`), full-height left-edge color swatch blocks (`64px` wide), and `#000000` `Anton` display headers.
 - **Floating Pill Bottom Navigation:** Translucent white floating capsule (`Paint Model`, `Paint Colour`, `Hobby Desk` with `#007AFF` active selection pill) paired with a detached circular `Search` button and `#FBBA00` `+` FAB / `+ Add To Project` primary pill.
 
@@ -55,14 +55,14 @@ When referencing or adapting layouts from the official mobile app (`screenshots/
 
 ## 3. Typography
 
-Authentic fonts extracted from the official APK (`public/fonts/`):
+Authentic web fonts converted from the official APK (`public/fonts/`):
 
-1. **Display & Section Headings — `Anton` (`anton_regular.ttf`)**
+1. **Display & Section Headings — `Anton` (`anton_regular.woff2`)**
    - Always `uppercase`, weight `400`, `letter-spacing: 0.04em`, tight `line-height: 1.15`.
    - **Page / Model Title (`h1`):** `2.0rem` (`32px`), `#FBBA00` (`--gold-bright`).
    - **Section / Modal Title (`h2`, `h3`):** `1.15rem`–`1.55rem` (`18px`–`25px`), `#F4F3EF` or `#FBBA00`.
    - **KPI Numbers:** `1.5rem` (`24px`) in `Anton` for scannable inventory/project counts.
-2. **Editorial & Recipe Copy — `Bitter` (`bitter_regular.otf`, `bitter_bold.otf`, `bitter_italic.otf`)**
+2. **Editorial & Recipe Copy — `Bitter` (`bitter_regular.woff2`)**
    - Base size `15px`, `line-height: 1.5`. Used for painting instructions, recipe step descriptions, and project notes.
 3. **UI Controls, Badges & Metadata — System Sans (`Inter` / `system-ui`)**
    - Used for buttons (`14px`, weight `600`), filter chips (`12.8px`, weight `600`), uppercase status badges (`11.5px`, weight `700`, `letter-spacing: 0.03em`), and monospace hex/hash pills (`12px`).

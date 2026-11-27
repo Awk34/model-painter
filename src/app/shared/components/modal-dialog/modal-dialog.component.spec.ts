@@ -5,22 +5,7 @@ import { AppModalDialogComponent } from './modal-dialog.component';
 
 @Component({
   imports: [AppModalDialogComponent],
-  template: `
-    <button type="button" id="opener-btn" (click)="open.set(true)">Open</button>
-    <app-modal-dialog
-      [open]="open()"
-      [title]="title()"
-      [ariaLabel]="ariaLabel()"
-      [size]="size()"
-      [style.--dialog-max-width]="customMaxWidth()"
-      [closeOnBackdrop]="closeOnBackdrop()"
-      (closed)="onClosed()"
-    >
-      <div class="modal-body">
-        <button type="button" id="inner-btn">Inner Action</button>
-      </div>
-    </app-modal-dialog>
-  `,
+  templateUrl: './modal-dialog.component.spec.ng.html',
 })
 class TestHostComponent {
   readonly open = signal(false);

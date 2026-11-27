@@ -4,6 +4,7 @@ Phase 3 & 4: High-Resolution Media Mirror & Web-App JSON/CSV Exporter
 for Paint Warhammer / Citadel Colour (com.gamesworkshop.citadelpaint).
 """
 
+import argparse
 import csv
 import hashlib
 import json
@@ -16,18 +17,47 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-BASE_DIR = Path("/home/antigravity/warhammer_extractor")
-RAW_DIR = BASE_DIR / "data" / "raw"
-EXPORT_DIR = BASE_DIR / "data" / "export"
-JSON_DIR = EXPORT_DIR / "json"
-CSV_DIR = EXPORT_DIR / "csv"
-ASSETS_DIR = EXPORT_DIR / "assets" / "images"
+REPO_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_BASE_DIR = Path(
+    os.environ.get("WARHAMMER_EXTRACTOR_DIR", str(REPO_DIR))
+)
+DEFAULT_EXPORT_DIR = Path(
+    os.environ.get("WARHAMMER_EXPORT_DIR", str(DEFAULT_BASE_DIR / "data" / "export"))
+)
 
 STAGE_LABELS = {
     "base": "Basic",
     "detail": "Battle Ready",
     "artificer": "Parade Ready",
 }
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Build structured JSON/CSV exports and mirror high-res media assets "
+            "from raw Warhammer Paint API dumps."
+        )
+    )
+    parser.add_argument(
+        "--base-dir",
+        type=Path,
+        default=DEFAULT_BASE_DIR,
+        help=(
+            "Base extractor directory containing data/raw "
+            "(defaults to WARHAMMER_EXTRACTOR_DIR env var or repo root)."
+        ),
+    )
+    parser.add_argument(
+        "--export-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Export output directory "
+            "(defaults to WARHAMMER_EXPORT_DIR env var or <base-dir>/data/export)."
+        ),
+    )
+    return parser
 
 
 def load_json(path: Path):
@@ -75,25 +105,37 @@ def url_to_rel_path(url: str, category: str) -> str:
     return f"assets/images/{category}/{stem}{ext}"
 
 
-def main():
+def main(argv: list[str] | None = None):
+    args = build_parser().parse_args(argv)
+    base_dir: Path = args.base_dir
+    raw_dir = base_dir / "data" / "raw"
+    export_dir: Path = (
+        args.export_dir
+        if args.export_dir is not None
+        else Path(os.environ.get("WARHAMMER_EXPORT_DIR", str(base_dir / "data" / "export")))
+    )
+    json_dir = export_dir / "json"
+    csv_dir = export_dir / "csv"
+    assets_dir = export_dir / "assets" / "images"
+
     t0 = time.time()
-    for d in [JSON_DIR, CSV_DIR, ASSETS_DIR]:
+    for d in [json_dir, csv_dir, assets_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
     print("=== Loading Raw API Data ===", flush=True)
-    games_raw = load_json(RAW_DIR / "games.json")
-    factions_raw = load_json(RAW_DIR / "factions.json")
-    colour_groups_raw = load_json(RAW_DIR / "colour_groups.json")
-    colour_group_mappings = load_json(RAW_DIR / "colour_group_mappings.json")
-    paints_list = load_json(RAW_DIR / "paints_list.json")
-    compat_list = load_json(RAW_DIR / "paints_compatibility_list.json")
-    colours_list = load_json(RAW_DIR / "colours_list.json")
-    colours_basing = load_json(RAW_DIR / "colours_basing.json")
-    user_inventory = load_json(RAW_DIR / "user_inventory.json")
-    user_wishlist = load_json(RAW_DIR / "user_wishlist.json")
-    user_projects = load_json(RAW_DIR / "user_projects_detailed.json")
-    game_recipes_map = load_json(RAW_DIR / "game_recipes_map.json")
-    faction_recipes_map = load_json(RAW_DIR / "faction_recipes_map.json")
+    games_raw = load_json(raw_dir / "games.json")
+    factions_raw = load_json(raw_dir / "factions.json")
+    colour_groups_raw = load_json(raw_dir / "colour_groups.json")
+    colour_group_mappings = load_json(raw_dir / "colour_group_mappings.json")
+    paints_list = load_json(raw_dir / "paints_list.json")
+    compat_list = load_json(raw_dir / "paints_compatibility_list.json")
+    colours_list = load_json(raw_dir / "colours_list.json")
+    colours_basing = load_json(raw_dir / "colours_basing.json")
+    user_inventory = load_json(raw_dir / "user_inventory.json")
+    user_wishlist = load_json(raw_dir / "user_wishlist.json")
+    user_projects = load_json(raw_dir / "user_projects_detailed.json")
+    game_recipes_map = load_json(raw_dir / "game_recipes_map.json")
+    faction_recipes_map = load_json(raw_dir / "faction_recipes_map.json")
 
     # Track all media URLs -> relative local path
     url_to_local = {}
@@ -110,7 +152,7 @@ def main():
     paint_compat_by_id = {}
     for cp in compat_list:
         pid = cp["id"]
-        c_file = RAW_DIR / "paint_compatibles" / f"{pid}.json"
+        c_file = raw_dir / "paint_compatibles" / f"{pid}.json"
         if c_file.exists():
             paint_compat_by_id[pid] = load_json(c_file)
         else:
@@ -122,7 +164,7 @@ def main():
 
     for p_summary in paints_list:
         pid = p_summary["id"]
-        det_file = RAW_DIR / "paint_details" / f"{pid}.json"
+        det_file = raw_dir / "paint_details" / f"{pid}.json"
         p = load_json(det_file) if det_file.exists() else dict(p_summary)
 
         img_url = p.get("imageUrl")
@@ -192,7 +234,7 @@ def main():
 
     colours_by_id = {c["id"]: c for c in colours_list}
     # Include any extra colour_details files fetched during step 6b
-    for c_file in sorted((RAW_DIR / "colour_details").glob("*.json")):
+    for c_file in sorted((raw_dir / "colour_details").glob("*.json")):
         cid = c_file.stem
         if cid not in colours_by_id:
             cd = load_json(c_file)
@@ -208,7 +250,7 @@ def main():
     colour_stages_rows = []
 
     for cid, c_sum in colours_by_id.items():
-        det_file = RAW_DIR / "colour_details" / f"{cid}.json"
+        det_file = raw_dir / "colour_details" / f"{cid}.json"
         c_det = load_json(det_file) if det_file.exists() else {}
 
         img_url = c_sum.get("imageUrl")
@@ -415,7 +457,7 @@ def main():
     model_area_steps_rows = []
     model_colour_points_rows = []
 
-    recipe_files = sorted((RAW_DIR / "recipes").glob("*.json"))
+    recipe_files = sorted((raw_dir / "recipes").glob("*.json"))
     for r_file in recipe_files:
         r = load_json(r_file)
         rid = r["id"]
@@ -675,14 +717,14 @@ def main():
             "local_header_image_path": c["localHeaderImagePath"],
         })
 
-    save_json(JSON_DIR / "paints.json", paints_export)
-    save_json(JSON_DIR / "paint_compatibility.json", paint_compat_rows)
-    save_json(JSON_DIR / "colours.json", colours_export)
-    save_json(JSON_DIR / "colour_groups.json", list(colour_group_mappings.values()))
-    save_json(JSON_DIR / "games.json", games_export)
-    save_json(JSON_DIR / "models_recipes.json", recipes_export)
-    save_json(JSON_DIR / "user_account.json", user_account_export)
-    save_json(EXPORT_DIR / "asset_manifest.json", url_to_local)
+    save_json(json_dir / "paints.json", paints_export)
+    save_json(json_dir / "paint_compatibility.json", paint_compat_rows)
+    save_json(json_dir / "colours.json", colours_export)
+    save_json(json_dir / "colour_groups.json", list(colour_group_mappings.values()))
+    save_json(json_dir / "games.json", games_export)
+    save_json(json_dir / "models_recipes.json", recipes_export)
+    save_json(json_dir / "user_account.json", user_account_export)
+    save_json(export_dir / "asset_manifest.json", url_to_local)
 
     summary_stats = {
         "extractedAtUtc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -706,13 +748,13 @@ def main():
             "uniqueMediaAssets": len(url_to_local),
         },
     }
-    save_json(JSON_DIR / "summary_stats.json", summary_stats)
+    save_json(json_dir / "summary_stats.json", summary_stats)
 
     # 7. Write Flat CSV Exports
     print("=== Writing Flat Relational CSV Exports ===", flush=True)
 
     def write_csv(filename: str, rows: list, fieldnames: list):
-        out_file = CSV_DIR / filename
+        out_file = csv_dir / filename
         with open(out_file, "w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
@@ -775,11 +817,11 @@ def main():
     # 8. Download High-Res Media Mirror
     print(f"\n=== Mirroring {len(url_to_local)} Unique High-Res Media Assets ===", flush=True)
     for sub in ["paints", "colours", "games", "factions", "models", "recipe_steps", "projects"]:
-        (ASSETS_DIR / sub).mkdir(parents=True, exist_ok=True)
+        (assets_dir / sub).mkdir(parents=True, exist_ok=True)
 
     def download_asset(item):
         url, rel_path = item
-        dest = EXPORT_DIR / rel_path
+        dest = export_dir / rel_path
         if dest.exists() and dest.stat().st_size > 0:
             return "cached"
         for attempt in range(3):
@@ -820,9 +862,9 @@ def main():
                 )
 
     summary_stats["mediaMirror"] = stats
-    save_json(JSON_DIR / "summary_stats.json", summary_stats)
+    save_json(json_dir / "summary_stats.json", summary_stats)
     print(f"\n[DONE] Exports & Media Mirror completed in {time.time() - t0:.1f}s!", flush=True)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

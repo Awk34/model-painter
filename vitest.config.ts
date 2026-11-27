@@ -1,9 +1,142 @@
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { angularJitApplicationTransform } from '@angular/compiler-cli';
 import { playwright } from '@vitest/browser-playwright';
+import { chromium } from 'playwright';
 import ts from 'typescript';
 import { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+
+const CHROMIUM_PATH_BINARIES = [
+  'chromium',
+  'chromium-browser',
+  'google-chrome',
+  'google-chrome-stable',
+];
+
+function isExecutableFile(filePath: string): boolean {
+  try {
+    fs.accessSync(filePath, fs.constants.X_OK);
+    return fs.statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function findExecutableOnPath(names: readonly string[]): string | undefined {
+  const pathEnv = process.env['PATH'] ?? '';
+  if (!pathEnv) {
+    return undefined;
+  }
+  const dirs = pathEnv.split(path.delimiter).filter(Boolean);
+  for (const name of names) {
+    for (const dir of dirs) {
+      const candidate = path.join(dir, name);
+      if (isExecutableFile(candidate)) {
+        return candidate;
+      }
+    }
+  }
+  return undefined;
+}
+
+function parsePlaywrightRevision(dirName: string): number {
+  const match = dirName.match(/-(\d+)$/);
+  return match ? Number.parseInt(match[1], 10) : 0;
+}
+
+function findPlaywrightCachedBrowser(): string | undefined {
+  const cacheDirs = Array.from(
+    new Set(
+      [
+        process.env['XDG_CACHE_HOME']
+          ? path.join(process.env['XDG_CACHE_HOME'], 'ms-playwright')
+          : null,
+        path.join(os.homedir(), '.cache', 'ms-playwright'),
+      ].filter((dir): dir is string => Boolean(dir))
+    )
+  );
+
+  for (const cacheRoot of cacheDirs) {
+    if (!fs.existsSync(cacheRoot)) {
+      continue;
+    }
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(cacheRoot, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    const browserDirs = entries
+      .filter(
+        (entry) =>
+          entry.isDirectory() &&
+          (entry.name.startsWith('chromium-') ||
+            entry.name.startsWith('chromium_headless_shell-'))
+      )
+      .sort((a, b) => {
+        const aIsFull = a.name.startsWith('chromium-') ? 0 : 1;
+        const bIsFull = b.name.startsWith('chromium-') ? 0 : 1;
+        if (aIsFull !== bIsFull) {
+          return aIsFull - bIsFull;
+        }
+        return parsePlaywrightRevision(b.name) - parsePlaywrightRevision(a.name);
+      });
+
+    for (const dir of browserDirs) {
+      const dirPath = path.join(cacheRoot, dir.name);
+      let subEntries: fs.Dirent[];
+      try {
+        subEntries = fs.readdirSync(dirPath, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      for (const sub of subEntries) {
+        if (!sub.isDirectory()) {
+          continue;
+        }
+        if (sub.name.startsWith('chrome-linux')) {
+          const candidate = path.join(dirPath, sub.name, 'chrome');
+          if (isExecutableFile(candidate)) {
+            return candidate;
+          }
+        }
+        if (sub.name.startsWith('chrome-headless-shell-linux')) {
+          const candidate = path.join(dirPath, sub.name, 'chrome-headless-shell');
+          if (isExecutableFile(candidate)) {
+            return candidate;
+          }
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+export function resolveChromiumExecutablePath(): string | undefined {
+  const chromeBin = process.env['CHROME_BIN']?.trim();
+  if (chromeBin && isExecutableFile(chromeBin)) {
+    return chromeBin;
+  }
+
+  try {
+    const pwPath = chromium.executablePath();
+    if (pwPath && isExecutableFile(pwPath)) {
+      return pwPath;
+    }
+  } catch {
+    // Ignore if Playwright fails to compute a path; fall back to PATH and cache scan.
+  }
+
+  const onPath = findExecutableOnPath(CHROMIUM_PATH_BINARIES);
+  if (onPath) {
+    return onPath;
+  }
+
+  return findPlaywrightCachedBrowser();
+}
 
 /**
  * Compiles Angular components with `angularJitApplicationTransform` (supporting signal `input()`,
@@ -12,11 +145,12 @@ import { defineConfig } from 'vitest/config';
  */
 function angularJitPlugin(): Plugin {
   let cachedProgram: ts.Program | null = null;
+  let cacheDirty = true;
   let compilerOptions: ts.CompilerOptions = {};
 
   function getProgramForFile(filePath: string): ts.Program {
-    if (!cachedProgram || !cachedProgram.getSourceFile(filePath)) {
-      const configFile = ts.readConfigFile('tsconfig.spec.json', ts.sys.readFile);
+    if (cacheDirty || !cachedProgram || !cachedProgram.getSourceFile(filePath)) {
+      const configFile = ts.readConfigFile('tsconfig.browser.spec.ts', ts.sys.readFile);
       const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, process.cwd());
       compilerOptions = {
         ...parsed.options,
@@ -29,7 +163,13 @@ function angularJitPlugin(): Plugin {
       const rootNames = parsed.fileNames.includes(filePath)
         ? parsed.fileNames
         : [...parsed.fileNames, filePath];
-      cachedProgram = ts.createProgram(rootNames, compilerOptions, undefined, cachedProgram ?? undefined);
+      cachedProgram = ts.createProgram(
+        rootNames,
+        compilerOptions,
+        undefined,
+        cachedProgram ?? undefined
+      );
+      cacheDirty = false;
     }
     return cachedProgram;
   }
@@ -37,6 +177,17 @@ function angularJitPlugin(): Plugin {
   return {
     name: 'angular-jit-plugin',
     enforce: 'pre',
+    watchChange(id) {
+      const cleanId = id.split('?')[0];
+      if (
+        cleanId.endsWith('.ts') ||
+        cleanId.endsWith('.json') ||
+        cleanId.endsWith('.ng.html') ||
+        cleanId.endsWith('.css')
+      ) {
+        cacheDirty = true;
+      }
+    },
     transform(code, id) {
       const cleanId = id.split('?')[0];
       if (cleanId.includes('/node_modules/') || !cleanId.endsWith('.ts')) {
@@ -95,6 +246,55 @@ function angularJitPlugin(): Plugin {
   };
 }
 
+function isDirectoryWritable(dirPath: string): boolean {
+  try {
+    fs.accessSync(dirPath, fs.constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function buildChromiumLaunchOptions(): {
+  executablePath?: string;
+  args?: string[];
+  env?: Record<string, string>;
+} {
+  const resolvedChromiumPath = resolveChromiumExecutablePath();
+  const options: {
+    executablePath?: string;
+    args?: string[];
+    env?: Record<string, string>;
+  } = {
+    ...(process.platform === 'linux' ? { args: ['--no-sandbox'] } : {}),
+    ...(resolvedChromiumPath ? { executablePath: resolvedChromiumPath } : {}),
+  };
+
+  if (process.platform === 'linux') {
+    const configDir = process.env['XDG_CONFIG_HOME'] || path.join(os.homedir(), '.config');
+    const cacheDir = process.env['XDG_CACHE_HOME'] || path.join(os.homedir(), '.cache');
+    if (!isDirectoryWritable(configDir) || !isDirectoryWritable(cacheDir)) {
+      const cleanEnv: Record<string, string> = {};
+      for (const [k, v] of Object.entries(process.env)) {
+        if (typeof v === 'string') {
+          cleanEnv[k] = v;
+        }
+      }
+      cleanEnv['XDG_CONFIG_HOME'] = isDirectoryWritable(configDir)
+        ? configDir
+        : path.join(os.tmpdir(), 'chrome-cfg');
+      cleanEnv['XDG_CACHE_HOME'] = isDirectoryWritable(cacheDir)
+        ? cacheDir
+        : path.join(os.tmpdir(), 'chrome-cache');
+      options.env = cleanEnv;
+    }
+  }
+
+  return options;
+}
+
+const launchOptions = buildChromiumLaunchOptions();
+
 export default defineConfig({
   plugins: [angularJitPlugin()],
   optimizeDeps: {
@@ -115,11 +315,7 @@ export default defineConfig({
       enabled: true,
       headless: true,
       provider: playwright({
-        launchOptions: {
-          executablePath:
-            process.env['CHROME_BIN'] ||
-            '/home/korol/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',
-        },
+        launchOptions,
       }),
       instances: [{ browser: 'chromium' }],
     },

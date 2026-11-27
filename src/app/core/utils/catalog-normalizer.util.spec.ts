@@ -1,5 +1,6 @@
 import { ColorSummary, ModelSummary, Paint } from '../models/catalog.models';
 import {
+  computeMatchQuality,
   enrichStepPaint,
   extractColorGroupNames,
   inferPaintingStage,
@@ -8,6 +9,7 @@ import {
   normalizeModelRecipe,
   normalizeModelSummary,
   normalizePaintingStageLabel,
+  normalizeThirdPartyBundle,
   synthesizeColorDetails,
   synthesizeModelRecipe,
 } from './catalog-normalizer.util';
@@ -193,5 +195,60 @@ describe('catalog-normalizer.util', () => {
     expect(inferPaintingStage('p-spray', 'Spray', baseSet, detailSet)).toBe('Base Finish');
     expect(inferPaintingStage('p-contrast', 'Contrast', baseSet, detailSet)).toBe('Detail Finish');
     expect(inferPaintingStage('p-layer', 'Layer', baseSet, detailSet)).toBe('Artificer Finish');
+  });
+
+  it('normalizes legacy third-party bundles missing matchQuality, category, and potStyle', () => {
+    expect(computeMatchQuality(2.5)).toBe('exact');
+    expect(computeMatchQuality(8.0)).toBe('close');
+    expect(computeMatchQuality(18.5)).toBe('similar');
+
+    const normalized = normalizeThirdPartyBundle({
+      thirdPartyPaints: [
+        {
+          id: 'tp-val-72011',
+          brand: 'Vallejo',
+          range: 'Game Color',
+          code: '72.011',
+          name: 'Gory Red',
+          category: 'base',
+          potStyle: 'flat',
+          hex: '#8D1C21',
+          citadelMatches: [
+            {
+              citadelPaintId: 'p-base',
+              citadelPaintName: 'Mephiston Red',
+              citadelRange: 'warhammer_colour',
+              citadelCategory: 'base',
+              citadelHex: '#9A1115',
+              deltaE: 3.1,
+              matchType: 'curated',
+            },
+          ],
+        },
+      ],
+      citadelToThirdParty: {
+        'p-base': [
+          {
+            thirdPartyPaintId: 'tp-val-72011',
+            brand: 'Vallejo',
+            range: 'Game Color',
+            name: 'Gory Red',
+            hex: '#8D1C21',
+            deltaE: 9.4,
+            matchType: 'color_match',
+          },
+        ],
+      },
+    });
+
+    expect(normalized.thirdPartyPaints[0].citadelMatches[0].matchQuality).toBe('exact');
+    expect('matchType' in normalized.thirdPartyPaints[0].citadelMatches[0]).toBeFalse();
+
+    const ref = normalized.citadelToThirdPartyMap['p-base'][0];
+    expect(ref.matchQuality).toBe('close');
+    expect(ref.category).toBe('base');
+    expect(ref.potStyle).toBe('flat');
+    expect(ref.code).toBe('72.011');
+    expect('matchType' in ref).toBeFalse();
   });
 });

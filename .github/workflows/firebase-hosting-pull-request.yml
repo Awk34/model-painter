@@ -29,6 +29,37 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Cloud Functions dependencies
+        run: pnpm --dir functions install --no-frozen-lockfile
+
+      - name: Run lint
+        run: pnpm run lint
+
+      - name: Run TypeScript typecheck
+        run: pnpm run typecheck
+
+      - name: Run rules parity and script tests
+        run: |
+          pnpm run test:rules
+          pnpm run test:scripts
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run headless Karma unit tests
+        run: |
+          CHROME_EXE=$(node -e "import('playwright').then(p => console.log(p.chromium.executablePath()))")
+          printf '#!/bin/sh\nexec "%s" --no-sandbox "$@"\n' "$CHROME_EXE" > /tmp/chrome-no-sandbox.sh
+          chmod +x /tmp/chrome-no-sandbox.sh
+          CHROME_BIN=/tmp/chrome-no-sandbox.sh pnpm exec ng test --watch=false --browsers=ChromeHeadless
+          rm -f /tmp/chrome-no-sandbox.sh
+
+      - name: Run Vitest browser screenshot tests
+        run: pnpm run test:screenshot
+
+      - name: Build Cloud Functions
+        run: pnpm --dir functions run build
+
       - name: Build Angular application
         run: pnpm run build
 

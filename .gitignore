@@ -1,6 +1,8 @@
 # Dependencies & Build Outputs
 node_modules/
+.pnpm-store/
 dist/
+coverage/
 .angular/
 out-tsc/
 functions/node_modules/

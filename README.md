@@ -36,11 +36,25 @@ A product-agnostic **Angular** + **Firebase** miniature painting companion for t
 ## 🚀 Quick Start (Local Development)
 
 ```bash
-npm install
-npm start
+pnpm install
+pnpm run start
 ```
 
-Then open `http://localhost:4200` in your browser.
+Then open `http://localhost:4204` in your browser.
+
+---
+
+## 🧪 Testing, Linting & Type-Checking
+
+```bash
+pnpm run lint                                            # Offline AST/HTML/unused-symbol lint checks
+pnpm run typecheck                                       # tsc --noEmit (app, unit specs, browser specs, functions)
+pnpm --dir functions run build                           # Compile Cloud Functions TypeScript
+pnpm run test:rules                                      # Firestore/Storage rules parity & emulator tests
+pnpm run test:scripts                                    # All Node script, lint, SPA server & catalog schema tests
+pnpm exec ng test --watch=false --browsers=ChromeHeadless # Angular Karma/Jasmine unit suite
+pnpm run test:screenshot                                 # Vitest browser visual regression suite
+```
 
 ---
 
@@ -54,7 +68,7 @@ Then open `http://localhost:4200` in your browser.
    ```
 2. **Build & Deploy:**
    ```bash
-   npm run build
+   pnpm run build
    firebase deploy
    ```
 
@@ -63,10 +77,10 @@ Then open `http://localhost:4200` in your browser.
 ## 📂 Repository Structure
 
 - `src/app/` — Angular 19 Standalone Components, Signals services (`CatalogService`, `UserStateService`, `InventoryMatchService`, `WarhammerImportService`), and routing.
-- `public/fonts/` & `public/icons/` — Authentic `Anton` & `Bitter` fonts and `39` SVG vector icons extracted from the APK.
-- `public/data/catalog_meta/` — Read-optimized catalog bundles (`paints_bundle.json`, `third_party_paints_bundle.json`, `colours_bundle.json`, `games_factions_bundle.json`, `models_index_0..5.json`, and `manifest.json` with SHA-256 hashes).
+- `public/fonts/` & `public/icons/` — Subsetted `.woff2` `Anton` (`anton_regular.woff2`) & `Bitter` (`bitter_regular.woff2`) fonts and `46` SVG vector icons extracted from the APK.
+- `public/data/catalog_meta/` — Read-optimized catalog bundles (`paints_bundle.json`, `third_party_paints_bundle.json`, `colours_bundle.json`, `games_factions_bundle.json`, `models_index_0..5.json`, and `manifest.json` with SHA-256 hashes & `staticOnly` metadata).
 - `functions/` — Stateless Firebase Cloud Function (`importMyWarhammerAccount`) for multi-user Auth0 PKCE token exchange.
-- `scripts/` — Data bundling (`build_third_party_paints.py`, `prepare_local_bundles.py`), APK asset extraction (`extract_apk_assets.py`), and Firebase seeding (`seed_firebase.py`).
+- `scripts/` — Data bundling (`build_third_party_paints.py`, `prepare_local_bundles.py`), APK asset extraction (`extract_apk_assets.py`), Firebase seeding & sync (`seed_firebase.py`, `sync_recipes_and_colours.py`), static SPA server (`serve_spa.mjs`), offline linter (`lint.mjs`), and Node test suites (`rules_parity.test.mjs`, `firestore_rules.test.mjs`, `serve_spa.test.mjs`, `lint.test.mjs`, `catalog_schema.test.mjs`).
 - `extractor/` — Phase 1–4 Python scripts used to extract the GraphQL catalog, user account data, CSV/JSON datasets, and `6,430` high-res media assets from the Android APK.
 - `docs/` — Architectural specifications (`warhammer_colour_web_app_plan.md` & `warhammer_colour_extraction_plan.md`).
 - `IDEAS.md` — Future feature ideas and roadmap (community model builds/kitbashes, sponsored/affiliate links, community catalog & reference photo proposals, and saving public photos to personal model/project reference galleries).

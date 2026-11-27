@@ -952,4 +952,75 @@ describe('CatalogService', () => {
     ]);
     expect(service.modelsUsingPaintMap().get('nonexistent')).toBeUndefined();
   });
+
+  it('normalizes legacy third_party_paints_bundle payloads and supports CatalogBundleMeta entries', async () => {
+    routeResponses.set('/data/catalog_meta/manifest.json', () =>
+      jsonResponse({
+        schemaVersion: 1,
+        updatedAt: '2026-11-26T00:00:00Z',
+        bundles: {
+          paints_bundle: 'sha256:paints_test',
+          third_party_paints_bundle: 'sha256:tp_legacy',
+          colours_bundle: 'sha256:colours_test',
+          games_factions_bundle: 'sha256:games_test',
+          models_index_0: {
+            hash: 'sha256:models_0_test',
+            sizeBytes: 2_300_000,
+            staticOnly: true,
+          },
+        },
+      })
+    );
+    routeResponses.set('/data/catalog_meta/third_party_paints_bundle.json', () =>
+      jsonResponse({
+        thirdPartyPaints: [
+          {
+            id: 'tp-ttc-018',
+            brand: 'Two Thin Coats',
+            range: 'Core Range',
+            code: 'TTC-018',
+            name: "Dragon's Gold",
+            category: 'base',
+            potStyle: 'metallic',
+            hex: '#C4912E',
+            citadelMatches: [
+              {
+                citadelPaintId: 'paint-gold',
+                citadelPaintName: 'Retributor Armour',
+                citadelRange: 'warhammer_colour',
+                citadelCategory: 'Base',
+                citadelHex: '#C39E81',
+                deltaE: 4.2,
+                matchType: 'curated',
+              },
+            ],
+          },
+        ],
+        citadelToThirdPartyMap: {
+          'paint-gold': [
+            {
+              thirdPartyPaintId: 'tp-ttc-018',
+              brand: 'Two Thin Coats',
+              range: 'Core Range',
+              name: "Dragon's Gold",
+              hex: '#C4912E',
+              deltaE: 4.2,
+              matchType: 'curated',
+            },
+          ],
+        },
+      })
+    );
+
+    const service = injectCatalogService();
+    await (service as unknown as { initPromise: Promise<void> }).initPromise;
+
+    expect(service.models().length).toBe(1);
+    const tp = service.thirdPartyPaints()[0];
+    expect(tp.citadelMatches[0].matchQuality).toBe('exact');
+    const ref = service.citadelToThirdPartyMap()['paint-gold'][0];
+    expect(ref.matchQuality).toBe('exact');
+    expect(ref.category).toBe('base');
+    expect(ref.potStyle).toBe('metallic');
+  });
 });

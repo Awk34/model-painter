@@ -1,4 +1,5 @@
 import {
+  CitadelThirdPartyMatchRef,
   ColorDetails,
   ColorFinishTier,
   ColorStageStep,
@@ -9,12 +10,112 @@ import {
   ModelRecipe,
   ModelSummary,
   Paint,
+  ThirdPartyCitadelMatch,
+  ThirdPartyPaint,
 } from '../models/catalog.models';
 import { getPaintRepresentativeHex } from './catalog-filter.util';
 
 export type RawColorSummary = ColorSummary & {
   colourGroups?: (string | { name?: string })[];
 };
+
+export interface RawThirdPartyBundle {
+  brands?: string[];
+  thirdPartyPaints?: (Omit<ThirdPartyPaint, 'citadelMatches'> & {
+    citadelMatches?: (Partial<ThirdPartyCitadelMatch> & { matchType?: string })[];
+  })[];
+  citadelToThirdParty?: Record<
+    string,
+    (Partial<CitadelThirdPartyMatchRef> & { matchType?: string })[]
+  >;
+  citadelToThirdPartyMap?: Record<
+    string,
+    (Partial<CitadelThirdPartyMatchRef> & { matchType?: string })[]
+  >;
+}
+
+export function computeMatchQuality(deltaE: number): 'exact' | 'close' | 'similar' {
+  if (!Number.isFinite(deltaE)) {
+    return 'similar';
+  }
+  if (deltaE <= 5.0) {
+    return 'exact';
+  }
+  if (deltaE <= 12.0) {
+    return 'close';
+  }
+  return 'similar';
+}
+
+export function normalizeThirdPartyMatchQuality(
+  rawQuality: unknown,
+  deltaE: number
+): 'exact' | 'close' | 'similar' {
+  if (rawQuality === 'exact' || rawQuality === 'close' || rawQuality === 'similar') {
+    return rawQuality;
+  }
+  return computeMatchQuality(deltaE);
+}
+
+export function normalizeThirdPartyBundle(rawBundle: RawThirdPartyBundle): {
+  thirdPartyPaints: ThirdPartyPaint[];
+  citadelToThirdPartyMap: Record<string, CitadelThirdPartyMatchRef[]>;
+} {
+  const tpById = new Map<string, ThirdPartyPaint>();
+  const thirdPartyPaints: ThirdPartyPaint[] = (rawBundle.thirdPartyPaints ?? []).map((tp) => {
+    const citadelMatches: ThirdPartyCitadelMatch[] = (tp.citadelMatches ?? []).map((m) => {
+      const deltaE = typeof m.deltaE === 'number' && Number.isFinite(m.deltaE) ? m.deltaE : 0;
+      return {
+        citadelPaintId: m.citadelPaintId ?? '',
+        citadelPaintName: m.citadelPaintName ?? '',
+        citadelRange: m.citadelRange ?? 'warhammer_colour',
+        citadelCategory: m.citadelCategory ?? '',
+        citadelHex: m.citadelHex ?? '#808080',
+        deltaE,
+        matchQuality: normalizeThirdPartyMatchQuality(m.matchQuality, deltaE),
+      };
+    });
+    const normalizedPaint: ThirdPartyPaint = {
+      ...tp,
+      citadelMatches,
+    };
+    tpById.set(normalizedPaint.id, normalizedPaint);
+    return normalizedPaint;
+  });
+
+  const rawMap = rawBundle.citadelToThirdPartyMap ?? rawBundle.citadelToThirdParty ?? {};
+  const citadelToThirdPartyMap: Record<string, CitadelThirdPartyMatchRef[]> = {};
+  for (const [citadelId, refs] of Object.entries(rawMap)) {
+    if (
+      citadelId === '__proto__' ||
+      citadelId === 'constructor' ||
+      citadelId === 'prototype' ||
+      !Array.isArray(refs)
+    ) {
+      continue;
+    }
+    citadelToThirdPartyMap[citadelId] = refs.map((ref) => {
+      const deltaE =
+        typeof ref.deltaE === 'number' && Number.isFinite(ref.deltaE) ? ref.deltaE : 0;
+      const srcTp = ref.thirdPartyPaintId ? tpById.get(ref.thirdPartyPaintId) : undefined;
+      const potStyle = ref.potStyle ?? srcTp?.potStyle;
+      return {
+        thirdPartyPaintId: ref.thirdPartyPaintId ?? '',
+        brand: ref.brand ?? srcTp?.brand ?? '',
+        range: ref.range ?? srcTp?.range ?? '',
+        ...(ref.code !== undefined ? { code: ref.code } : srcTp?.code ? { code: srcTp.code } : {}),
+        name: ref.name ?? srcTp?.name ?? '',
+        category: ref.category ?? srcTp?.category ?? 'base',
+        ...(potStyle !== undefined ? { potStyle } : {}),
+        hex: ref.hex ?? srcTp?.hex ?? '#808080',
+        deltaE,
+        matchQuality: normalizeThirdPartyMatchQuality(ref.matchQuality, deltaE),
+      };
+    });
+  }
+
+  return { thirdPartyPaints, citadelToThirdPartyMap };
+}
 
 export function normalizePaintingStageLabel(stage: string | undefined): string {
   const normalized = (stage ?? '').trim().toLowerCase();

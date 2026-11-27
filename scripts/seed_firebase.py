@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import math
 import mimetypes
@@ -645,23 +646,72 @@ def _is_firestore_doc_size_error(err: FirestoreHttpError) -> bool:
     )
 
 
-def upload_meta_bundles(client: FirestoreRestClient) -> None:
-    """Upload catalog_meta JSON files that fit within Firestore's 1 MiB doc limit."""
+def upload_meta_bundles(
+    client: FirestoreRestClient, meta_dir: Path | None = None
+) -> None:
+    """Upload catalog_meta JSON files that fit within Firestore's 1 MiB doc limit, uploading manifest last."""
+    target_dir = meta_dir if meta_dir is not None else META_DIR
     print("1. Uploading catalog_meta bundles & manifest...")
-    bundle_files = sorted(META_DIR.glob("*.json")) if META_DIR.exists() else []
+    bundle_files = sorted(target_dir.glob("*.json")) if target_dir.exists() else []
     if not bundle_files:
-        print(f"   [WARN] No catalog_meta JSON files found in {META_DIR}.")
+        print(f"   [WARN] No catalog_meta JSON files found in {target_dir}.")
         return
+
+    manifest_path = target_dir / "manifest.json"
+    manifest_doc: dict[str, Any] | None = None
+    if manifest_path.is_file():
+        manifest_doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(manifest_doc.get("bundles"), dict):
+            manifest_doc["bundles"] = {}
+
+    def mark_static_only(
+        doc_id: str, file_size: int, payload: dict[str, Any] | None = None
+    ) -> None:
+        if manifest_doc is None:
+            return
+        bundles_map = manifest_doc["bundles"]
+        existing = bundles_map.get(doc_id)
+        existing_hash: str | None = None
+        if isinstance(existing, dict) and isinstance(existing.get("hash"), str):
+            existing_hash = existing["hash"]
+        elif isinstance(existing, str):
+            existing_hash = existing
+        elif payload is not None:
+            raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            existing_hash = "sha256:" + hashlib.sha256(raw).hexdigest()[:24]
+
+        entry: dict[str, Any] = {
+            "sizeBytes": file_size,
+            "staticOnly": True,
+        }
+        if existing_hash:
+            entry["hash"] = existing_hash
+        bundles_map[doc_id] = entry
 
     for bundle_file in bundle_files:
         doc_id = bundle_file.stem
+        if doc_id == "manifest":
+            continue
+
         file_size = bundle_file.stat().st_size
-        if file_size > MAX_FIRESTORE_DOC_BYTES:
+        manifest_entry = (
+            manifest_doc["bundles"].get(doc_id) if manifest_doc is not None else None
+        )
+        is_marked_static = (
+            isinstance(manifest_entry, dict) and manifest_entry.get("staticOnly") is True
+        )
+        if is_marked_static or file_size > MAX_FIRESTORE_DOC_BYTES:
             size_mb = file_size / (1024 * 1024)
-            print(
-                f"   -> [SKIP] catalog_meta/{doc_id} ({size_mb:.2f} MiB exceeds "
-                "Firestore's 1 MiB document limit; served statically from /data/catalog_meta/)"
+            reason = (
+                "marked staticOnly in manifest.json"
+                if is_marked_static and file_size <= MAX_FIRESTORE_DOC_BYTES
+                else f"{size_mb:.2f} MiB exceeds Firestore's 1 MiB document limit"
             )
+            print(
+                f"   -> [SKIP] catalog_meta/{doc_id} ({reason}; "
+                "served statically from /data/catalog_meta/)"
+            )
+            mark_static_only(doc_id, file_size)
             continue
 
         payload = json.loads(bundle_file.read_text(encoding="utf-8"))
@@ -674,8 +724,13 @@ def upload_meta_bundles(client: FirestoreRestClient) -> None:
                     f"   -> [SKIP] catalog_meta/{doc_id} (Firestore 1 MiB encoded limit; "
                     "served statically from /data/catalog_meta/)"
                 )
+                mark_static_only(doc_id, file_size, payload)
                 continue
             raise
+
+    if manifest_doc is not None:
+        client.set_document("catalog_meta", "manifest", manifest_doc)
+        print("   -> catalog_meta/manifest")
 
 
 def upload_json_collection(
